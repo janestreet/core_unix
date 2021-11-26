@@ -1,0 +1,33 @@
+opam-version: "2.0"
+maintainer: "opensource@janestreet.com"
+authors: ["Jane Street Group, LLC <opensource@janestreet.com>"]
+homepage: "https://github.com/janestreet/core_unix"
+bug-reports: "https://github.com/janestreet/core_unix/issues"
+dev-repo: "git+https://github.com/janestreet/core_unix.git"
+doc: "https://ocaml.janestreet.com/ocaml-core/latest/doc/core_unix/index.html"
+license: "MIT"
+build: [
+  ["dune" "build" "-p" name "-j" jobs]
+]
+depends: [
+  "ocaml" {>= "4.08.0"}
+  "base"
+  "core"
+  "core_kernel"
+  "expect_test_helpers_core"
+  "jane-street-headers"
+  "jst-config"
+  "ocaml_intrinsics"
+  "ppx_jane"
+  "record_builder"
+  "sexplib"
+  "timezone"
+  "base-threads"
+  "dune"                     {>= "2.0.0"}
+  "spawn"                    {>= "v0.12"}
+]
+synopsis: "Unix-specific portions of Core"
+description: "
+Unix-specific extensions to some of the modules defined in [core] and [core_kernel].
+"
+depexts: ["linux-headers"] {os-distribution = "alpine"}
