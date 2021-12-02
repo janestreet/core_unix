@@ -4,6 +4,14 @@ renaming_lib() {
     lib_name=$1
     redirecting_lib_name=core_unix_$1
     module_name="${lib_name^}"
+
+    original_public_name=core.$lib_name
+    case $lib_name in
+        uuid_unix)
+            original_public_name=core.uuid
+            ;;
+    esac
+
     rm -r "$lib_name"
     mkdir "$lib_name"
     mkdir "$lib_name"/src
@@ -19,7 +27,7 @@ EOF
     fi
     cat > "$lib_name"/src/dune <<EOF
 (library (name $redirecting_lib_name) (public_name $public_name)
-  (libraries core.$lib_name) (preprocess no_preprocessing))
+  (libraries $original_public_name) (preprocess no_preprocessing))
 EOF
 }
 
