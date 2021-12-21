@@ -88,7 +88,11 @@ module Stable : sig
   end
 
   module Zone : sig
-    module V1 : Stable_without_comparator with type t = Timezone.Stable.V1.t
+    module V1 : sig
+      type t = Timezone.Stable.V1.t [@@deriving hash]
+
+      include Stable_without_comparator with type t := t
+    end
 
     module Full_data : sig
       module V1 : Stable_without_comparator with type t = Time.Stable.Zone.Full_data.V1.t

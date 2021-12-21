@@ -385,10 +385,11 @@ module Flock = struct
     mutable unlocked : bool;
   }
 
-  let lock_exn ~lock_path =
+  let lock_exn ?lock_owner_uid () ~lock_path =
     let fd =
       Core_unix.openfile ~perm:0o664 ~mode:[O_CREAT; O_WRONLY; O_CLOEXEC] lock_path
     in
+    Option.iter lock_owner_uid ~f:(fun uid -> Core_unix.fchown fd ~uid ~gid:(-1));
     match flock fd with
     | false ->
       Core_unix.close ~restart:true fd;

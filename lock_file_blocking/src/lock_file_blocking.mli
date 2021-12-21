@@ -220,8 +220,8 @@ module Flock : sig
   type t
 
   (** Raises an exception if taking the lock fails for any reason other than somebody else
-      holding the lock. *)
-  val lock_exn : lock_path:string -> [ `We_took_it of t | `Somebody_else_took_it ]
+      holding the lock. Optionally sets the lock owner to [lock_owner_uid]. *)
+  val lock_exn : ?lock_owner_uid:int -> unit -> lock_path:string -> [ `We_took_it of t | `Somebody_else_took_it ]
 
   (** Raises an exception if this lock was already unlocked earlier. *)
   val unlock_exn : t -> unit

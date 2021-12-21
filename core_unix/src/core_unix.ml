@@ -844,6 +844,15 @@ end
 
 type env = Env.t [@@deriving sexp]
 
+module Pgid = struct
+
+  type t = Spawn.Pgid.t
+
+  let new_process_group = Spawn.Pgid.new_process_group
+  let of_pid = Spawn.Pgid.of_pid
+end
+
+
 let exec ~prog ~argv ?(use_path = true) ?env () =
   let argv = Array.of_list argv in
   let env = Option.map env ~f:Env.expand_array in
@@ -1566,12 +1575,13 @@ end
 
 let create_process_internal
   :  working_dir : string option
+    -> setpgid     : Spawn.Pgid.t option
     -> prog        : string
     -> argv        : string list
     -> env         : string list
     -> Process_info.t
   =
-  fun ~working_dir ~prog ~argv ~env ->
+  fun ~working_dir ~setpgid ~prog ~argv ~env ->
   let close_on_err = ref [] in
   let safe_pipe () =
     let (fd_read, fd_write) as result = Spawn.safe_pipe () in
@@ -1585,6 +1595,7 @@ let create_process_internal
     let pid =
       Spawn.spawn
         ?cwd:(Option.map working_dir ~f:(fun x -> Spawn.Working_dir.Path x))
+        ?setpgid
         ~prog
         ~argv
         ~env:(Spawn.Env.of_list env)
@@ -1699,7 +1710,7 @@ end = struct
   ;;
 end
 
-let create_process_env ?working_dir ?prog_search_path ?argv0 ~prog ~args ~env () =
+let create_process_env ?working_dir ?prog_search_path ?argv0 ?setpgid ~prog ~args ~env () =
   let env_assignments = Env.expand env in
   Execvp_emulation.run
     ~prog
@@ -1710,13 +1721,14 @@ let create_process_env ?working_dir ?prog_search_path ?argv0 ~prog ~args ~env ()
     ~spawn:(fun ~prog ~argv ->
       create_process_internal
         ~working_dir
+        ~setpgid
         ~prog
         ~argv
         ~env:env_assignments)
     ()
 
-let create_process_env ?working_dir ?prog_search_path ?argv0 ~prog ~args ~env () =
-  improve (fun () -> create_process_env ?working_dir ?prog_search_path ?argv0 ~prog ~args ~env ())
+let create_process_env ?working_dir ?prog_search_path ?argv0 ?setpgid ~prog ~args ~env () =
+  improve (fun () -> create_process_env ?working_dir ?prog_search_path ?argv0 ?setpgid ~prog ~args ~env ())
     (fun () ->
        (match working_dir with
         | None -> []

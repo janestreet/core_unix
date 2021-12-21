@@ -78,7 +78,7 @@ let mkdir_or_symlink_critical_section (type a) path ~(f : unit -> a) : a =
 
 let flock_critical_section path ~f =
   critical_section
-    ~lock:(fun () -> Lock_file_blocking.Flock.lock_exn ~lock_path:path)
+    ~lock:(fun () -> Lock_file_blocking.Flock.lock_exn () ~lock_path:path)
     ~unlock:(Lock_file_blocking.Flock.unlock_exn)
     ~f
 

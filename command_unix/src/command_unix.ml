@@ -10,6 +10,7 @@ module For_unix = Command.Private.For_unix (struct
       include Core_unix
 
       let unsafe_getenv = Sys_unix.unsafe_getenv
+      let create_process_env = create_process_env ?setpgid:None
     end
 
     module Version_util = Version_util

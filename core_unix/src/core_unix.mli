@@ -297,6 +297,22 @@ end
 
 type env = Env.t [@@deriving sexp]
 
+(** this module mirrors [Spawn.Pgid] *)
+module Pgid : sig
+  (** Only used when creating a process. If a value of this type is provided when creating
+      a process, the child will immediately set its pgid accordingly. *)
+  type t
+
+  (** Sets the child's pgid to the same as its process id. Equivalent
+      to calling [setpgid(0, 0)]. *)
+  val new_process_group : t
+
+  (** Raises [Invalid_arg] if the value is not strictly
+      positive. *)
+  val of_pid : int -> t
+end
+
+
 (** [exec ~prog ~argv ?search_path ?env] execs [prog] with [argv].  If [use_path = true]
     (the default) and [prog] doesn't contain a slash, then [exec] searches the [PATH]
     environment variable for [prog].  If [env] is supplied, it determines the environment
@@ -996,6 +1012,7 @@ val create_process_env
   :  ?working_dir : string
   -> ?prog_search_path : string list
   -> ?argv0 : string
+  -> ?setpgid : Pgid.t
   -> prog : string
   -> args : string list
   -> env : env
