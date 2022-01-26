@@ -31,6 +31,8 @@ val daemonize
   :  ?redirect_stdout : Fd_redirection.t
   -> ?redirect_stderr : Fd_redirection.t
   -> ?cd : string
+  -> ?perm : int (** permission to pass to [openfile] when using [`File_append] or
+                     [`File_truncate] *)
   -> ?umask : int (** defaults to use existing umask *)
   -> ?allow_threads_to_have_been_created : bool (** defaults to false *)
   -> unit
@@ -72,6 +74,8 @@ val daemonize_wait
   :  ?redirect_stdout : Fd_redirection.t  (** default `Dev_null_skip_regular_files *)
   -> ?redirect_stderr : Fd_redirection.t  (** default `Dev_null_skip_regular_files *)
   -> ?cd : string  (** default / *)
+  -> ?perm : int (** permission to pass to [openfile] when using [`File_append] or
+                     [`File_truncate] *)
   -> ?umask : int  (** defaults to use existing umask *)
   -> ?allow_threads_to_have_been_created : bool (** defaults to false *)
   -> unit

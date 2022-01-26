@@ -281,7 +281,8 @@ module Null_toplevel = struct
     (* let pwait _ ~timeout:_ _      = assert false *)
   end
 end
-module _ : Linux_ext_intf.S = struct
+
+module Null : Linux_ext_intf.S = struct
   type nonrec tcp_bool_option = tcp_bool_option =
       TCP_CORK | TCP_QUICKACK
   [@@deriving sexp, bin_io]
@@ -408,6 +409,9 @@ module _ : Linux_ext_intf.S = struct
 
   include Null_toplevel
 end
+module _ = Null
+(* We leave a dummy reference to Null since it may trigger warning 60 (unused-module)
+   depending on the conditional compilation below. *)
 
 [%%import "config.h"]
 

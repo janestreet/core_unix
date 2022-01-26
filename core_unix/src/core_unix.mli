@@ -1355,7 +1355,7 @@ module Inet_addr : sig
       want a sexp converter to do that.  As we transition away, one can use
       [Blocking_sexp], which has the old behavior. *)
   val t_of_sexp : Sexp.t -> t
-  [@@deprecated "[since 2015-10] Replace [t] by [Blocking_sexp.t]"]
+  [@@deprecated "[since 2015-10] Replace [t] by [Stable.V1.t] or by [Blocking_sexp.t]"]
 
   (** [Blocking_sexp] performs DNS lookup to resolve hostnames to IP addresses. *)
   module Blocking_sexp : sig

@@ -35,7 +35,7 @@ module Fd_redirection = struct
 end
 ;;
 
-let redirect_fd ~mode ~src ~dst =
+let redirect_fd ?perm ~mode ~src ~dst () =
   match src with
   | `Do_not_redirect -> ()
   | #Fd_redirection.do_redirect as src ->
@@ -55,19 +55,19 @@ let redirect_fd ~mode ~src ~dst =
       else ()
     | `Dev_null -> redirect (open_dev_null ())
     | `File_append file ->
-      redirect (Unix.openfile file ~mode:[mode; Unix.O_CREAT; Unix.O_APPEND])
+      redirect (Unix.openfile file ?perm ~mode:[mode; Unix.O_CREAT; Unix.O_APPEND])
     | `File_truncate file ->
-      redirect (Unix.openfile file ~mode:[mode; Unix.O_CREAT; Unix.O_TRUNC])
+      redirect (Unix.openfile file ?perm ~mode:[mode; Unix.O_CREAT; Unix.O_TRUNC])
 ;;
 
-let redirect_stdio_fds ~stdout ~stderr =
-  redirect_fd ~mode:Unix.O_RDONLY ~src:`Dev_null ~dst:Unix.stdin;
-  redirect_fd ~mode:Unix.O_WRONLY ~src:stdout    ~dst:Unix.stdout;
-  redirect_fd ~mode:Unix.O_WRONLY ~src:stderr    ~dst:Unix.stderr;
+let redirect_stdio_fds ?perm ~stdout ~stderr () =
+  redirect_fd ?perm ~mode:Unix.O_RDONLY ~src:`Dev_null ~dst:Unix.stdin  ();
+  redirect_fd ?perm ~mode:Unix.O_WRONLY ~src:stdout    ~dst:Unix.stdout ();
+  redirect_fd ?perm ~mode:Unix.O_WRONLY ~src:stderr    ~dst:Unix.stderr ();
 ;;
 
 let daemonize ?(redirect_stdout=`Dev_null) ?(redirect_stderr=`Dev_null)
-      ?(cd = "/") ?umask ?(allow_threads_to_have_been_created = false) () =
+      ?(cd = "/") ?perm ?umask ?(allow_threads_to_have_been_created = false) () =
   check_threads ~allow_threads_to_have_been_created;
   let fork_no_parent () =
     match Unix.handle_unix_error Unix.fork with
@@ -84,7 +84,7 @@ let daemonize ?(redirect_stdout=`Dev_null) ?(redirect_stderr=`Dev_null)
   Unix.chdir cd;
   (* Ensure sensible umask.  Adjust as needed. *)
   Option.iter umask ~f:(fun umask -> ignore (Unix.umask umask));
-  redirect_stdio_fds ~stdout:redirect_stdout ~stderr:redirect_stderr;
+  redirect_stdio_fds ?perm ~stdout:redirect_stdout ~stderr:redirect_stderr ();
 ;;
 
 let process_status_to_exit_code = function
@@ -98,7 +98,7 @@ let process_status_to_exit_code = function
 let daemonize_wait
       ?(redirect_stdout=`Dev_null_skip_regular_files)
       ?(redirect_stderr=`Dev_null_skip_regular_files)
-      ?(cd = "/") ?umask ?(allow_threads_to_have_been_created = false) () =
+      ?(cd = "/") ?perm ?umask ?(allow_threads_to_have_been_created = false) () =
   check_threads ~allow_threads_to_have_been_created;
   match Unix.handle_unix_error Unix.fork with
   | `In_the_child ->
@@ -113,7 +113,7 @@ let daemonize_wait
       Unix.chdir cd;
       Option.iter umask ~f:(fun umask -> ignore (Unix.umask umask));
       Staged.stage (fun () ->
-        redirect_stdio_fds ~stdout:redirect_stdout ~stderr:redirect_stderr;
+        redirect_stdio_fds ?perm ~stdout:redirect_stdout ~stderr:redirect_stderr ();
         let old_sigpipe_behavior = Signal.Expert.signal Signal.pipe `Ignore in
         (try ignore (Unix.write_substring write_end ~buf ~pos:0 ~len : int) with _ -> ());
         Signal.Expert.set Signal.pipe old_sigpipe_behavior;
