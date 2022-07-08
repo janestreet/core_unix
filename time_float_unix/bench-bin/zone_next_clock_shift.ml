@@ -1,6 +1,6 @@
 open Core
 open Core_bench
-module Time = Time_unix
+module Time = Time_float_unix
 
 let zone = Time.Zone.find_exn "Europe/London"
 

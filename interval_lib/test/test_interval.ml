@@ -72,8 +72,8 @@ let%test_module _ =
            let equal = [%compare.equal: t]
 
            let tests =
-             let t1 = Time.Ofday.create ~hr:7 ~min:30 ~sec:7 ~ms:12 ~us:5 () in
-             let t2 = Time.Ofday.create ~hr:9 ~min:45 ~sec:8 ~ms:0 ~us:1 () in
+             let t1 = Time_float.Ofday.create ~hr:7 ~min:30 ~sec:7 ~ms:12 ~us:5 () in
+             let t2 = Time_float.Ofday.create ~hr:9 ~min:45 ~sec:8 ~ms:0 ~us:1 () in
              make_stable_unit_tests_v1
                ~coerce:V1.Private.to_ofday
                ~non_empty:

@@ -49,6 +49,8 @@ static inline value val_underlying_of_clockid_t(clockid_t clock) {
 }
 
 
+#ifdef JSC_CLOCK_GETCPUCLOCKID
+
 CAMLprim value caml_clock_getcpuclockid(value v_pid) {
   pid_t pid = Long_val(v_pid);
 
@@ -65,6 +67,8 @@ CAMLprim value caml_clock_getcpuclockid(value v_pid) {
 
   return val_underlying_of_clockid_t(clock);
 }
+
+#endif
 
 value caml_clock_getres (value clock_type) {
   struct timespec tp;

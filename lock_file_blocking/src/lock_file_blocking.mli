@@ -44,7 +44,7 @@ val create_exn
 (** [blocking_create t] tries to create the lock. If another process holds the lock this
     function will wait until it is released or until [timeout] expires. *)
 val blocking_create
-  :  ?timeout : Time.Span.t (** defaults to wait indefinitely *)
+  :  ?timeout : Time_float.Span.t (** defaults to wait indefinitely *)
   -> ?message : string
   -> ?close_on_exec : bool (** defaults to true *)
   -> ?unlink_on_exit : bool (** defaults to false *)
@@ -118,13 +118,13 @@ module Nfs : sig
   (** [blocking_create ?message path] is like [create], but sleeps for a short while
       between lock attempts and does not return until it succeeds or [timeout] expires.
       Timeout defaults to wait indefinitely. *)
-  val blocking_create : ?timeout : Time.Span.t -> ?message : string -> string -> unit
+  val blocking_create : ?timeout : Time_float.Span.t -> ?message : string -> string -> unit
 
   (** [critical_section ?message ~timeout path ~f] wraps function [f] (including
       exceptions escaping it) by first locking (using {!blocking_create}) and then
       unlocking the given lock file. *)
   val critical_section
-    : ?message : string -> string -> timeout : Time.Span.t -> f : (unit -> 'a) -> 'a
+    : ?message : string -> string -> timeout : Time_float.Span.t -> f : (unit -> 'a) -> 'a
 
   (** [get_hostname_and_pid path] reads the lock file at [path] and returns the hostname
       and path in the file.  Returns [None] if the file cannot be read. *)
@@ -210,18 +210,19 @@ end
     2. Writing pid or message in the file.
     The file is shared between multiple processes so this feature seems hard to
     think about, and it already lead to weird code. Let's just remove it.
-    You can still find who holds the file open by inspecting output of [lsof].
-
-    3. [close_on_exec = false]
-    There is no objective reason to omit that, but I can't think of a reason to support
-    it either.
-*)
+    You can still find who holds the file open by inspecting output of [lsof]. *)
 module Flock : sig
   type t
 
   (** Raises an exception if taking the lock fails for any reason other than somebody else
       holding the lock. Optionally sets the lock owner to [lock_owner_uid]. *)
-  val lock_exn : ?lock_owner_uid:int -> unit -> lock_path:string -> [ `We_took_it of t | `Somebody_else_took_it ]
+  val lock_exn
+    :  ?lock_owner_uid:int
+    -> ?exclusive:bool (* default: [true] *)
+    -> ?close_on_exec:bool (* default: [true] *)
+    -> unit
+    -> lock_path:string
+    -> [ `We_took_it of t | `Somebody_else_took_it ]
 
   (** Raises an exception if this lock was already unlocked earlier. *)
   val unlock_exn : t -> unit

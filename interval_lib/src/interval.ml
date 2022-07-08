@@ -3,14 +3,16 @@ open! Core
 open! Int.Replace_polymorphic_compare
 
 module Stable = struct
+  open Stable_witness.Export
+
   module V1 = struct
     module T = struct
       type 'a t =
         | Interval of 'a * 'a
         | Empty
-      [@@deriving bin_io, of_sexp, variants, compare, hash]
+      [@@deriving bin_io, of_sexp, variants, compare, hash, stable_witness]
 
-      type 'a interval = 'a t [@@deriving bin_io, of_sexp, compare, hash]
+      type 'a interval = 'a t [@@deriving bin_io, of_sexp, compare, hash, stable_witness]
 
       let interval_of_sexp a_of_sexp sexp =
         try interval_of_sexp a_of_sexp sexp (* for backwards compatibility *) with
@@ -32,11 +34,11 @@ module Stable = struct
 
     open T
 
-    type 'a t = 'a interval [@@deriving sexp, bin_io, compare, hash]
+    type 'a t = 'a interval [@@deriving sexp, bin_io, compare, hash, stable_witness]
 
     module Float = struct
       module T = struct
-        type t = float interval [@@deriving sexp, bin_io, compare, hash]
+        type t = float interval [@@deriving sexp, bin_io, compare, hash, stable_witness]
       end
 
       include T
@@ -45,7 +47,7 @@ module Stable = struct
 
     module Int = struct
       module T = struct
-        type t = int interval [@@deriving sexp, bin_io, compare, hash]
+        type t = int interval [@@deriving sexp, bin_io, compare, hash, stable_witness]
       end
 
       include T
@@ -57,8 +59,8 @@ module Stable = struct
 
     module Ofday = struct
       module T = struct
-        type t = Core.Time.Stable.Ofday.V1.t interval
-        [@@deriving sexp, bin_io, compare, hash]
+        type t = Core.Time_float.Stable.Ofday.V1.t interval
+        [@@deriving sexp, bin_io, compare, hash, stable_witness]
       end
 
       include T
@@ -68,7 +70,7 @@ module Stable = struct
     module Ofday_ns = struct
       module T = struct
         type t = Core.Time_ns.Stable.Ofday.V1.t interval
-        [@@deriving sexp, bin_io, compare]
+        [@@deriving sexp, bin_io, compare, stable_witness]
       end
 
       include T
@@ -105,7 +107,6 @@ module Raw_make (T : Bound) = struct
     include T
 
     let _ = ( <> ) (* Prevent unused value warning for "<>" *)
-
     let max x y = if T.( >= ) x y then x else y
     let min x y = if T.( <= ) x y then x else y
   end
@@ -399,7 +400,7 @@ module type S =
 module type S_time = sig end
 
 module Float = Make (Float)
-module Ofday = Make (Core.Time.Ofday)
+module Ofday = Make (Core.Time_float.Ofday)
 module Ofday_ns = Make (Core.Time_ns.Ofday)
 
 module Int = struct

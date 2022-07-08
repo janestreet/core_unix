@@ -1,6 +1,6 @@
 open! Core
 open! Import
-module Time := Core.Time
+module Time := Core.Time_float
 include Time_functor_intf.S with module Time0 := Time and module Time := Time
 
 module Stable : sig
@@ -9,7 +9,7 @@ module Stable : sig
     type nonrec comparator_witness = comparator_witness
 
     include
-      Stable_comparable.V1
+      Stable_comparable.With_stable_witness.V1
       with type t := t
       with type comparator_witness := comparator_witness
   end
@@ -53,7 +53,7 @@ module Stable : sig
     module V1 : sig
       type t = Time.Stable.Span.V1.t [@@deriving hash, equal]
 
-      include Stable_without_comparator with type t := t
+      include Stable_without_comparator_with_witness with type t := t
     end
 
     module V2 : sig
@@ -73,7 +73,7 @@ module Stable : sig
     module V1 : sig
       type t = Time.Stable.Ofday.V1.t [@@deriving hash]
 
-      include Stable_without_comparator with type t := t
+      include Stable_without_comparator_with_witness with type t := t
     end
 
     module Zoned : sig
@@ -91,7 +91,7 @@ module Stable : sig
     module V1 : sig
       type t = Timezone.Stable.V1.t [@@deriving hash]
 
-      include Stable_without_comparator with type t := t
+      include Stable_without_comparator_with_witness with type t := t
     end
 
     module Full_data : sig

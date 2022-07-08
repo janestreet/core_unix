@@ -1,6 +1,6 @@
 open! Core
 module Unix = Core_unix
-module Time = Time_unix
+module Time = Time_float_unix
 
 module Constants = struct
   (* We wrap all constants with [Sys.opaque_identity] so that callsites cannot specialize
@@ -363,9 +363,33 @@ module Span = struct
 
   let%bench "of_day" = of_day float_pi
 
+  let of_int_ns = of_int_ns
+
+  let%bench "of_int_ns" = of_int_ns int_zero
+
+  let of_int_us = of_int_us
+
+  let%bench "of_int_us" = of_int_us int_zero
+
+  let of_int_ms = of_int_ms
+
+  let%bench "of_int_ms" = of_int_ms int_zero
+
   let of_int_sec = of_int_sec
 
   let%bench "of_int_sec" = of_int_sec int_zero
+
+  let of_int_min = of_int_min
+
+  let%bench "of_int_min" = of_int_min int_zero
+
+  let of_int_hr = of_int_hr
+
+  let%bench "of_int_hr" = of_int_hr int_zero
+
+  let of_int_day = of_int_day
+
+  let%bench "of_int_day" = of_int_day int_zero
 
   let of_int32_seconds = of_int32_seconds
 
@@ -1720,7 +1744,7 @@ module Stable = struct
     module Map = Map
     module Set = Set
 
-    type nonrec t = t [@@deriving bin_io, hash, typerep]
+    type nonrec t = t [@@deriving bin_io, hash, typerep, stable_witness]
     type nonrec comparator_witness = comparator_witness
 
     let comparator = comparator
@@ -1819,7 +1843,7 @@ module Stable = struct
       open Time.Stable.Span.V1
       open Span_constants
 
-      type nonrec t = t [@@deriving bin_io]
+      type nonrec t = t [@@deriving bin_io, stable_witness]
 
       let compare = compare
 
@@ -1923,7 +1947,7 @@ module Stable = struct
       open Time.Stable.Ofday.V1
       open Ofday_constants
 
-      type nonrec t = t [@@deriving bin_io]
+      type nonrec t = t [@@deriving bin_io, stable_witness]
 
       let compare = compare
 
@@ -1987,7 +2011,7 @@ module Stable = struct
       open Time.Stable.Zone.V1
       open Zone_constants
 
-      type nonrec t = t [@@deriving bin_io]
+      type nonrec t = t [@@deriving bin_io, stable_witness]
 
       let compare = compare
 

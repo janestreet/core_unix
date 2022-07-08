@@ -1,2 +1,2 @@
 open! Core
-module Time = Time_unix
+module Time = Time_float_unix

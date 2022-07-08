@@ -8,8 +8,8 @@ open! Core
 open! Import
 
 module type S = sig
-  module Time0 : Time.S_kernel_without_zone
-  module Time : Time.S_kernel with module Time := Time0
+  module Time0 : Time_float.S_kernel_without_zone
+  module Time : Time_float.S_kernel with module Time := Time0
 
   module Span : sig
     include module type of Time.Span
@@ -199,8 +199,8 @@ module type Time_functor = sig
   module type S = S
 
   module Make
-      (Time0 : Time.S_kernel_without_zone)
-      (Time : Time.S_kernel with module Time := Time0) :
+      (Time0 : Time_float.S_kernel_without_zone)
+      (Time : Time_float.S_kernel with module Time := Time0) :
     S with module Time0 := Time0 and module Time := Time
 end
 

@@ -238,7 +238,7 @@ module type Interval = sig
 
   (** {3 Specialized interval types} *)
 
-  module Ofday : S with type bound = Time.Ofday.t
+  module Ofday : S with type bound = Time_float.Ofday.t
   module Ofday_ns : S with type bound = Time_ns.Ofday.t
   module Time : sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
   module Time_ns : sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
@@ -306,14 +306,14 @@ module type Interval = sig
   *)
   module Stable : sig
     module V1 : sig
-      type nonrec 'a t = 'a t [@@deriving bin_io, compare, sexp]
+      type nonrec 'a t = 'a t [@@deriving bin_io, compare, sexp, stable_witness]
 
-      module Float : Stable with type t = Float.t
-      module Int : Stable with type t = Int.t
+      module Float : Stable_with_witness with type t = Float.t
+      module Int : Stable_with_witness with type t = Int.t
       module Time : sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
       module Time_ns : sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
-      module Ofday : Stable with type t = Ofday.t
-      module Ofday_ns : Stable with type t = Ofday_ns.t
+      module Ofday : Stable_with_witness with type t = Ofday.t
+      module Ofday_ns : Stable_with_witness with type t = Ofday_ns.t
 
       (**/**)
 
@@ -330,11 +330,11 @@ module type Interval = sig
 
         val to_float : float t -> Float.t
         val to_int : int t -> Int.t
-        val to_ofday : Core.Time.Ofday.t t -> Ofday.t
+        val to_ofday : Core.Time_float.Ofday.t t -> Ofday.t
 
         (** Used in testing Interval_unix.Time.t. Using Core.Time.t interval is
             fine because it is equal to Interval_unix.Time.t. *)
-        val to_time : Core.Time.t t -> Core.Time.t interval
+        val to_time : Core.Time_float.t t -> Core.Time_float.t interval
       end
     end
   end

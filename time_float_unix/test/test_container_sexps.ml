@@ -3,7 +3,7 @@
 
 open Core
 open Expect_test_helpers_core
-module Time = Time_unix
+module Time = Time_float_unix
 
 let%test_module _ =
   (module struct

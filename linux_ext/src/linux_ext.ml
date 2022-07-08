@@ -8,7 +8,7 @@ module Syscall_result = Unix.Syscall_result
 
 module Sysinfo0 = struct
   type t =
-    { uptime : Time.Span.t;
+    { uptime : Time_float.Span.t;
       load1 : int;
       load5 : int;
       load15 : int;
@@ -422,13 +422,13 @@ module Clock = struct
   (* These functions should be in Unix, but due to the dependency on Time,
      this is not possible (cyclic dependency). *)
   external get_time : t -> float = "core_unix_clock_gettime"
-  let get_time t = Time.Span.of_sec (get_time t)
+  let get_time t = Time_float.Span.of_sec (get_time t)
 
   external set_time : t -> float -> unit = "core_unix_clock_settime"
-  let set_time t s = set_time t (Time.Span.to_sec s)
+  let set_time t s = set_time t (Time_float.Span.to_sec s)
 
   external get_resolution : t -> float = "core_unix_clock_getres"
-  let get_resolution t = Time.Span.of_sec (get_resolution t)
+  let get_resolution t = Time_float.Span.of_sec (get_resolution t)
 
   external get_process_clock : unit -> t = "core_unix_clock_process_cputime_id_stub"
 
@@ -700,7 +700,7 @@ module Sysinfo = struct
   let sysinfo = Ok (fun () ->
     let raw = raw_sysinfo () in
     {
-      uptime = Time.Span.of_int_sec raw.Raw_sysinfo.uptime;
+      uptime = Time_float.Span.of_int_sec raw.Raw_sysinfo.uptime;
       load1 = raw.Raw_sysinfo.load1;
       load5 = raw.Raw_sysinfo.load5;
       load15 = raw.Raw_sysinfo.load15;

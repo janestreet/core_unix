@@ -46,8 +46,8 @@ open! Int.Replace_polymorphic_compare
 include Time_functor_intf
 
 module Make
-    (Time0 : Time.S_kernel_without_zone)
-    (Time : Time.S_kernel with module Time := Time0) =
+    (Time0 : Time_float.S_kernel_without_zone)
+    (Time : Time_float.S_kernel with module Time := Time0) =
 struct
   module Span = struct
     include Time.Span
@@ -109,7 +109,7 @@ struct
           type nonrec t = t
 
           let to_string = to_string
-          let module_name = "Time_unix.Ofday.Zoned"
+          let module_name = "Time_float_unix.Ofday.Zoned"
         end)
     end
   end
@@ -266,7 +266,7 @@ struct
       type nonrec t = t
 
       let to_string = to_string
-      let module_name = "Time_unix"
+      let module_name = "Time_float_unix"
     end)
 
   let sexp_zone = ref Zone.local

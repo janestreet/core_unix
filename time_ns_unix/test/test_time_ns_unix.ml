@@ -1,7 +1,7 @@
 open! Core
 open! Int.Replace_polymorphic_compare
 open Expect_test_helpers_core
-module Time = Time_unix
+module Time = Time_float_unix
 module Time_ns = Time_ns_unix
 
 let%expect_test "zoned strings near min and max representable value" =
@@ -1205,8 +1205,7 @@ let%test_module "Time_ns.Span.Option.Stable.V2" =
         ; make (-1_381_156_200_010_101_000L)
         ; make 4_110_307_199_999_999_000L
         ; make (Int63.to_int64 Int63.max_value)
-        ; make (Int63.to_int64 Int63.min_value)
-          (* none *)
+        ; make (Int63.to_int64 Int63.min_value) (* none *)
         ];
       [%expect
         {|
@@ -1541,8 +1540,7 @@ let%test_module "Time_ns.Ofday.Option.Stable.V1" =
         ; make 86_399_999_999_000L
         ; make 86_399_999_999_999L
         ; make 86_400_000_000_000L
-        ; make (-4_611_686_018_427_387_904L)
-          (* None *)
+        ; make (-4_611_686_018_427_387_904L) (* None *)
         ];
       [%expect
         {|
@@ -2765,4 +2763,187 @@ let%expect_test "[Time_ns_unix.t_sexp_grammar]" =
      (String
       (List (Cons String (Cons String Empty)))
       (List (Cons String (Cons String (Cons String Empty)))))) |}]
+;;
+
+let%test_module "format" =
+  (module struct
+    let hkg = Time_ns.Zone.find_exn "Asia/Hong_Kong"
+    let ldn = Time_ns.Zone.find_exn "Europe/London"
+    let nyc = Time_ns.Zone.find_exn "America/New_York"
+    let zones = [ hkg; ldn; nyc ]
+
+    let test_time time =
+      print_endline (Time_ns.to_string_abs time ~zone:Time_ns.Zone.utc);
+      List.iter zones ~f:(fun zone ->
+        print_endline
+          (Time_ns.format time ~zone "%F %T" ^ " -- " ^ Time_ns.Zone.name zone))
+    ;;
+
+    let time1 = Time_ns.of_string_abs "2015-01-01 10:00:00 Europe/London"
+    let time2 = Time_ns.of_string_abs "2015-06-06 10:00:00 Europe/London"
+
+    let%expect_test _ =
+      test_time time1;
+      [%expect
+        {|
+        2015-01-01 10:00:00.000000000Z
+        2015-01-01 18:00:00 -- Asia/Hong_Kong
+        2015-01-01 10:00:00 -- Europe/London
+        2015-01-01 05:00:00 -- America/New_York |}]
+    ;;
+
+    let%expect_test _ =
+      test_time time2;
+      [%expect
+        {|
+        2015-06-06 09:00:00.000000000Z
+        2015-06-06 17:00:00 -- Asia/Hong_Kong
+        2015-06-06 10:00:00 -- Europe/London
+        2015-06-06 05:00:00 -- America/New_York |}]
+    ;;
+
+    let list_of_transition = function
+      | None -> []
+      | Some (time, _) -> [ time ]
+    ;;
+
+    let transitions_of_time time zone =
+      List.concat_map
+        ~f:list_of_transition
+        [ Time_ns.Zone.prev_clock_shift
+            zone
+            ~at_or_before:(Time_ns.to_time_float_round_nearest time)
+        ; Time_ns.Zone.next_clock_shift
+            zone
+            ~strictly_after:(Time_ns.to_time_float_round_nearest time)
+        ]
+      |> List.map ~f:Time_ns.of_time_float_round_nearest
+    ;;
+
+    let times_around time =
+      List.map [ -2.; -1.; 0.; 1.; 2. ] ~f:(fun min ->
+        Time_ns.add time (Time_ns.Span.of_min min))
+    ;;
+
+    let test_transition time = List.iter (times_around time) ~f:test_time
+
+    let test_transitions time zone =
+      List.iter (transitions_of_time time zone) ~f:(fun time ->
+        print_endline "";
+        test_transition time)
+    ;;
+
+    let%expect_test _ =
+      test_transitions time1 ldn;
+      [%expect
+        {|
+        2014-10-26 00:58:00.000000000Z
+        2014-10-26 08:58:00 -- Asia/Hong_Kong
+        2014-10-26 01:58:00 -- Europe/London
+        2014-10-25 20:58:00 -- America/New_York
+        2014-10-26 00:59:00.000000000Z
+        2014-10-26 08:59:00 -- Asia/Hong_Kong
+        2014-10-26 01:59:00 -- Europe/London
+        2014-10-25 20:59:00 -- America/New_York
+        2014-10-26 01:00:00.000000000Z
+        2014-10-26 09:00:00 -- Asia/Hong_Kong
+        2014-10-26 01:00:00 -- Europe/London
+        2014-10-25 21:00:00 -- America/New_York
+        2014-10-26 01:01:00.000000000Z
+        2014-10-26 09:01:00 -- Asia/Hong_Kong
+        2014-10-26 01:01:00 -- Europe/London
+        2014-10-25 21:01:00 -- America/New_York
+        2014-10-26 01:02:00.000000000Z
+        2014-10-26 09:02:00 -- Asia/Hong_Kong
+        2014-10-26 01:02:00 -- Europe/London
+        2014-10-25 21:02:00 -- America/New_York
+
+        2015-03-29 00:58:00.000000000Z
+        2015-03-29 08:58:00 -- Asia/Hong_Kong
+        2015-03-29 00:58:00 -- Europe/London
+        2015-03-28 20:58:00 -- America/New_York
+        2015-03-29 00:59:00.000000000Z
+        2015-03-29 08:59:00 -- Asia/Hong_Kong
+        2015-03-29 00:59:00 -- Europe/London
+        2015-03-28 20:59:00 -- America/New_York
+        2015-03-29 01:00:00.000000000Z
+        2015-03-29 09:00:00 -- Asia/Hong_Kong
+        2015-03-29 02:00:00 -- Europe/London
+        2015-03-28 21:00:00 -- America/New_York
+        2015-03-29 01:01:00.000000000Z
+        2015-03-29 09:01:00 -- Asia/Hong_Kong
+        2015-03-29 02:01:00 -- Europe/London
+        2015-03-28 21:01:00 -- America/New_York
+        2015-03-29 01:02:00.000000000Z
+        2015-03-29 09:02:00 -- Asia/Hong_Kong
+        2015-03-29 02:02:00 -- Europe/London
+        2015-03-28 21:02:00 -- America/New_York |}]
+    ;;
+
+    let%expect_test _ =
+      test_transitions time1 nyc;
+      [%expect
+        {|
+        2014-11-02 05:58:00.000000000Z
+        2014-11-02 13:58:00 -- Asia/Hong_Kong
+        2014-11-02 05:58:00 -- Europe/London
+        2014-11-02 01:58:00 -- America/New_York
+        2014-11-02 05:59:00.000000000Z
+        2014-11-02 13:59:00 -- Asia/Hong_Kong
+        2014-11-02 05:59:00 -- Europe/London
+        2014-11-02 01:59:00 -- America/New_York
+        2014-11-02 06:00:00.000000000Z
+        2014-11-02 14:00:00 -- Asia/Hong_Kong
+        2014-11-02 06:00:00 -- Europe/London
+        2014-11-02 01:00:00 -- America/New_York
+        2014-11-02 06:01:00.000000000Z
+        2014-11-02 14:01:00 -- Asia/Hong_Kong
+        2014-11-02 06:01:00 -- Europe/London
+        2014-11-02 01:01:00 -- America/New_York
+        2014-11-02 06:02:00.000000000Z
+        2014-11-02 14:02:00 -- Asia/Hong_Kong
+        2014-11-02 06:02:00 -- Europe/London
+        2014-11-02 01:02:00 -- America/New_York
+
+        2015-03-08 06:58:00.000000000Z
+        2015-03-08 14:58:00 -- Asia/Hong_Kong
+        2015-03-08 06:58:00 -- Europe/London
+        2015-03-08 01:58:00 -- America/New_York
+        2015-03-08 06:59:00.000000000Z
+        2015-03-08 14:59:00 -- Asia/Hong_Kong
+        2015-03-08 06:59:00 -- Europe/London
+        2015-03-08 01:59:00 -- America/New_York
+        2015-03-08 07:00:00.000000000Z
+        2015-03-08 15:00:00 -- Asia/Hong_Kong
+        2015-03-08 07:00:00 -- Europe/London
+        2015-03-08 03:00:00 -- America/New_York
+        2015-03-08 07:01:00.000000000Z
+        2015-03-08 15:01:00 -- Asia/Hong_Kong
+        2015-03-08 07:01:00 -- Europe/London
+        2015-03-08 03:01:00 -- America/New_York
+        2015-03-08 07:02:00.000000000Z
+        2015-03-08 15:02:00 -- Asia/Hong_Kong
+        2015-03-08 07:02:00 -- Europe/London
+        2015-03-08 03:02:00 -- America/New_York |}]
+    ;;
+  end)
+;;
+
+let%test_module "parse" =
+  (module struct
+    let test zone string =
+      Time_ns.parse ~zone ~fmt:"%Y-%m-%d %H:%M:%S" string
+      |> Time_ns.to_string_abs ~zone:Time_ns.Zone.utc
+      |> print_endline
+    ;;
+
+    let%expect_test _ =
+      test Time_ns.Zone.utc "1970-01-01 00:00:00";
+      [%expect {| 1970-01-01 00:00:00.000000000Z |}];
+      test (Time_ns.Zone.find_exn "Asia/Hong_Kong") "1970-01-01 08:00:00";
+      [%expect {| 1970-01-01 00:00:00.000000000Z |}];
+      test (Time_ns.Zone.find_exn "America/New_York") "2013-10-07 09:30:00";
+      [%expect {| 2013-10-07 13:30:00.000000000Z |}]
+    ;;
+  end)
 ;;

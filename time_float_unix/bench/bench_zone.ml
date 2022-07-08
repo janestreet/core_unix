@@ -1,5 +1,5 @@
 open! Core
-module Time = Time_unix
+module Time = Time_float_unix
 
 let epoch = Time.epoch
 let winter = Time.of_string "2000-01-01 06:00:00Z"

@@ -18,7 +18,14 @@ module Unix = Core_unix
    and leaves the file unlocked (bad!) if [a] and [b] are unrelated file descriptors for
    the same file. *)
 
-let flock fd = Unix.flock fd Unix.Flock_command.lock_exclusive
+let flock fd ~exclusive =
+  let flock_command =
+    match exclusive with
+    | true -> Unix.Flock_command.lock_exclusive
+    | false -> Unix.Flock_command.lock_shared
+  in
+  Unix.flock fd flock_command
+;;
 
 let lockf ?(mode = Unix.F_TLOCK) fd =
   try
@@ -31,11 +38,11 @@ let lockf ?(mode = Unix.F_TLOCK) fd =
 let lock fd =
   (* [lockf] doesn't throw any exceptions, so if an exception is raised from this
      function, it must have come from [flock]. *)
-  let flocked = flock fd in
+  let flocked = flock fd ~exclusive:true in
   let lockfed = lockf fd in
   flocked && lockfed
 [%%else]
-let lock = flock
+let lock = flock ~exclusive:true
 [%%endif]
 
 let create
@@ -46,10 +53,13 @@ let create
   let message = sprintf "%s\n" message in
   (* We use [~perm:0o664] rather than our usual default perms, [0o666], because
      lock files shouldn't rely on the umask to disallow tampering by other. *)
-  let fd = Unix.openfile path ~mode:[Unix.O_WRONLY; Unix.O_CREAT] ~perm:0o664 in
+  let fd =
+    Unix.openfile path
+      ~mode:([Unix.O_WRONLY; O_CREAT] @ if close_on_exec then [ O_CLOEXEC ] else [])
+      ~perm:0o664
+  in
   try
     if lock fd then begin
-      if close_on_exec then Unix.set_close_on_exec fd;
       let pid_when_lock_file_was_created = Unix.getpid () in
       if unlink_on_exit then at_exit (fun () ->
         (* Do not unlink if we are in a different process than the one
@@ -78,7 +88,9 @@ let create
 
 let create_exn ?message ?close_on_exec ?unlink_on_exit path =
   if not (create ?message ?close_on_exec ?unlink_on_exit path) then
-    failwithf "Lock_file.create_exn '%s' was unable to acquire the lock" path ()
+    failwithf
+      "Lock_file.create_exn '%s' was unable to acquire the lock. The process that \
+       acquired the lock is likely still running" path ()
 
 let random = lazy (Random.State.make_self_init ())
 
@@ -98,13 +110,13 @@ let repeat_with_timeout ?timeout lockf path =
     in
     loop ()
   | Some timeout ->
-    let start_time = Time.now () in
+    let start_time = Time_float.now () in
     let rec loop () =
       try lockf path
       with
       | e -> begin
-          let since_start = Time.abs_diff start_time (Time.now ()) in
-          if Time.Span.(since_start > timeout) then
+          let since_start = Time_float.abs_diff start_time (Time_float.now ()) in
+          if Time_float.Span.(since_start > timeout) then
             failwithf "Lock_file: '%s' timed out waiting for existing lock. \
                        Last error was %s" path (Exn.to_string e) ()
           else begin
@@ -125,7 +137,7 @@ let blocking_create ?timeout ?message ?close_on_exec ?unlink_on_exit path =
 let is_locked path =
   try
     let fd      = Unix.openfile path ~mode:[Unix.O_RDONLY] ~perm:0o664 in
-    let flocked = flock fd in
+    let flocked = flock fd ~exclusive:true in
     let lockfed = lockf fd ~mode:Unix.F_TEST in
     Unix.close fd; (* releases any locks from [flock] and/or [lockf] *)
     if flocked && lockfed then false
@@ -161,7 +173,7 @@ module Nfs = struct
     | Ok sysinfo ->
       let of_string stat =
         (* [read_file_and_convert] will catch any exceptions raised here *)
-        let boot_time = Time.sub (Time.now ()) (sysinfo ()).Linux_ext.Sysinfo.uptime in
+        let boot_time = Time_float.sub (Time_float.now ()) (sysinfo ()).Linux_ext.Sysinfo.uptime in
         let jiffies =
           let fields =
             String.rsplit2_exn stat ~on:')'
@@ -178,8 +190,8 @@ module Nfs = struct
           |> Int64.to_float
         in
         jiffies /. hz
-        |> Time.Span.of_sec
-        |> Time.add boot_time
+        |> Time_float.Span.of_sec
+        |> Time_float.add boot_time
       in
       read_file_and_convert (sprintf !"/proc/%{Pid}/stat" pid) ~of_string
   ;;
@@ -189,7 +201,7 @@ module Nfs = struct
       { host       : string
       ; pid        : Pid.Stable.V1.t
       ; message    : string
-      ; start_time : Time.Stable.With_utc_sexp.V2.t option [@sexp.option]
+      ; start_time : Time_float.Stable.With_utc_sexp.V2.t option [@sexp.option]
       }
     [@@deriving sexp, fields]
 
@@ -253,8 +265,8 @@ module Nfs = struct
               (* our method of calculating start time is open to some inaccuracy, so let's
                  be generous and allow for up to 1s of difference (this would only allow
                  for a collision if pids get reused within 1s, which seems unlikely) *)
-              let epsilon = Time.Span.of_sec 1. in
-              Time.Span.(<) (Time.abs_diff lock_start pid_start) epsilon
+              let epsilon = Time_float.Span.of_sec 1. in
+              Time_float.Span.( < ) (Time_float.abs_diff lock_start pid_start) epsilon
           in
           let is_locked_by_me () =
             (Pid.equal locking_pid my_pid)
@@ -385,12 +397,14 @@ module Flock = struct
     mutable unlocked : bool;
   }
 
-  let lock_exn ?lock_owner_uid () ~lock_path =
+  let lock_exn ?lock_owner_uid ?(exclusive = true) ?(close_on_exec = true) () ~lock_path =
     let fd =
-      Core_unix.openfile ~perm:0o664 ~mode:[O_CREAT; O_WRONLY; O_CLOEXEC] lock_path
+      Core_unix.openfile lock_path
+        ~mode:([Unix.O_WRONLY; O_CREAT] @ if close_on_exec then [ O_CLOEXEC ] else [])
+        ~perm:0o664
     in
     Option.iter lock_owner_uid ~f:(fun uid -> Core_unix.fchown fd ~uid ~gid:(-1));
-    match flock fd with
+    match flock ~exclusive fd with
     | false ->
       Core_unix.close ~restart:true fd;
       `Somebody_else_took_it

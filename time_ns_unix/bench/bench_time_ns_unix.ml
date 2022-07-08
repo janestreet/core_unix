@@ -30,7 +30,7 @@
    performance, although we may want to add benchmarks for that some day.  We also skip
    benchmarking functor-produced modules like [*.Map] and [*.Table]. *)
 open! Core
-module Time = Time_unix
+module Time = Time_float_unix
 module Time_ns = Time_ns_unix
 
 module Constants = struct
@@ -483,6 +483,18 @@ module Span = struct
 
   let%bench "of_int_sec" = of_int_sec int_ten
 
+  let of_int_min = of_int_min
+
+  let%bench "of_int_min" = of_int_min int_ten
+
+  let of_int_hr = of_int_hr
+
+  let%bench "of_int_hr" = of_int_hr int_ten
+
+  let of_int_day = of_int_day
+
+  let%bench "of_int_day" = of_int_day int_ten
+
   let to_int_ns = to_int_ns
 
   let%bench "to_int_ns" = to_int_ns second
@@ -741,7 +753,7 @@ module Span = struct
     module V1 = struct
       open V1
 
-      type nonrec t = t [@@deriving bin_io, hash]
+      type nonrec t = t [@@deriving bin_io, hash, stable_witness]
       type nonrec comparator_witness = comparator_witness
 
       let comparator = comparator
@@ -792,7 +804,7 @@ module Span = struct
       module Map = Map
       module Set = Set
 
-      type nonrec t = t [@@deriving bin_io, hash]
+      type nonrec t = t [@@deriving bin_io, hash, sexp_grammar, stable_witness]
       type nonrec comparator_witness = comparator_witness
 
       let comparator = comparator
@@ -1089,7 +1101,7 @@ module Span = struct
       module V1 = struct
         open V1
 
-        type nonrec t = t [@@deriving bin_io]
+        type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
 
         let comparator = comparator
@@ -1121,7 +1133,7 @@ module Span = struct
       module V2 = struct
         open V2
 
-        type nonrec t = t [@@deriving bin_io]
+        type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
 
         let comparator = comparator
@@ -1972,7 +1984,7 @@ module Ofday = struct
       module V1 = struct
         open V1
 
-        type nonrec t = t [@@deriving bin_io]
+        type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
 
         let comparator = comparator
@@ -2038,6 +2050,7 @@ module Time_constants = struct
   let example_sexp = sexp_of_t example |> opaque
   let example_string = to_string example |> opaque
   let example_localized_string = opaque (to_sec_string example ~zone:Zone.utc)
+  let example_formatted = format example "%F %T%z" ~zone:Zone.utc |> opaque
   let dst_t = Ofday.Ofday_constants.dst_time_ns
   let no_dst_t = Ofday.Ofday_constants.no_dst_time_ns
   let epoch_time = opaque (to_time_float_round_nearest epoch)
@@ -2651,6 +2664,14 @@ let%bench "of_string_fix_proto (w/o dst)" =
   of_string_fix_proto `Local fix_local_string_of_no_dst_t
 ;;
 
+let format = format
+
+let%bench "format" = format example "%F %T%z" ~zone:Zone.utc
+
+let parse = parse
+
+let%bench "parse" = parse example_formatted ~fmt:"%F %T%z" ~zone:Zone.utc
+
 module Utc = struct
   open Utc
 
@@ -3101,7 +3122,7 @@ module Option = struct
     module V1 = struct
       open V1
 
-      type nonrec t = t [@@deriving bin_io]
+      type nonrec t = t [@@deriving bin_io, stable_witness]
       type nonrec comparator_witness = comparator_witness
 
       let comparator = comparator
@@ -3140,7 +3161,7 @@ module Stable = struct
     module Map = Map
     module Set = Set
 
-    type nonrec t = t [@@deriving bin_io]
+    type nonrec t = t [@@deriving bin_io, stable_witness]
     type nonrec comparator_witness = comparator_witness
 
     let comparator = comparator
@@ -3170,13 +3191,16 @@ module Stable = struct
   (* There's no particularly good reason to use [Alternate_sexp] from [Core.Time_ns]. *)
   module Alternate_sexp = Time_ns.Stable.Alternate_sexp
 
+  (* Tested as part of [Timezone]. *)
+  module Zone = Timezone.Stable
+
   module Option = struct
     module V1 = struct
       open Option
       open Time_ns.Stable.Option.V1
       open Time_option_constants
 
-      type nonrec t = t [@@deriving bin_io]
+      type nonrec t = t [@@deriving bin_io, stable_witness]
       type nonrec comparator_witness = comparator_witness
 
       let comparator = comparator
@@ -3214,7 +3238,7 @@ module Stable = struct
       open Time_ns.Stable.Span.V1
       open Span_constants
 
-      type nonrec t = t [@@deriving bin_io, hash]
+      type nonrec t = t [@@deriving bin_io, hash, stable_witness]
       type nonrec comparator_witness = comparator_witness
 
       let comparator = comparator
@@ -3267,7 +3291,7 @@ module Stable = struct
       module Map = Map
       module Set = Set
 
-      type nonrec t = t [@@deriving bin_io, hash]
+      type nonrec t = t [@@deriving bin_io, hash, sexp_grammar, stable_witness]
       type nonrec comparator_witness = comparator_witness
 
       let comparator = comparator
@@ -3316,7 +3340,7 @@ module Stable = struct
         open Time_ns.Stable.Span.Option.V1
         open Span_option_constants
 
-        type nonrec t = t [@@deriving bin_io]
+        type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
 
         let comparator = comparator
@@ -3350,7 +3374,7 @@ module Stable = struct
         open Time_ns.Stable.Span.Option.V2
         open Span_option_constants
 
-        type nonrec t = t [@@deriving bin_io]
+        type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
 
         let comparator = comparator
@@ -3387,7 +3411,7 @@ module Stable = struct
       open Time_ns.Stable.Ofday.V1
       open Ofday_constants
 
-      type nonrec t = t [@@deriving bin_io]
+      type nonrec t = t [@@deriving bin_io, stable_witness]
       type nonrec comparator_witness = comparator_witness
 
       let comparator = comparator
@@ -3454,7 +3478,7 @@ module Stable = struct
         open Time_ns.Stable.Ofday.Option.V1
         open Ofday_option_constants
 
-        type nonrec t = t [@@deriving bin_io]
+        type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
 
         let comparator = comparator

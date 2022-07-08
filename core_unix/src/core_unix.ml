@@ -1859,8 +1859,13 @@ module Clock = struct
      to be totally fine in a 31-bit int, but I don't want to find out not the hard way,
      and I don't see a lot of value in providing a 32-bit implementation, so it's easier to punt. *)
 
+  [%%ifdef JSC_CLOCK_GETCPUCLOCKID]
   external get_cpuclock_for : Pid.t -> underlying = "caml_clock_getcpuclockid"
   let get_cpuclock_for = Ok get_cpuclock_for
+  [%%else]
+  let get_cpuclock_for = Or_error.unimplemented "Unix.Clock.get_cpuclock_for"
+  [%%endif]
+
   [%%else]
   external getres : t -> Int63.t = "caml_clock_getres"
   external gettime : t -> Int63.t = "caml_clock_gettime"

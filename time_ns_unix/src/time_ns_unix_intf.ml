@@ -1,5 +1,5 @@
 open! Core
-module Time = Time_unix
+module Time = Time_float_unix
 
 module type Option = sig
   include Immediate_option.S_int63
@@ -22,20 +22,20 @@ module type Span = sig
     module V1 : sig
       type nonrec t = t [@@deriving hash, equal]
 
-      include Stable_int63able with type t := t
+      include Stable_int63able_with_witness with type t := t
     end
 
     module V2 : sig
-      type nonrec t = t [@@deriving hash, equal]
+      type nonrec t = t [@@deriving hash, equal, sexp_grammar]
       type nonrec comparator_witness = comparator_witness
 
       include
-        Stable_int63able
+        Stable_int63able_with_witness
         with type t := t
         with type comparator_witness := comparator_witness
 
       include
-        Comparable.Stable.V1.S
+        Comparable.Stable.V1.With_stable_witness.S
         with type comparable := t
         with type comparator_witness := comparator_witness
 
@@ -51,8 +51,8 @@ module type Span = sig
     include Quickcheck.S with type t := t
 
     module Stable : sig
-      module V1 : Stable_int63able with type t = t
-      module V2 : Stable_int63able with type t = t
+      module V1 : Stable_int63able_with_witness with type t = t
+      module V2 : Stable_int63able_with_witness with type t = t
     end
   end
 end
@@ -113,7 +113,7 @@ module type Ofday = sig
     include Quickcheck.S with type t := t
 
     module Stable : sig
-      module V1 : Stable_int63able with type t = t
+      module V1 : Stable_int63able_with_witness with type t = t
     end
 
     (** Returns [some] if the given span is a valid time since start of day, and [none]
@@ -129,18 +129,7 @@ end
     This module represents absolute times with nanosecond precision, approximately between
     the years 1823 and 2116 CE.
 
-    You should normally default to using [Time] instead of this module!  The reasons are:
-
-    - Many functions around our libraries expect [Time.t] values, so it will likely be
-      much more convenient for you.
-
-    - It leads to greater consistency across different codebases.  It would be bad to end
-      up with half our libraries expecting [Time.t] and the other half expecting
-      [Time_ns.t].
-
-    - [Time_ns] silently ignores overflow.
-
-    Some reasons you might want want to actually prefer [Time_ns.t] in certain cases:
+    Some reasons you might prefer [Time_ns.t] over float-based [Time.t]:
 
     - It has superior performance.
 
@@ -148,11 +137,15 @@ end
       reason about, since [int]s respect a bunch of arithmetic identities that [float]s
       don't, e.g., [x + (y + z) = (x + y) + z].
 
-    Neither [Core.Time_ns] nor [Core.Time] are available in Javascript.
+    Some reasons you might prefer to use float-based [Time] instead of this module:
 
-    All in all, it would have been nice to have chosen [Time_ns.t] to begin with, but
-    we're unlikely to flip everything to [Time_ns.t] in the short term (see comment at the
-    end of [time_ns.ml]).
+    - Some libraries use [Time.t] values, often for historical reasons, so it may be
+      necessary to use [Time.t] with them.
+
+    - [Time_ns] silently ignores overflow.
+
+    Neither {!Time_ns_unix} nor {!Time_float_unix} are available in JavaScript, but both
+    {!Core.Time_ns} and {!Core.Time} are.
 
     See {!Core.Time_ns} for additional low level documentation. *)
 module type Time_ns_unix = sig
@@ -174,7 +167,7 @@ module type Time_ns_unix = sig
     include Quickcheck.S with type t := t
 
     module Stable : sig
-      module V1 : Stable_int63able with type t = t
+      module V1 : Stable_int63able_with_witness with type t = t
     end
   end
 
@@ -241,13 +234,65 @@ module type Time_ns_unix = sig
   (** [pause_forever] sleeps indefinitely. *)
   val pause_forever : unit -> never_returns
 
+  (** [format t fmt] formats the given time according to fmt, which follows the formatting
+      rules given in 'man strftime'.  The time is output in the given timezone. Here are
+      some commonly used control codes:
+
+      {v
+      %Y - year (4 digits)
+      %y - year (2 digits)
+      %m - month
+      %d - day
+      %H - hour
+      %M - minute
+      %S - second
+    v}
+
+      a common choice would be: %Y-%m-%d %H:%M:%S
+
+      Although %Z and %z are interpreted as format strings, neither are correct in the
+      current implementation. %Z always refers to the local machine timezone, and does not
+      correctly detect whether DST is active. The effective local timezone can be
+      controlled by setting the "TZ" environment variable before calling [format]. %z
+      behaves unreliably and should be avoided.
+
+      Not all strftime control codes are standard; the supported subset will depend on the
+      C libraries linked into a given executable.
+  *)
+  val format : t -> string -> zone:Zone.t -> string
+
+  (** [parse string ~fmt ~zone] parses [string], according to [fmt], which follows the
+      formatting rules given in 'man strptime'.  The time is assumed to be in the given
+      timezone.
+
+      {v
+      %Y - year (4 digits)
+      %y - year (2 digits)
+      %m - month
+      %d - day
+      %H - hour
+      %M - minute
+      %S - second
+    v}
+
+      Raise if [allow_trailing_input] is false and [fmt] does not consume all of the
+      input. *)
+  val parse
+    :  ?allow_trailing_input:bool (** default = false *)
+    -> string
+    -> fmt:string
+    -> zone:Zone.t
+    -> t
+
   module Stable : sig
     module V1 : sig
       include
-        Stable_int63able with type t = t and type comparator_witness = comparator_witness
+        Stable_int63able_with_witness
+        with type t = t
+         and type comparator_witness = comparator_witness
 
       include
-        Comparable.Stable.V1.S
+        Comparable.Stable.V1.With_stable_witness.S
         with type comparable := t
         with type comparator_witness := comparator_witness
     end
@@ -259,27 +304,27 @@ module type Time_ns_unix = sig
     end
 
     module Option : sig
-      module V1 : Stable_int63able with type t = Option.t
+      module V1 : Stable_int63able_with_witness with type t = Option.t
     end
 
     module Span : sig
       module V1 : sig
         type t = Span.t [@@deriving hash, equal]
 
-        include Stable_int63able with type t := t
+        include Stable_int63able_with_witness with type t := t
       end
 
       module V2 : sig
-        type t = Span.t [@@deriving hash, equal]
+        type t = Span.t [@@deriving hash, equal, sexp_grammar]
         type nonrec comparator_witness = Span.comparator_witness
 
         include
-          Stable_int63able
+          Stable_int63able_with_witness
           with type t := t
           with type comparator_witness := comparator_witness
 
         include
-          Comparable.Stable.V1.S
+          Comparable.Stable.V1.With_stable_witness.S
           with type comparable := t
           with type comparator_witness := comparator_witness
 
@@ -287,14 +332,14 @@ module type Time_ns_unix = sig
       end
 
       module Option : sig
-        module V1 : Stable_int63able with type t = Span.Option.t
-        module V2 : Stable_int63able with type t = Span.Option.t
+        module V1 : Stable_int63able_with_witness with type t = Span.Option.t
+        module V2 : Stable_int63able_with_witness with type t = Span.Option.t
       end
     end
 
     module Ofday : sig
       module V1 :
-        Stable_int63able
+        Stable_int63able_with_witness
         with type t = Ofday.t
         with type comparator_witness = Time_ns.Stable.Ofday.V1.comparator_witness
 
@@ -307,8 +352,10 @@ module type Time_ns_unix = sig
       end
 
       module Option : sig
-        module V1 : Stable_int63able with type t = Ofday.Option.t
+        module V1 : Stable_int63able_with_witness with type t = Ofday.Option.t
       end
     end
+
+    module Zone = Timezone.Stable
   end
 end

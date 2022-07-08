@@ -97,7 +97,9 @@ let zero = Int63.zero
 [%%ifdef JSC_ARCH_SIXTYFOUR]
 
 (* noalloc on x86_64 only *)
-let now () = Ocaml_intrinsics.Perfmon.rdtsc () |> Stdlib.Int64.to_int |> Int63.of_int
+let[@inline] now () =
+  Ocaml_intrinsics.Perfmon.rdtsc () |> Stdlib.Int64.to_int |> Int63.of_int
+;;
 
 module Calibrator = struct
   (* performance hack: prevent writes to this record from boxing floats by making all
@@ -150,13 +152,13 @@ module Calibrator = struct
   ;;
 
   let tsc_to_nanos_since_epoch =
-    let convert t tsc base mul =
+    let[@inline] convert t tsc base mul =
       (* Scale an int by a float without intermediate allocation and overflow. *)
       Int63.( + )
         base
         (Float.int63_round_nearest_exn (mul *. Int63.to_float (diff tsc t.tsc)))
     in
-    fun t tsc ->
+    fun [@inline] t tsc ->
       if tsc < t.monotonic_until_tsc
       then convert t tsc t.monotonic_time_nanos t.floats.monotonic_nanos_per_cycle
       else convert t tsc t.time_nanos t.floats.nanos_per_cycle
@@ -422,13 +424,15 @@ let calibrator = Calibrator.t
 
 let to_time t ~calibrator =
   Calibrator.tsc_to_seconds_since_epoch calibrator t
-  |> Time.Span.of_sec
-  |> Time.of_span_since_epoch
+  |> Time_float.Span.of_sec
+  |> Time_float.of_span_since_epoch
 ;;
 
-let to_nanos_since_epoch t ~calibrator = Calibrator.tsc_to_nanos_since_epoch calibrator t
+let[@inline] to_nanos_since_epoch t ~calibrator =
+  Calibrator.tsc_to_nanos_since_epoch calibrator t
+;;
 
-let to_time_ns t ~calibrator =
+let[@inline] to_time_ns t ~calibrator =
   Time_ns.of_int63_ns_since_epoch (to_nanos_since_epoch ~calibrator t)
 ;;
 

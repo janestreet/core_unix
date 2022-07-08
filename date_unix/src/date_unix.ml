@@ -1,6 +1,6 @@
 open! Core
 open! Date_unix_intf
-module Time = Time_unix
+module Time = Time_float_unix
 
 let of_tm (tm : Unix.tm) =
   Date.create_exn

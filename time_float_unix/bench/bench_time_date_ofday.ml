@@ -9,7 +9,7 @@
    purpose is not so much to figure out exactly what the transition costs as it is to see
    how much the cost of the transition changes between one revision and another. *)
 open! Core
-module Time = Time_unix
+module Time = Time_float_unix
 module Time_ns = Time_ns_unix
 
 let rec all_but_last_exn = function

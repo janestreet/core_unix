@@ -1,7 +1,7 @@
 open! Core
 module TSC = Time_stamp_counter
 
-let%bench "Time.now" = Time.now ()
+let%bench "Time.now" = Time_float.now ()
 let%bench "Time_ns.now" = Time_ns.now ()
 
 let%bench_fun "TSC.Calibrator.calibrate" =

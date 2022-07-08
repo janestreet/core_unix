@@ -4,7 +4,7 @@
    sorts. *)
 open! Core
 open Expect_test_helpers_core
-module Time = Time_unix
+module Time = Time_float_unix
 module Time_ns = Time_ns_unix
 
 module Examples = struct

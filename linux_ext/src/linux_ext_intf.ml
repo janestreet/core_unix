@@ -9,7 +9,7 @@ module type S = sig
   module Sysinfo : sig
     (** Result of sysinfo syscall (man 2 sysinfo). *)
     type t =
-      { uptime : Time.Span.t;  (** Time since boot *)
+      { uptime : Time_float.Span.t;  (** Time since boot *)
         load1 : int;      (** Load average over the last minute *)
         load5 : int;      (** Load average over the last 5 minutes*)
         load15 : int;     (** Load average over the last 15 minutes *)
@@ -165,11 +165,11 @@ module type S = sig
     (** Returns the CPU-clock associated with the thread. *)
     val get : (Thread.t -> t) Or_error.t
 
-    val get_time : (t -> Time.Span.t) Or_error.t
+    val get_time : (t -> Time_float.Span.t) Or_error.t
 
-    val set_time : (t -> Time.Span.t -> unit) Or_error.t
+    val set_time : (t -> Time_float.Span.t -> unit) Or_error.t
 
-    val get_resolution : (t -> Time.Span.t) Or_error.t
+    val get_resolution : (t -> Time_float.Span.t) Or_error.t
 
     (** The clock measuring the CPU time of a process. *)
     val get_process_clock : (unit -> t) Or_error.t

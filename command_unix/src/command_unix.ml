@@ -4,7 +4,7 @@ module Path = Command.Private.Path
 module For_unix = Command.Private.For_unix (struct
     module Signal = Signal
     module Thread = Core_thread
-    module Time = Time_unix
+    module Time = Time_float_unix
 
     module Unix = struct
       include Core_unix

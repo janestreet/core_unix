@@ -157,7 +157,7 @@ val calibrator : Calibrator.t Lazy.t
 (**
 
    It is guaranteed that repeated calls will return nondecreasing [Time.t] values. *)
-val to_time : t -> calibrator:Calibrator.t -> Time.t
+val to_time : t -> calibrator:Calibrator.t -> Time_float.t
 
 
 val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t

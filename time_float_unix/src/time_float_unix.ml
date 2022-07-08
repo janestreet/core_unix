@@ -1,6 +1,6 @@
 open! Core
 open! Import
-module Time = Core.Time
+module Time = Core.Time_float
 
 include (
   Time :
@@ -63,6 +63,20 @@ module Stable = struct
        For a complicated "stable" story like this, we rely on comprehensive tests
        of stability; see [lib/core/test/src/test_time.ml]. *)
     include T
+
+    let stable_witness : t Stable_witness.t = Stable_witness.assert_stable
+
+    module Map = struct
+      include Map
+
+      let stable_witness _ = Stable_witness.assert_stable
+    end
+
+    module Set = struct
+      include Set
+
+      let stable_witness = Stable_witness.assert_stable
+    end
   end
 
   module With_utc_sexp = struct

@@ -1,7 +1,7 @@
 open! Core
 open! Int.Replace_polymorphic_compare
 module Unix = Core_unix
-module Time = Time_unix
+module Time = Time_float_unix
 include Time_ns
 module Zone = Time.Zone
 
@@ -17,6 +17,7 @@ module Span = struct
       module T = struct
         type nonrec t = Time_ns.Span.t [@@deriving bin_io, compare, hash, equal]
 
+        let stable_witness : t Stable_witness.t = Stable_witness.assert_stable
         let sexp_of_t t = Time.Stable.Span.V1.sexp_of_t (to_span_float_round_nearest t)
         let t_of_sexp s = of_span_float_round_nearest (Time.Stable.Span.V1.t_of_sexp s)
         let of_int63_exn t = Time_ns.Span.of_int63_ns t
@@ -117,6 +118,13 @@ module Span = struct
           let t_of_sexp s = of_option ([%of_sexp: Stable.V1.t option] s)
           let of_int63_exn i = if is_none i then none else v1_some (of_int63_ns i)
           let to_int63 t = t
+
+          let stable_witness : t Stable_witness.t =
+            Stable_witness.of_serializable
+              Int63.Stable.V1.stable_witness
+              of_int63_exn
+              to_int63
+          ;;
         end
 
         include T
@@ -153,6 +161,13 @@ module Span = struct
 
           let of_int63_exn i = i
           let to_int63 t = t
+
+          let stable_witness : t Stable_witness.t =
+            Stable_witness.of_serializable
+              Int63.Stable.V1.stable_witness
+              of_int63_exn
+              to_int63
+          ;;
         end
 
         include T
@@ -221,6 +236,54 @@ let of_string_gen ~if_no_timezone s =
 let of_string_abs s = of_string_gen ~if_no_timezone:`Fail s
 let of_string s = of_string_gen ~if_no_timezone:`Local s
 let arg_type = Core.Command.Arg_type.create of_string_abs
+
+let to_tm t ~zone : Unix.tm =
+  let date, ofday = to_date_ofday t ~zone in
+  let parts = Ofday.to_parts ofday in
+  { tm_year = Date.year date - 1900
+  ; tm_mon = Month.to_int (Date.month date) - 1
+  ; tm_mday = Date.day date
+  ; tm_hour = parts.hr
+  ; tm_min = parts.min
+  ; tm_sec = parts.sec
+  ; tm_isdst =
+      (* We don't keep track of "DST or not", so we use a dummy value. See caveat in
+         interface about time zones and DST. *)
+      false
+  ; tm_wday = Day_of_week.to_int (Date.day_of_week date)
+  ; tm_yday = Date.diff date (Date.create_exn ~y:(Date.year date) ~m:Jan ~d:1)
+  }
+;;
+
+let format (t : t) s ~zone = Unix.strftime (to_tm t ~zone) s
+
+let of_tm tm ~zone =
+  (* Explicitly ignoring isdst, wday, yday (they are redundant with the other fields
+     and the [zone] argument) *)
+  let ({ tm_year
+       ; tm_mon
+       ; tm_mday
+       ; tm_hour
+       ; tm_min
+       ; tm_sec
+       ; tm_isdst = _
+       ; tm_wday = _
+       ; tm_yday = _
+       }
+       : Unix.tm)
+    =
+    tm
+  in
+  let date =
+    Date.create_exn ~y:(tm_year + 1900) ~m:(Month.of_int_exn (tm_mon + 1)) ~d:tm_mday
+  in
+  let ofday = Ofday.create ~hr:tm_hour ~min:tm_min ~sec:tm_sec () in
+  of_date_ofday ~zone date ofday
+;;
+
+let parse ?allow_trailing_input s ~fmt ~zone =
+  Unix.strptime ?allow_trailing_input ~fmt s |> of_tm ~zone
+;;
 
 (* Does not represent extra hours due to DST (daylight saving time) (because DST makes
    adjustments in terms of wall clock time) or leap seconds (which aren't represented in
@@ -415,6 +478,7 @@ module Ofday = struct
         module T = struct
           type nonrec t = t [@@deriving compare, bin_io]
 
+          let stable_witness : t Stable_witness.t = Stable_witness.assert_stable
           let sexp_of_t t = [%sexp_of: Time_ns.Stable.Ofday.V1.t option] (to_option t)
           let t_of_sexp s = of_option ([%of_sexp: Time_ns.Stable.Ofday.V1.t option] s)
           let to_int63 t = Span.Option.Stable.V1.to_int63 t
@@ -495,10 +559,11 @@ let to_ofday_zoned t ~zone =
 module Stable0 = struct
   module V1 = struct
     module T0 = struct
-      (* We use the unstable sexp here, and rely on comprehensive tests of the stable
-         conversion to make sure we don't change it. *)
+      (* We use the unstable serialization here, and rely on comprehensive tests of the
+         stable conversion to make sure we don't change it. *)
       type nonrec t = t [@@deriving bin_io, compare, sexp, hash]
 
+      let stable_witness : t Stable_witness.t = Stable_witness.assert_stable
       let of_int63_exn t = of_span_since_epoch (Span.of_int63_ns t)
       let to_int63 t = to_int63_ns_since_epoch t
     end
@@ -510,7 +575,7 @@ module Stable0 = struct
     end
 
     include T
-    include Comparable.Stable.V1.Make (T)
+    include Comparable.Stable.V1.With_stable_witness.Make (T)
   end
 end
 
@@ -555,6 +620,7 @@ module Option = struct
       module T = struct
         type nonrec t = t [@@deriving compare, bin_io]
 
+        let stable_witness : t Stable_witness.t = Stable_witness.assert_stable
         let sexp_of_t t = [%sexp_of: Stable0.V1.t option] (to_option t)
         let t_of_sexp s = of_option ([%of_sexp: Stable0.V1.t option] s)
         let to_int63 t = Span.Option.Stable.V1.to_int63 t
@@ -617,6 +683,7 @@ module Stable = struct
     module Option = Ofday.Option.Stable
   end
 
+  module Zone = Timezone.Stable
   include Stable0
   module Alternate_sexp = Core.Time_ns.Stable.Alternate_sexp
 end

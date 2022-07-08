@@ -90,7 +90,7 @@ module type S = sig
   val abs_diff : t -> t -> Span.t
   val to_string_fix_proto : [ `Local | `Utc ] -> t -> string
   val of_string_fix_proto : [ `Local | `Utc ] -> string -> t
-  val to_string_abs : t -> zone:Time.Zone.t -> string
+  val to_string_abs : t -> zone:Time_float.Zone.t -> string
   val of_string_abs : string -> t
 
   val next_multiple
@@ -101,15 +101,15 @@ module type S = sig
     -> unit
     -> t
 
-  val of_date_ofday : zone:Time.Zone.t -> Date.t -> Ofday.t -> t
-  val to_ofday : t -> zone:Time.Zone.t -> Ofday.t
-  val to_date : t -> zone:Time.Zone.t -> Date.t
+  val of_date_ofday : zone:Time_float.Zone.t -> Date.t -> Ofday.t -> t
+  val to_ofday : t -> zone:Time_float.Zone.t -> Ofday.t
+  val to_date : t -> zone:Time_float.Zone.t -> Date.t
 
   val occurrence
     :  [ `First_after_or_at | `Last_before_or_at ]
     -> t
     -> ofday:Ofday.t
-    -> zone:Time.Zone.t
+    -> zone:Time_float.Zone.t
     -> t
 
   val pause : Span.t -> unit
