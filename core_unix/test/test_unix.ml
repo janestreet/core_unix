@@ -353,7 +353,10 @@ let%test_module "" =
     open Ifaddr.Flag
     open Ifaddr.Flag.Private
 
-    let int_of_set = Set.fold ~init:0 ~f:(fun acc t -> acc lor core_unix_iff_to_int t)
+    let int_of_set =
+      Core.Set.fold ~init:0 ~f:(fun acc t -> acc lor core_unix_iff_to_int t)
+    ;;
+
     let to_int = core_unix_iff_to_int
 
     let%test_unit _ = [%test_result: Set.t] (set_of_int 0) ~expect:Set.empty

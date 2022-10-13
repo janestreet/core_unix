@@ -331,12 +331,21 @@ val exec
   -> unit
   -> never_returns
 
-(** [fork_exec ~prog ~argv ?use_path ?env ()] forks and execs [prog] with [argv] in the
-    child process, returning the child PID to the parent. As in [exec], by convention, the
-    0th element in [argv] should be the program itself. *)
+(** [fork_exec ~prog ~argv ?preexec_fn ?use_path ?env ()] forks, calls [preexec_fn], and
+    then execs [prog] with [argv] in the child process, returning the child PID to the
+    parent. As in [exec], by convention, the 0th element in [argv] should be the program
+    itself.
+
+    Since [preexec_fn] is invoked post-fork but pre-exec, it must:
+    - not allocate; and
+    - not call any async-signal-unsafe functions (see man 7 signal)
+
+    Violating these constraints may cause the program to deadlock or exhibit undefined
+    behavior. *)
 val fork_exec
   :  prog:string
   -> argv:string list
+  -> ?preexec_fn:(unit -> unit)
   -> ?use_path:bool  (** default is [true] *)
   -> ?env:env
   -> unit
@@ -2488,6 +2497,8 @@ module Ifaddr : sig
 end
 
 val getifaddrs : unit -> Ifaddr.t list
+
+val get_all_ifnames : unit -> string list
 
 module Stable : sig
   module Inet_addr = Inet_addr.Stable

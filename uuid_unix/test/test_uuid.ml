@@ -13,7 +13,7 @@ module _ = struct
     let rec loop set l =
       match l with
       | [] -> true
-      | t :: rest -> if Set.mem set t then false else loop (Set.add set t) rest
+      | t :: rest -> if Core.Set.mem set t then false else loop (Core.Set.add set t) rest
     in
     loop Set.empty l
   ;;

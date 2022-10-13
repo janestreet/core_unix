@@ -6,7 +6,11 @@ open! Import
 
 let param =
   let%map_open.Command (_ : bool) = anon ("BOOL" %: bool)
-  and (_ : bool list) = anon (sequence ("BOOL" %: bool)) in
+  and (_ : bool list) = anon (sequence ("BOOL" %: bool))
+  and (_ : string list option) =
+    let complete (_ : Univ_map.t) ~part = part in
+    flag "--" (escape_with_autocomplete ~complete) ~doc:"escape"
+  in
   ()
 ;;
 
@@ -41,6 +45,12 @@ let%expect_test "completion of anons" =
     false
     true
     (command.ml.Exit_called (status 0)) |}];
+  (* The list passed into the escape completer is all the args after the escape flag. *)
+  test [ "a"; "b"; "--"; "c"; "d" ];
+  [%expect {|
+    c
+    d
+    (command.ml.Exit_called (status 0)) |}];
   ()
 ;;
 
@@ -48,6 +58,7 @@ let%expect_test "completion after [-help]" =
   test [ "-" ];
   [%expect
     {|
+    --
     -build-info
     -help
     -version

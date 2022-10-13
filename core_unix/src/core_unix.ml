@@ -878,9 +878,12 @@ let fork () =
 (* Same as [Caml.exit] but does not run at_exit handlers *)
 external sys_exit : int -> 'a = "caml_sys_exit"
 
-let fork_exec ~prog ~argv ?use_path ?env () =
+let fork_exec ~prog ~argv ?preexec_fn ?use_path ?env () =
   match fork () with
   | `In_the_child ->
+    (match preexec_fn with
+     | Some preexec_fn -> preexec_fn ()
+     | None -> ());
     never_returns (
       try exec ~prog ~argv ?use_path ?env ()
       with _ -> sys_exit 127
@@ -2065,11 +2068,9 @@ module Passwd = struct
         Exn.protect
           ~f:(fun () ->
             let rec loop acc =
-              try
-                let ent = Low_level.getpwent_exn () in
-                loop (ent :: acc)
-              with
-              | End_of_file -> List.rev acc
+              match Low_level.getpwent_exn () with
+              | exception End_of_file -> List.rev acc
+              | ent -> loop (ent :: acc)
             in
             loop [])
           ~finally:(fun () -> Low_level.endpwent ())
@@ -2251,7 +2252,7 @@ module Host = struct
   let have_address_in_common h1 h2 =
     let addrs1 = Inet_addr0.Set.of_array h1.addresses in
     let addrs2 = Inet_addr0.Set.of_array h2.addresses in
-    not (Inet_addr0.Set.is_empty (Inet_addr0.Set.inter addrs1 addrs2))
+    not (Set.is_empty (Set.inter addrs1 addrs2))
   ;;
 end
 
@@ -2992,7 +2993,7 @@ module Ifaddr = struct
           let v = core_unix_iff_to_int t in
           match bitmask land v with
           | 0 -> flags
-          | _ -> Set.add flags t)
+          | _ -> Core.Set.add flags t)
     ;;
 
     module Private = struct
@@ -3096,6 +3097,8 @@ end
 let getifaddrs () =
   List.map (Ifaddr.core_unix_getifaddrs ()) ~f:Ifaddr.test_and_convert
 ;;
+
+external get_all_ifnames : unit -> string list = "core_unix_all_ifnames"
 
 module Stable = struct
   module Inet_addr = Inet_addr.Stable

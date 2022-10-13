@@ -1091,7 +1091,7 @@ CAMLprim value core_unix_if_indextoname(value v_index)
   else return caml_copy_string(name);
 }
 
-#include "socketaddr.h"
+#include <caml/socketaddr.h>
 
 /* Keep this in sync with the type Core_unix.Mcast_action.t */
 #define VAL_MCAST_ACTION_ADD  (Val_int(0))
@@ -1206,11 +1206,17 @@ enum option_type {
   TYPE_UNIX_ERROR = 4
 };
 
-extern value unix_getsockopt_aux(
+#include <caml/version.h>
+#if OCAML_VERSION_MAJOR < 5
+#define caml_unix_getsockopt_aux unix_getsockopt_aux
+#define caml_unix_setsockopt_aux unix_setsockopt_aux
+#endif
+
+extern value caml_unix_getsockopt_aux(
   char *name,
   enum option_type ty, int level, int option,
   value v_socket);
-extern value unix_setsockopt_aux(
+extern value caml_unix_setsockopt_aux(
   char *name,
   enum option_type ty, int level, int option,
   value v_socket, value v_status);
@@ -1218,13 +1224,13 @@ extern value unix_setsockopt_aux(
 CAMLprim value core_unix_mcast_get_ttl(value v_socket)
 {
   return
-    unix_getsockopt_aux("getsockopt", TYPE_INT, IPPROTO_IP, IP_MULTICAST_TTL, v_socket);
+    caml_unix_getsockopt_aux("getsockopt", TYPE_INT, IPPROTO_IP, IP_MULTICAST_TTL, v_socket);
 }
 
 CAMLprim value core_unix_mcast_set_ttl(value v_socket, value v_ttl)
 {
   return
-    unix_setsockopt_aux( "setsockopt", TYPE_INT, IPPROTO_IP, IP_MULTICAST_TTL, v_socket, v_ttl);
+    caml_unix_setsockopt_aux( "setsockopt", TYPE_INT, IPPROTO_IP, IP_MULTICAST_TTL, v_socket, v_ttl);
 }
 
 CAMLprim value core_unix_mcast_set_ifname(value v_socket, value v_ifname)
@@ -1238,7 +1244,7 @@ CAMLprim value core_unix_mcast_set_ifname(value v_socket, value v_ifname)
 
   /* Now setsockopt to publish on the interface using the address. */
   return
-    unix_setsockopt_aux("setsockopt",
+    caml_unix_setsockopt_aux("setsockopt",
                         TYPE_INT,
                         IPPROTO_IP, IP_MULTICAST_IF,
                         v_socket,
@@ -1248,13 +1254,13 @@ CAMLprim value core_unix_mcast_set_ifname(value v_socket, value v_ifname)
 CAMLprim value core_unix_mcast_get_loop(value v_socket)
 {
   return
-    unix_getsockopt_aux("getsockopt", TYPE_BOOL, IPPROTO_IP, IP_MULTICAST_LOOP, v_socket);
+    caml_unix_getsockopt_aux("getsockopt", TYPE_BOOL, IPPROTO_IP, IP_MULTICAST_LOOP, v_socket);
 }
 
 CAMLprim value core_unix_mcast_set_loop(value v_socket, value v_loop)
 {
   return
-    unix_setsockopt_aux( "setsockopt", TYPE_BOOL, IPPROTO_IP, IP_MULTICAST_LOOP, v_socket, v_loop);
+    caml_unix_setsockopt_aux( "setsockopt", TYPE_BOOL, IPPROTO_IP, IP_MULTICAST_LOOP, v_socket, v_loop);
 }
 
 /* Scheduling */
@@ -1595,6 +1601,33 @@ core_unix_getifaddrs(value v_unit)
   caml_release_runtime_system ();
   freeifaddrs(ifap_orig);
   caml_acquire_runtime_system ();
+
+  CAMLreturn(head);
+}
+
+CAMLprim value core_unix_all_ifnames(value v_unit) {
+  CAMLparam1(v_unit);
+  CAMLlocal3(head, next, name);
+
+  struct if_nameindex *intf_all;
+  struct if_nameindex *intf;
+
+  caml_release_runtime_system();
+  intf_all = if_nameindex();
+  caml_acquire_runtime_system();
+
+  head = Val_unit; /* [] */
+  for (intf = intf_all; intf != NULL && intf->if_index != 0; intf++) {
+    next = caml_alloc(2, 0 /* :: */);
+    name = caml_copy_string(intf->if_name);
+    Store_field(next, 0, name);
+    Store_field(next, 1, head);
+    head = next;
+  }
+
+  caml_release_runtime_system();
+  if_freenameindex(intf_all);
+  caml_acquire_runtime_system();
 
   CAMLreturn(head);
 }

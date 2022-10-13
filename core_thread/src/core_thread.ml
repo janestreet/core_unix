@@ -72,7 +72,7 @@ external getaffinity_self_exn : unit        -> int Array.t = "pthread_np_getaffi
 
 let setaffinity_self_exn =
   let setaffinity_self_exn cpuset =
-    setaffinity_self_exn (Int.Set.to_array cpuset)
+    setaffinity_self_exn (Set.to_array cpuset)
   in
   Ok setaffinity_self_exn
 ;;

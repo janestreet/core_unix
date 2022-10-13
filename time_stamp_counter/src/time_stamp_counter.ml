@@ -173,7 +173,10 @@ module Calibrator = struct
      frequency changes.  In this module we have chosen a value of alpha that varies with
      the duration of time, i.e. longer time samples are given more weight and shorter time
      samples are given lesser weight. *)
-  let alpha_for_interval time_diff = 0. +. Float.max 0. (1. -. exp (-0.5 *. time_diff))
+  let[@inline] alpha_for_interval time_diff =
+    0. +. Float.max 0. (1. -. exp (-0.5 *. time_diff))
+  ;;
+
   let catchup_cycles = 1E9
 
   let initial_alpha = 1.

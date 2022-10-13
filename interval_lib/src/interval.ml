@@ -471,13 +471,13 @@ module Int = struct
   let fold_result = For_container.fold_result
   let fold_until = For_container.fold_until
 
-  let min_elt t ~compare =
+  let min_elt t ~compare:((compare : _ -> _ -> _) [@local]) =
     if not (phys_equal compare Int.compare)
     then For_container.min_elt t ~compare
     else lbound t
   ;;
 
-  let max_elt t ~compare =
+  let max_elt t ~compare:((compare : _ -> _ -> _) [@local]) =
     if not (phys_equal compare Int.compare)
     then For_container.max_elt t ~compare
     else ubound t

@@ -84,6 +84,20 @@ module type S = sig
         This option should not be used in code intended to be portable. *)
   [@@deriving sexp, bin_io]
 
+  type tcp_string_option =
+    | TCP_CONGESTION
+    (** (Since Linux 2.6.13) Get or set the congestion-control algorithm for this socket.
+
+        The algorithm "reno" is always permitted; other algorithms may be available,
+        depending on kernel configuration and loaded modules (see
+        /proc/sys/net/ipv4/tcp_allowed_congestion_control; add more using modprobe).
+
+        "man 7 tcp" states that getsockopt(... TCP_CONGESTION ...) can return the empty
+        string to indicate "uses the default congestion algorithm", but this does not seem
+        to be necessarily true; sometimes in that situation it will just return the name
+        of the default congestion algorithm. *)
+  [@@deriving sexp, bin_io]
+
   (** [gettcpopt_bool sock opt] Returns the current value of the boolean TCP socket option
       [opt] for socket [sock]. *)
   val gettcpopt_bool : (File_descr.t -> tcp_bool_option -> bool) Or_error.t
@@ -92,6 +106,15 @@ module type S = sig
       [opt] for socket [sock] to value [v]. *)
   val settcpopt_bool
     : (File_descr.t -> tcp_bool_option -> bool -> unit) Or_error.t
+
+  (** [gettcpopt_string sock opt] Returns the current value of the string TCP socket
+      option [opt] for socket [sock]. *)
+  val gettcpopt_string : (File_descr.t -> tcp_string_option -> string) Or_error.t
+
+  (** [settcpopt_string sock opt v] sets the current value of the string TCP socket option
+      [opt] for socket [sock] to value [v]. *)
+  val settcpopt_string
+    : (File_descr.t -> tcp_string_option -> string -> unit) Or_error.t
 
   (** [send_nonblocking_no_sigpipe sock ?pos ?len buf] tries to do a nonblocking send on
       socket [sock] given buffer [buf], offset [pos] and length [len].  Prevents

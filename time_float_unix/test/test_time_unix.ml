@@ -622,7 +622,10 @@ let%test_module "Time.Stable" =
     end
 
     module For_set = struct
-      let compare x y = List.compare For_time.compare (Set.to_list x) (Set.to_list y)
+      let compare x y =
+        List.compare For_time.compare (Core.Set.to_list x) (Core.Set.to_list y)
+      ;;
+
       let examples = set_examples
 
       let quickcheck_generator =

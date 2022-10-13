@@ -1877,7 +1877,7 @@ module Stable = struct
       open Time.Stable.Span.V2
       open Span_constants
 
-      type nonrec t = t [@@deriving bin_io]
+      type nonrec t = t [@@deriving bin_io, stable_witness]
 
       let compare = compare
 
@@ -1911,7 +1911,7 @@ module Stable = struct
       open Time.Stable.Span.V3
       open Span_constants
 
-      type nonrec t = t [@@deriving bin_io, typerep]
+      type nonrec t = t [@@deriving bin_io, typerep, stable_witness]
 
       let compare = compare
 

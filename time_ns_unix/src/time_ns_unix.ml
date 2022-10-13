@@ -12,25 +12,6 @@ module Span = struct
   let compare = compare
   let arg_type = Core.Command.Arg_type.create of_string
 
-  module Stable = struct
-    module V1 = struct
-      module T = struct
-        type nonrec t = Time_ns.Span.t [@@deriving bin_io, compare, hash, equal]
-
-        let stable_witness : t Stable_witness.t = Stable_witness.assert_stable
-        let sexp_of_t t = Time.Stable.Span.V1.sexp_of_t (to_span_float_round_nearest t)
-        let t_of_sexp s = of_span_float_round_nearest (Time.Stable.Span.V1.t_of_sexp s)
-        let of_int63_exn t = Time_ns.Span.of_int63_ns t
-        let to_int63 t = Time_ns.Span.to_int63_ns t
-      end
-
-      include T
-      include Comparator.Stable.V1.Make (T)
-    end
-
-    module V2 = Time_ns.Stable.Span.V2
-  end
-
   module Option = struct
     type span = t [@@deriving sexp]
     type t = Int63.t [@@deriving bin_io, compare, hash, typerep] (* nanoseconds or none *)

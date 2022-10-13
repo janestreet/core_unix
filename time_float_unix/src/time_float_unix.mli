@@ -59,13 +59,13 @@ module Stable : sig
     module V2 : sig
       type t = Time.Stable.Span.V2.t [@@deriving hash, equal]
 
-      include Stable_without_comparator with type t := t
+      include Stable_without_comparator_with_witness with type t := t
     end
 
     module V3 : sig
       type t = Time.Stable.Span.V3.t [@@deriving hash, typerep, equal]
 
-      include Stable_without_comparator with type t := t
+      include Stable_without_comparator_with_witness with type t := t
     end
   end
 

@@ -70,7 +70,9 @@ CAMLprim value core_unix_getgrgid_r(value v_gid, value v_buf)
   caml_enter_blocking_section();
   retval = getgrgid_r(gid, &entry, buf, buflen, &result);
   caml_leave_blocking_section();
-  if(retval) {
+  /* See [man getgrgid_r] for which return values count as errors */
+  if(retval == EINTR || retval == EIO || retval == EMFILE || retval == ENFILE ||
+     retval == ENOMEM || retval == ERANGE) {
     unix_error(retval, "getgrgid_r", caml_alloc_sprintf("%d", Int_val(v_gid)));
   }
   else {
@@ -101,7 +103,9 @@ CAMLprim value core_unix_getpwuid_r(value v_uid, value v_buf)
   caml_enter_blocking_section();
   retval = getpwuid_r(uid, &entry, buf, buflen, &result);
   caml_leave_blocking_section();
-  if(retval) {
+  /* See [man getpwuid_r] for which return values count as errors */
+  if(retval == EINTR || retval == EIO || retval == EMFILE || retval == ENFILE ||
+     retval == ENOMEM || retval == ERANGE) {
     unix_error(retval, "getpwuid_r", caml_alloc_sprintf("%d", Int_val(v_uid)));
   }
   else {
@@ -132,7 +136,9 @@ CAMLprim value core_unix_getpwnam_r(value v_nam, value v_buf)
   caml_enter_blocking_section();
   retval = getpwnam_r(nam, &entry, buf, buflen, &result);
   caml_leave_blocking_section();
-  if(retval) {
+  /* See [man getpwnam_r] for which return values count as errors */
+  if(retval == EINTR || retval == EIO || retval == EMFILE || retval == ENFILE ||
+     retval == ENOMEM || retval == ERANGE) {
     unix_error(retval, "getpwnam_r", v_nam);
   }
   else {
@@ -163,7 +169,9 @@ CAMLprim value core_unix_getgrnam_r(value v_nam, value v_buf)
   caml_enter_blocking_section();
   retval = getgrnam_r(nam, &entry, buf, buflen, &result);
   caml_leave_blocking_section();
-  if(retval) {
+  /* See [man getgrnam_r] for which return values count as errors */
+  if(retval == EINTR || retval == EIO || retval == EMFILE || retval == ENFILE ||
+     retval == ENOMEM || retval == ERANGE) {
     unix_error(retval, "getgrnam_r", v_nam);
   }
   else {

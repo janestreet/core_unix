@@ -26,9 +26,11 @@ module Sysinfo0 = struct
   [@@deriving bin_io, sexp]
 end
 
-(* If you update this type, you also must update linux_tcpopt_bool, in the C stubs. (And
-   do make sure you get the order correct) *)
+(* If you update any of the [tcp_${x}_option] types, you also must update
+   [linux_tcpopt_${x}], in the C stubs (and do make sure you get the order correct!). *)
 type tcp_bool_option = TCP_CORK | TCP_QUICKACK [@@deriving sexp, bin_io]
+
+type tcp_string_option = TCP_CONGESTION [@@deriving sexp, bin_io]
 
 module Bound_to_interface = struct
   type t = Any | Only of string [@@deriving sexp_of]
@@ -227,6 +229,7 @@ module Null_toplevel = struct
   let get_bind_to_interface              = u "Linux_ext.get_bind_to_interface"
   let get_terminal_size                  = u "Linux_ext.get_terminal_size"
   let gettcpopt_bool                     = u "Linux_ext.gettcpopt_bool"
+  let gettcpopt_string                   = u "Linux_ext.gettcpopt_string"
   let setpriority                        = u "Linux_ext.setpriority"
   let getpriority                        = u "Linux_ext.getpriority"
   let in_channel_realpath                = u "Linux_ext.in_channel_realpath"
@@ -243,6 +246,7 @@ module Null_toplevel = struct
   let sendfile                           = u "Linux_ext.sendfile"
   let sendmsg_nonblocking_no_sigpipe     = u "Linux_ext.sendmsg_nonblocking_no_sigpipe"
   let settcpopt_bool                     = u "Linux_ext.settcpopt_bool"
+  let settcpopt_string                   = u "Linux_ext.settcpopt_string"
   let peer_credentials                   = u "Linux_ext.peer_credentials"
 
   module Epoll = struct
@@ -285,6 +289,10 @@ end
 module Null : Linux_ext_intf.S = struct
   type nonrec tcp_bool_option = tcp_bool_option =
       TCP_CORK | TCP_QUICKACK
+  [@@deriving sexp, bin_io]
+
+  type nonrec tcp_string_option = tcp_string_option =
+      TCP_CONGESTION
   [@@deriving sexp, bin_io]
 
   module Bound_to_interface = struct
@@ -722,6 +730,12 @@ external gettcpopt_bool
 
 external settcpopt_bool
   : file_descr -> tcp_bool_option -> bool -> unit = "core_linux_settcpopt_bool_stub"
+
+external gettcpopt_string
+  : file_descr -> tcp_string_option -> string = "core_linux_gettcpopt_string_stub"
+
+external settcpopt_string
+  : file_descr -> tcp_string_option -> string -> unit = "core_linux_settcpopt_string_stub"
 
 external peer_credentials : file_descr -> Peer_credentials.t = "core_linux_peer_credentials"
 
@@ -1192,6 +1206,7 @@ let bind_to_interface              = Ok bind_to_interface
 let get_bind_to_interface          = Ok get_bind_to_interface
 let get_terminal_size              = Ok get_terminal_size
 let gettcpopt_bool                 = Ok gettcpopt_bool
+let gettcpopt_string               = Ok gettcpopt_string
 let setpriority                    = Ok setpriority
 let getpriority                    = Ok getpriority
 let in_channel_realpath            = Ok in_channel_realpath
@@ -1208,6 +1223,7 @@ let send_nonblocking_no_sigpipe    = Ok send_nonblocking_no_sigpipe
 let sendfile                       = Ok sendfile
 let sendmsg_nonblocking_no_sigpipe = Ok sendmsg_nonblocking_no_sigpipe
 let settcpopt_bool                 = Ok settcpopt_bool
+let settcpopt_string               = Ok settcpopt_string
 let peer_credentials               = Ok peer_credentials
 
 module Extended_file_attributes = struct

@@ -529,3 +529,41 @@ let%expect_test "cpu_list_of_string_exn" =
       (stride 0))
     |}]
 ;;
+
+let%expect_test "TCP_CONGESTION" =
+  let gettcpopt_string = Or_error.ok_exn Linux_ext.gettcpopt_string in
+  let settcpopt_string = Or_error.ok_exn Linux_ext.settcpopt_string in
+  let sock = Unix.socket ~domain:PF_INET ~kind:SOCK_STREAM ~protocol:0 () in
+  (* man 7 tcp says that "reno" is always permitted. *)
+  settcpopt_string sock TCP_CONGESTION "reno";
+  let str = gettcpopt_string sock TCP_CONGESTION in
+  print_s [%sexp (str : string)];
+  [%expect {| reno |}];
+  (* basically everyone uses cubic as the default these days, so for the purposes of
+     this test I'm willing to assume that it's available for this test. *)
+  settcpopt_string sock TCP_CONGESTION "cubic";
+  let str = gettcpopt_string sock TCP_CONGESTION in
+  print_s [%sexp (str : string)];
+  [%expect {| cubic |}];
+  (* Passing a garbage algo should raise: *)
+  List.iter [ ""; "\000"; "notaccalgo"; "longer-than-16-chars" ] ~f:(fun garbage ->
+    Expect_test_helpers_base.show_raise (fun () ->
+      settcpopt_string sock TCP_CONGESTION garbage));
+  [%expect
+    {|
+    (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
+    (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
+    (raised (Unix.Unix_error "No such file or directory" setsockopt ""))
+    (raised (Unix.Unix_error "No such file or directory" setsockopt "")) |}];
+  (* We need to close the socket to clean up the test... *)
+  Unix.close sock;
+  (* But it also gives us an opportunity to demonstrate correct behaviour (gracefully
+     raising) on an illegal file descriptor: *)
+  Expect_test_helpers_base.show_raise (fun () -> gettcpopt_string sock TCP_CONGESTION);
+  Expect_test_helpers_base.show_raise (fun () ->
+    settcpopt_string sock TCP_CONGESTION "reno");
+  [%expect
+    {|
+    (raised (Unix.Unix_error "Bad file descriptor" getsockopt ""))
+    (raised (Unix.Unix_error "Bad file descriptor" setsockopt "")) |}]
+;;

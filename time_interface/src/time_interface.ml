@@ -66,7 +66,7 @@ module type S = sig
       -> t
       -> string
 
-    val randomize : t -> percent:Percent.t -> t
+    val randomize : ?state:Random.State.t -> t -> percent:Percent.t -> t
     val to_unit_of_time : t -> Unit_of_time.t
     val of_unit_of_time : Unit_of_time.t -> t
   end
