@@ -1288,7 +1288,7 @@ CAMLprim value core_unix_sched_setscheduler(
 #warning "_POSIX_PRIORITY_SCHEDULING not present; sched_setscheduler undefined"
 CAMLprim value core_unix_sched_setscheduler(
   value __unused v_pid, value __unused v_policy, value __unused v_priority)
-{  invalid_argument("sched_setscheduler unimplemented"); }
+{  caml_invalid_argument("sched_setscheduler unimplemented"); }
 #endif
 
 
