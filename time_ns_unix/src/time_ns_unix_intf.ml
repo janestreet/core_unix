@@ -322,7 +322,7 @@ module type Time_ns_unix = sig
         module V1 : sig
           type nonrec t = Ofday.Zoned.t [@@deriving hash]
 
-          include Stable_without_comparator with type t := t
+          include Stable_without_comparator_with_witness with type t := t
         end
       end
 

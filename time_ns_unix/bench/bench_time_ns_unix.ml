@@ -3446,7 +3446,7 @@ module Stable = struct
         open Time_ns.Stable.Ofday.Zoned.V1
         open Ofday_zoned_constants
 
-        type nonrec t = t [@@deriving bin_io]
+        type nonrec t = t [@@deriving bin_io, stable_witness]
 
         let compare = compare
 

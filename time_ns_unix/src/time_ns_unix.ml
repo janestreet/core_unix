@@ -352,16 +352,14 @@ module Ofday = struct
 
     module Stable = struct
       module V1 = struct
-        type nonrec t = t [@@deriving hash]
-
         let compare = With_nonchronological_compare.compare
 
         module Bin_repr = struct
-          type t =
+          type nonrec t = t =
             { ofday : Time_ns.Stable.Ofday.V1.t
             ; zone : Timezone.Stable.V1.t
             }
-          [@@deriving bin_io]
+          [@@deriving bin_io, stable_witness]
         end
 
         include
@@ -373,6 +371,10 @@ module Ofday = struct
               let to_binable t : Bin_repr.t = { ofday = ofday t; zone = zone t }
               let of_binable (repr : Bin_repr.t) = create repr.ofday repr.zone
             end)
+
+        type nonrec t = t [@@deriving hash]
+
+        let stable_witness : t Stable_witness.t = Bin_repr.stable_witness
 
         type sexp_repr = Time_ns.Stable.Ofday.V1.t * Timezone.Stable.V1.t
         [@@deriving sexp]
