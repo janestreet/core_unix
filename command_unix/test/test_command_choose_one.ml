@@ -59,8 +59,8 @@ let%expect_test "basic" =
 
     === flags ===
 
-      [-a INT]                   . a [all or none in "-a,-b"]
-      [-b INT]                   . b [all or none in "-a,-b"]
+      [-a INT]                   . a [requires: "-b"]
+      [-b INT]                   . b [requires: "-a"]
       [-build-info]              . print info about this build and exit
       [-version]                 . print the version of this build and exit
       [-help], -?                . print this help text and exit
@@ -96,7 +96,7 @@ let%expect_test "interaction with no_arg" =
     {|
     Error parsing command line:
 
-      Not all flags in group "-a,-b,-c" are given: missing required flag: -c
+      Not all flags in group "-a,-c" are given: missing required flag: -c
 
     For usage information, run
 
@@ -108,7 +108,7 @@ let%expect_test "interaction with no_arg" =
     {|
     Error parsing command line:
 
-      Not all flags in group "-a,-b,-c" are given: missing required flag: -a
+      Not all flags in group "-a,-c" are given: missing required flag: -a
 
     For usage information, run
 
@@ -124,9 +124,9 @@ let%expect_test "interaction with no_arg" =
 
     === flags ===
 
-      [-a INT]                   . a [all or none in "-a,-b,-c"]
-      [-b]                       . b [all or none in "-a,-b,-c"]
-      [-c INT]                   . c [all or none in "-a,-b,-c"]
+      [-a INT]                   . a [requires: "-c"]
+      [-b]                       . b [requires: "-a,-c"]
+      [-c INT]                   . c [requires: "-a"]
       [-build-info]              . print info about this build and exit
       [-version]                 . print the version of this build and exit
       [-help], -?                . print this help text and exit
@@ -282,13 +282,13 @@ let%expect_test "with choose one" =
 
     === flags ===
 
-      [-a INT]                   . a [all or none in "-a,-b"]
-      [-b INT]                   . b [all or none in "-a,-b"]
-      [-c INT]                   . c [all or none in "-c,-d"]
-      [-d STRING]                . d [all or none in "-c,-d"]
-      [-e INT]                   . e [all or none in "-e,-f,-g"]
-      [-f INT]                   . f [all or none in "-e,-f,-g"]
-      [-g STRING]                . g [all or none in "-e,-f,-g"]
+      [-a INT]                   . a [requires: "-b"]
+      [-b INT]                   . b [requires: "-a"]
+      [-c INT]                   . c [requires: "-d"]
+      [-d STRING]                . d [requires: "-c"]
+      [-e INT]                   . e [requires: "-f,-g"]
+      [-f INT]                   . f [requires: "-e,-g"]
+      [-g STRING]                . g [requires: "-e,-f"]
       [-build-info]              . print info about this build and exit
       [-version]                 . print the version of this build and exit
       [-help], -?                . print this help text and exit
@@ -320,8 +320,8 @@ let%expect_test "listed flag" =
 
     === flags ===
 
-      [-a INT] ...               . a [all or none in "-a,-b"]
-      [-b INT]                   . b [all or none in "-a,-b"]
+      [-a INT] ...               . a [requires: "-b"]
+      [-b INT]                   . b
       [-build-info]              . print info about this build and exit
       [-version]                 . print the version of this build and exit
       [-help], -?                . print this help text and exit
@@ -441,10 +441,10 @@ let%expect_test "nested" =
 
     === flags ===
 
-      [-a INT]                   . a [all or none in "-a,-b,-no,-yes"]
-      [-b INT]                   . b [all or none in "-a,-b,-no,-yes"]
-      [-no]                      . no [all or none in "-a,-b,-no,-yes"]
-      [-yes]                     . yes [all or none in "-a,-b,-no,-yes"]
+      [-a INT]                   . a [requires: "-b"]
+      [-b INT]                   . b [requires: "-a"]
+      [-no]                      . no [requires: "-a,-b"]
+      [-yes]                     . yes [requires: "-a,-b"]
       [-build-info]              . print info about this build and exit
       [-version]                 . print the version of this build and exit
       [-help], -?                . print this help text and exit
@@ -469,7 +469,7 @@ let%expect_test "nested" =
     {|
   Error parsing command line:
 
-    Not all flags in group "-a,-b,-no,-yes" are given: Must pass one of these:
+    Not all flags in group "-a,-b" are given: Must pass one of these:
       -no
       -yes
 
@@ -519,11 +519,10 @@ let%expect_test "with anons" =
 
     === flags ===
 
-      [-- QUERIES]               . [all or none in "--,-search-in-errors,QUERY"]
+      [--]                       . QUERIES
       [-a INT]                   . a
       [-search-in-errors]        . search failed build matching the search-engine
-                                   like QUERY [all or none in
-                                   "--,-search-in-errors,QUERY"]
+                                   like QUERY
       [-build-info]              . print info about this build and exit
       [-version]                 . print the version of this build and exit
       [-help], -?                . print this help text and exit
@@ -615,7 +614,23 @@ let%expect_test "with anon" =
   let test = (Command_test_helpers.parse_command_line param |> unstage) ~on_success in
   test [];
   [%expect {|
-    (data ()) |}]
+    (data ()) |}];
+  test [ "--help" ];
+  [%expect
+    {|
+    CMD SUMMARY
+
+      CMD [ANON]
+
+    === flags ===
+
+      [-search-in-errors]        . search failed build matching the search-engine
+                                   like QUERY
+      [-build-info]              . print info about this build and exit
+      [-version]                 . print the version of this build and exit
+      [-help], -?                . print this help text and exit
+
+    (command.ml.Exit_called (status 0)) |}]
 ;;
 
 let%expect_test "with anon" =
@@ -678,7 +693,7 @@ let%expect_test "no_arg_required" =
     {|
     Error parsing command line:
 
-      Not all flags in group "-must-pass-me,-optional-flag" are given: missing required flag: -must-pass-me
+      Not all flags in group "-must-pass-me" are given: missing required flag: -must-pass-me
 
     For usage information, run
 
@@ -694,10 +709,8 @@ let%expect_test "no_arg_required" =
 
     === flags ===
 
-      [-must-pass-me]            . must pass this flag [all or none in
-                                   "-must-pass-me,-optional-flag"]
-      [-optional-flag]           . an optional flag [all or none in
-                                   "-must-pass-me,-optional-flag"]
+      [-must-pass-me]            . must pass this flag
+      [-optional-flag]           . an optional flag [requires: "-must-pass-me"]
       [-build-info]              . print info about this build and exit
       [-version]                 . print the version of this build and exit
       [-help], -?                . print this help text and exit

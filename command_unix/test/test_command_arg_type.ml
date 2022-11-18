@@ -18,7 +18,7 @@ let parse ~arg_type str =
 ;;
 
 let complete ~arg_type part =
-  let completions = Command.Arg_type.For_testing.complete arg_type Univ_map.empty ~part in
+  let completions = Command.Arg_type.auto_complete arg_type Univ_map.empty ~part in
   print_s [%sexp (completions : string list)]
 ;;
 
