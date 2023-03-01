@@ -104,6 +104,7 @@ module Cat = struct
                Writer.write (Lazy.force Writer.stdout) chunk))
          in
          return ())
+      ~behave_nicely_in_pipeline:false
   ;;
 end
 

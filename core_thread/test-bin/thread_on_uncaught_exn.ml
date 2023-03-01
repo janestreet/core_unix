@@ -6,7 +6,7 @@ let thread_main () =
 
 let main ~create_thread ~join_thread =
   Core.at_exit (fun () -> printf "Core.at_exit callback ran\n%!");
-  Caml.at_exit (fun () -> printf "Caml.at_exit callback ran\n%!");
+  Stdlib.at_exit (fun () -> printf "Caml.at_exit callback ran\n%!");
   printf "About to create thread\n%!";
   let thread = create_thread thread_main () in
   join_thread thread;

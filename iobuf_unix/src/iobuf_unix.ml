@@ -98,7 +98,9 @@ module Recvmmsg_context = struct
     ; ctx : ctx
     }
 
-  let create iobufs = { iobufs; bstrs = Array.map iobufs ~f:Expert.buf; ctx = ctx iobufs }
+  let create iobufs =
+    { iobufs; bstrs = Array.map iobufs ~f:(fun buf -> Expert.buf buf); ctx = ctx iobufs }
+  ;;
 end
 
 external unsafe_recvmmsg_assume_fd_is_nonblocking

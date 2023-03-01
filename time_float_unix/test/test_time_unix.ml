@@ -411,7 +411,10 @@ module _ = struct
     List.iter [ "12:00 nyc"; "12:00 America/New_York" ] ~f:(fun string ->
       let t = of_string string in
       assert (t = of_string (to_string t));
-      assert (t = t_of_sexp (sexp_of_t t)))
+      assert (t = t_of_sexp (sexp_of_t t));
+      assert (t = of_string (to_string_trimmed t));
+      assert (
+        Int.( <= ) (String.length (to_string_trimmed t)) (String.length (to_string t))))
   ;;
 end
 
@@ -2919,4 +2922,14 @@ let%test_unit "ofday_zoned conversion consistency" =
       assert (Time.( = ) time_utc time);
       assert (Time.( = ) time_nyc time);
       assert (Time.( = ) time_hkg time)))
+;;
+
+let%expect_test "sexp grammar" =
+  require_ok [%here] (Sexp_grammar_validation.validate_grammar (module Time_float_unix));
+  [%expect
+    {|
+    (Union
+     (String
+      (List (Cons String (Cons String Empty)))
+      (List (Cons String (Cons String (Cons String Empty)))))) |}]
 ;;

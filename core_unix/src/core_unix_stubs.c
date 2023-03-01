@@ -841,6 +841,8 @@ CAMLprim value core_unix_sysconf(value v_name)
 #endif
     case 14 : name = _SC_IOV_MAX; break;
     case 15 : name = _SC_CLK_TCK; break;
+    case 16 : name = _SC_NPROCESSORS_CONF; break;
+    case 17 : name = _SC_NPROCESSORS_ONLN; break;
     default :
       /* impossible */
       caml_failwith("unix_sysconf: unknown sum tag");
@@ -959,9 +961,12 @@ CAMLprim value core_unix_getgrouplist(value v_user, value v_group)
 {
   int n;
   int ngroups = NGROUPS_MAX;
-  gid_t groups[NGROUPS_MAX];
+  gid_t* groups;
   value ret;
   char *c_user;
+
+  groups = (gid_t*) malloc(NGROUPS_MAX * sizeof(gid_t));
+  if (groups == NULL) abort();
 
   assert(Is_block(v_user) && Tag_val(v_user) == String_tag);
   assert(!Is_block(v_group));
@@ -973,12 +978,18 @@ CAMLprim value core_unix_getgrouplist(value v_user, value v_group)
     free(c_user);
   caml_leave_blocking_section();
 
-  if (n == -1) uerror ("getgrouplist", Nothing);
+  if (n == -1) {
+    free(groups);
+    uerror ("getgrouplist", Nothing);
+  }
 
   ret = caml_alloc(n, 0);
   for (n = n - 1; n >= 0; n--) {
+    assert(n < NGROUPS_MAX);
     Store_field(ret, n, Val_long(groups[n]));
   }
+
+  free(groups);
 
   return ret;
 }

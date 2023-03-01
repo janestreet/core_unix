@@ -22,6 +22,13 @@ val parse_command_line
   -> (?on_error:(unit -> unit) -> ?on_success:('a -> unit) -> string list -> unit)
        Staged.t
 
+val parse_command_line_or_error
+  :  ?path:string list
+  -> ?summary:string
+  -> ?readme:(unit -> string)
+  -> 'a Command.Param.t
+  -> (string list -> 'a Or_error.t) Staged.t
+
 (** [validate_command command] provides a function [f] s.t. [f args] will parse the args
     against [command] without executing the body of [command] if parsing succeeds.
 

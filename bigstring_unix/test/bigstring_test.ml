@@ -114,6 +114,16 @@ let really_read_test ~n bs fd =
   (sprintf "%s: %s" n (repr bs)) @? (bs = bs')
 ;;
 
+let pread_test ~n bs fd =
+  let len = Bigstring.length bs in
+  let pos = Int.min (len - 1) 8 in
+  let len = Int.max (len - 8) 1 in
+  let bs' = Bigstring.create len in
+  let bs = Bigstring.sub ~pos ~len bs in
+  let read = Bigstring_unix.pread fd ~offset:pos ~len bs' in
+  (sprintf "%s: %s" n (repr bs)) @? (bs = bs' && read = len)
+;;
+
 let socketpair () =
   Unix.socketpair ~domain:Unix.PF_UNIX ~kind:Unix.SOCK_STREAM ~protocol:0 ()
 
@@ -175,11 +185,12 @@ let%expect_test "simple conversion" =
 ;;
 
 let%expect_test "input" =
-  fd_test really_read_test  ~n:"single" (bs_of_s "X");
-  fd_test really_read_test  ~n:"simple" (bs_of_s "normal length string");
-  repeat 100 (fd_test really_read_test ~n:"random") (bsg ~size:png);
-  repeat 100 (fd_test really_read_test ~n:"random big")
-    (bsg ~size:(fun () -> 100 * png ()));
+  List.iter [really_read_test; pread_test] ~f:(fun test ->
+    fd_test test  ~n:"single" (bs_of_s "X");
+    fd_test test  ~n:"simple" (bs_of_s "normal length string");
+    repeat 100 (fd_test test ~n:"random") (bsg ~size:png);
+    repeat 100 (fd_test test ~n:"random big")
+      (bsg ~size:(fun () -> 100 * png ())))
 ;;
 
 let%expect_test "destruction" =

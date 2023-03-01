@@ -171,6 +171,20 @@ CAMLprim value bigstring_read_assume_fd_is_nonblocking_stub(
   return Val_long(n_read);
 }
 
+CAMLprim value bigstring_pread_stub(
+  value v_fd, value v_offset, value v_pos, value v_len, value v_bstr)
+{
+  char *bstr = get_bstr(v_bstr, v_pos);
+  size_t len = Long_val(v_len);
+  ssize_t n_read;
+
+  caml_enter_blocking_section();
+  n_read = pread(Int_val(v_fd), bstr, len, Long_val(v_offset));
+  caml_leave_blocking_section();
+  if (n_read == -1) uerror("bigstring_pread_stub", Nothing);
+  return Val_long(n_read);
+}
+
 CAMLprim value bigstring_pread_assume_fd_is_nonblocking_stub(
     value v_fd, value v_offset, value v_pos, value v_len, value v_bstr)
 {

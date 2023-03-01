@@ -412,8 +412,12 @@ val getppid_exn : unit -> Pid.t
 (** Set process group ID of a process. *)
 val setpgid : of_:Pid.t -> to_:Pid.t -> unit
 
-(** Return process group ID of a process. *)
-val getpgid : Pid.t -> Pid.t
+(** Return process group ID of a process.
+
+    [None] means the pgid is zero, which cannot be represented as a [Pid.t]. This happens
+    at least for kernel processes. See [ps -ejH] for examples.
+*)
+val getpgid : Pid.t -> Pid.t option
 
 module Thread_id : sig
   type t [@@deriving sexp_of, bin_io]
@@ -457,6 +461,7 @@ type open_flag =
   | O_NOCTTY        (** Don't make this dev a controlling tty *)
   | O_DSYNC         (** Writes complete as `Synchronised I/O data integrity completion' *)
   | O_SYNC          (** Writes complete as `Synchronised I/O file integrity completion' *)
+
   | O_RSYNC         (** Reads complete as writes (depending on O_SYNC/O_DSYNC) *)
   | O_SHARE_DELETE  (** Windows only: allow the file to be deleted while still open *)
   | O_CLOEXEC       (** Set the close-on-exec flag on the descriptor returned by {!openfile} *)
@@ -1346,7 +1351,14 @@ module Group : sig
   val getbygid_exn : int -> t
 end
 
-(** Return the login name of the user executing the process. *)
+(** Return the name of the user executing the process, from the {!Passwd} module.
+
+    Note that this function is not always guaranteed to succeed: depending on OS
+    configuration, computing the current username can involve network queries, which can
+    fail transiently. *)
+val username : unit -> string
+
+(** A deprecated alias for [username]. *)
 val getlogin : unit -> string
 
 module Protocol_family : sig
@@ -2264,6 +2276,8 @@ type sysconf =
   | AVPHYS_PAGES
   | IOV_MAX
   | CLK_TCK
+  | NPROCESSORS_CONF
+  | NPROCESSORS_ONLN
 [@@deriving sexp]
 
 (** Wrapper over [sysconf] function in C. *)

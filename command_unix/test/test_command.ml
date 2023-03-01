@@ -196,11 +196,32 @@ let%expect_test "[choose_one] duplicate name" =
     (raised (
       "[Command.Spec.choose_one] called with duplicate name"
       (-foo)
-      lib/core/src/command.ml:LINE:COL)) |}]
+      lib/command/src/command.ml:LINE:COL)) |}]
 ;;
 
 let run_command param ~args =
   run ~argv:("__exe_name__" :: args) (Command.basic ~summary:"" param)
+;;
+
+let run_command_or_error param ~args =
+  run ~argv:("__exe_name__" :: args) (Command.basic_or_error ~summary:"" param)
+;;
+
+let%expect_test "basic_or_error works as expected" =
+  let run main =
+    run_command_or_error
+      ~args:[]
+      (let%map_open.Command () = return () in
+       main)
+  in
+  run (fun () -> error_s [%message "an error"]);
+  [%expect {|
+    "an error"
+    (raised (command.ml.Exit_called (status 1))) |}];
+  run (fun () -> Ok ());
+  [%expect {| |}];
+  run (fun () -> raise_s [%message "an exception"]);
+  [%expect {| (raised "an exception") |}]
 ;;
 
 let%expect_test "[choose_one] any flagless params" =
@@ -250,9 +271,11 @@ let%expect_test "[choose_one]" =
   test [] ~if_nothing_chosen:(Default_to "default");
   [%expect {| (arg default) |}];
   test ~if_nothing_chosen:Raise [ "-foo" ];
-  [%expect {| (arg -foo) |}];
+  [%expect {|
+    (arg -foo) |}];
   test ~if_nothing_chosen:Raise [ "-bar" ];
-  [%expect {| (arg -bar) |}];
+  [%expect {|
+    (arg -bar) |}];
   test ~if_nothing_chosen:Raise [ "-foo"; "-bar" ];
   [%expect
     {|
@@ -317,9 +340,11 @@ let%expect_test "nested [choose_one]" =
 
     (raised (command.ml.Exit_called (status 1))) |}];
   test [ "-foo" ];
-  [%expect {| (arg (Foo_bar (true false))) |}];
+  [%expect {|
+    (arg (Foo_bar (true false))) |}];
   test [ "-bar" ];
-  [%expect {| (arg (Foo_bar (false true))) |}]
+  [%expect {|
+    (arg (Foo_bar (false true))) |}]
 ;;
 
 let%expect_test "parse error with subcommand" =
@@ -398,11 +423,12 @@ let%expect_test "choose_one strings" =
             ~f:Tuple2.create
             (flag "-a" no_arg ~doc:"")
             (flag "-b,c" (optional int) ~doc:""))));
-  [%expect
+  Expect_test_patterns.require_match
+    [%here]
     {|
     (Error
      ("For simplicity, [Command.Spec.choose_one] does not support names with commas."
-      (-b,c) *)) (glob) |}];
+      (-b,c) *)) (glob) |};
   print_string
     (to_string
        (map2 ~f:Tuple2.create (anon ("FOO" %: string)) (flag "-a" no_arg ~doc:"")));
@@ -802,4 +828,36 @@ let%expect_test "lazy Arg_type" =
   [%expect {|
     true
     (command.ml.Exit_called (status 0)) |}]
+;;
+
+let%expect_test "[Command.Param.parse]" =
+  let param =
+    let%map_open.Command arg1 = flag "arg1" (required string) ~doc:"STRING"
+    and arg2 = flag "arg2" (optional int) ~doc:"INT" in
+    arg1, arg2
+  in
+  let print x =
+    print_s [%sexp (Command.Param.parse param x : (string * int option) Or_error.t)]
+  in
+  print [ "-arg1"; "first-arg"; "-arg2"; "55" ];
+  [%expect {| (Ok (first-arg (55))) |}];
+  print [ "-arg1"; "first-arg" ];
+  [%expect {| (Ok (first-arg ())) |}];
+  print [];
+  [%expect {| (Error "missing required flag: -arg1") |}]
+;;
+
+let%expect_test "Regression test: [Command.Param.parse] should not call exit" =
+  let param = Command.Param.(anon ("arg1" %: string)) in
+  let print x =
+    let result =
+      Or_error.try_with_join (fun () : string Or_error.t -> Command.Param.parse param x)
+    in
+    print_s [%sexp (result : string Or_error.t)]
+  in
+  print [ "arg1"; "arg2" ];
+  [%expect
+    {|
+    (Error (
+      "Command.Failed_to_parse_command_line(\"too many anonymous arguments\")")) |}]
 ;;

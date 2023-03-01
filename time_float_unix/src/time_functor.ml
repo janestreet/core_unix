@@ -99,6 +99,10 @@ struct
         String.concat [ Time.Ofday.to_string t.ofday; " "; Zone.to_string t.zone ]
       ;;
 
+      let to_string_trimmed (t : t) : string =
+        String.concat [ Time.Ofday.to_string_trimmed t.ofday; " "; Zone.to_string t.zone ]
+      ;;
+
       let arg_type = Core.Command.Arg_type.create of_string
 
       module With_nonchronological_compare = struct
@@ -294,6 +298,16 @@ struct
 
   let t_of_sexp sexp =
     t_of_sexp_gen sexp ~if_no_timezone:(`Use_this_one (Lazy.force !sexp_zone))
+  ;;
+
+  let t_sexp_grammar : t Sexplib.Sexp_grammar.t =
+    { untyped =
+        Union
+          [ String
+          ; List (Cons (String, Cons (String, Empty)))
+          ; List (Cons (String, Cons (String, Cons (String, Empty))))
+          ]
+    }
   ;;
 
   let t_of_sexp_abs sexp = t_of_sexp_gen sexp ~if_no_timezone:`Fail

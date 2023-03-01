@@ -1,4 +1,4 @@
 (library (name command_unix_test)
  (libraries textutils.ascii_table async command_test_helpers command_unix
-  expect_test_helpers_async)
+  expect_test_helpers_async expect_test_patterns)
  (preprocess (pps ppx_jane)))

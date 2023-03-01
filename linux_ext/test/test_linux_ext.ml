@@ -323,6 +323,111 @@ let%expect_test "set and get affinity" =
   | _ -> ()
 ;;
 
+(* Priority *)
+let%test_module "getpriority and setpriority" =
+  (module struct
+    let getpriority = ok_exn getpriority
+    let setpriority = ok_exn setpriority
+    let gettid = ok_exn Core_unix.gettid
+
+    let print_priority ?pid () =
+      printf !"%{sexp:Linux_ext.Priority.t}\n" (getpriority ?pid ())
+    ;;
+
+    let%expect_test "this thread" =
+      let starting_priority = getpriority () in
+      (* All of these actually refer to the current thread. *)
+      let tids = [ None; Some (gettid () |> Thread_id.to_int |> Pid.of_int) ] in
+      List.iteri (List.cartesian_product tids tids) ~f:(fun index (set_pid, get_pid) ->
+        let priority = Linux_ext.Priority.of_int (index + 1) in
+        setpriority ?pid:set_pid priority;
+        print_priority ?pid:get_pid ());
+      [%expect {|
+        1
+        2
+        3
+        4 |}];
+      setpriority starting_priority;
+      print_s
+        [%sexp ([%equal: Linux_ext.Priority.t] starting_priority (getpriority ()) : bool)];
+      [%expect {| true |}]
+    ;;
+
+    let%expect_test "other thread" =
+      let child_tid = Set_once.create () in
+      let ready_for_thread_to_get_priority = Set_once.create () in
+      let priority_retrieved_in_thread = Set_once.create () in
+      let ready_for_thread_to_exit = Set_once.create () in
+      (* [mutex] guards the vars above; [condition] is signalled when any change.
+
+         As there are only two threads involved, [signal] will suffice, but we may as well
+         broadcast since we do not care about performance and don't want to ambush someone
+         that modifies this test to add three threads.
+
+         The [`Locked] argument indicates that the caller knows they must have the mutex
+         locked. *)
+      let mutex = Caml_threads.Mutex.create () in
+      let condition = Caml_threads.Condition.create () in
+      let rec wait_for_set_once set_once `Locked =
+        match Set_once.get set_once with
+        | None ->
+          Caml_threads.Condition.wait condition mutex;
+          wait_for_set_once set_once `Locked
+        | Some v -> v
+      in
+      let set_set_once set_once value `Locked =
+        Set_once.set_exn set_once [%here] value;
+        Caml_threads.Condition.broadcast condition
+      in
+      let thread_body () =
+        Caml_threads.Mutex.lock mutex;
+        setpriority (Priority.of_int 4);
+        let tid = gettid () |> Thread_id.to_int |> Pid.of_int in
+        set_set_once child_tid tid `Locked;
+        wait_for_set_once ready_for_thread_to_get_priority `Locked;
+        let priority = getpriority () in
+        set_set_once priority_retrieved_in_thread priority `Locked;
+        wait_for_set_once ready_for_thread_to_exit `Locked;
+        Caml_threads.Mutex.unlock mutex
+      in
+      Caml_threads.Mutex.lock mutex;
+      let starting_priority = getpriority () in
+      setpriority (Priority.of_int 6);
+      print_priority ();
+      [%expect {| 6 |}];
+      (* Create the thread. *)
+      let thread = Caml_threads.Thread.create thread_body () in
+      let child_tid = wait_for_set_once child_tid `Locked in
+      (* When the child starts, it sets its priority to 4. We can read it by its TID: *)
+      print_priority ~pid:child_tid ();
+      [%expect {| 4 |}];
+      (* Our priority is unchanged: *)
+      print_priority ();
+      [%expect {| 6 |}];
+      (* We can modify the child's priority from here: *)
+      setpriority ~pid:child_tid (Priority.of_int 5);
+      print_priority ~pid:child_tid ();
+      [%expect {| 5 |}];
+      (* Our priority is unchanged: *)
+      print_priority ();
+      [%expect {| 6 |}];
+      (* Ask the child to read its own priority: *)
+      set_set_once ready_for_thread_to_get_priority () `Locked;
+      let priority_retrieved_in_thread =
+        wait_for_set_once priority_retrieved_in_thread `Locked
+      in
+      (* It reads the correct priority: *)
+      print_s [%sexp (priority_retrieved_in_thread : Priority.t)];
+      [%expect {| 5 |}];
+      (* Clean up. *)
+      set_set_once ready_for_thread_to_exit () `Locked;
+      Caml_threads.Mutex.unlock mutex;
+      Caml_threads.Thread.join thread;
+      setpriority starting_priority
+    ;;
+  end)
+;;
+
 let%test_unit "get_terminal_size" =
   match get_terminal_size with
   | Error _ -> ()

@@ -4,174 +4,7 @@ module Unix = Core_unix
 module Time = Time_float_unix
 include Time_ns
 module Zone = Time.Zone
-
-module Span = struct
-  include Time_ns.Span
-
-  let hash t = Int63.hash (Time_ns.Span.to_int63_ns t)
-  let compare = compare
-  let arg_type = Core.Command.Arg_type.create of_string
-
-  module Option = struct
-    type span = t [@@deriving sexp]
-    type t = Int63.t [@@deriving bin_io, compare, hash, typerep] (* nanoseconds or none *)
-
-    let none = Int63.min_value
-    let is_none t = Int63.(t = none)
-    let is_some t = Int63.(t <> none)
-    let some_is_representable span = is_some (to_int63_ns span)
-
-    let[@cold] raise_some_error span =
-      raise_s [%message [%here] "Span.Option.some value not representable" (span : span)]
-    ;;
-
-    let some span =
-      if some_is_representable span then to_int63_ns span else raise_some_error span
-    ;;
-
-    let value t ~default = if is_none t then default else of_int63_ns t
-    let unchecked_value t = of_int63_ns t
-
-    let value_exn t =
-      if is_some t
-      then unchecked_value t
-      else raise_s [%message [%here] "Span.Option.value_exn none"]
-    ;;
-
-    let of_option = function
-      | None -> none
-      | Some t -> some t
-    ;;
-
-    let to_option t = if is_none t then None else Some (of_int63_ns t)
-
-    module For_quickcheck = struct
-      module Some = struct
-        type t = span
-
-        let quickcheck_generator =
-          Quickcheck.Generator.filter quickcheck_generator ~f:some_is_representable
-        ;;
-
-        let quickcheck_observer = quickcheck_observer
-
-        let quickcheck_shrinker =
-          Base_quickcheck.Shrinker.filter quickcheck_shrinker ~f:some_is_representable
-        ;;
-      end
-
-      type t = Some.t option [@@deriving quickcheck]
-    end
-
-    let quickcheck_generator =
-      Quickcheck.Generator.map For_quickcheck.quickcheck_generator ~f:of_option
-    ;;
-
-    let quickcheck_observer =
-      Quickcheck.Observer.unmap For_quickcheck.quickcheck_observer ~f:to_option
-    ;;
-
-    let quickcheck_shrinker =
-      Quickcheck.Shrinker.map
-        For_quickcheck.quickcheck_shrinker
-        ~f:of_option
-        ~f_inverse:to_option
-    ;;
-
-    module Optional_syntax = struct
-      module Optional_syntax = struct
-        let is_none = is_none
-        let unsafe_value = unchecked_value
-      end
-    end
-
-    module Stable = struct
-      module V1 = struct
-        module T = struct
-          type nonrec t = t [@@deriving compare, bin_io]
-
-          let v1_some span =
-            assert (some_is_representable span);
-            to_int63_ns span
-          ;;
-
-          let sexp_of_t t = [%sexp_of: Stable.V1.t option] (to_option t)
-          let t_of_sexp s = of_option ([%of_sexp: Stable.V1.t option] s)
-          let of_int63_exn i = if is_none i then none else v1_some (of_int63_ns i)
-          let to_int63 t = t
-
-          let stable_witness : t Stable_witness.t =
-            Stable_witness.of_serializable
-              Int63.Stable.V1.stable_witness
-              of_int63_exn
-              to_int63
-          ;;
-        end
-
-        include T
-        include Comparator.Stable.V1.Make (T)
-      end
-
-      module V2 = struct
-        module T = struct
-          type nonrec t = t [@@deriving compare, bin_io]
-
-          let sexp_of_t t =
-            Sexp.List
-              (if is_none t then [] else [ Stable.V2.sexp_of_t (unchecked_value t) ])
-          ;;
-
-          let t_of_sexp sexp =
-            let fail () =
-              of_sexp_error
-                "Time_ns_unix.Span.Option.Stable.V2.t_of_sexp: sexp must be a List of \
-                 0-1 Atom"
-                sexp
-            in
-            match sexp with
-            | Sexp.Atom _ -> fail ()
-            | Sexp.List list ->
-              (match list with
-               | [] -> none
-               | [ Sexp.Atom x ] ->
-                 some
-                   (try of_string x with
-                    | exn -> of_sexp_error (Exn.to_string exn) sexp)
-               | _ -> fail ())
-          ;;
-
-          let of_int63_exn i = i
-          let to_int63 t = t
-
-          let stable_witness : t Stable_witness.t =
-            Stable_witness.of_serializable
-              Int63.Stable.V1.stable_witness
-              of_int63_exn
-              to_int63
-          ;;
-        end
-
-        include T
-        include Comparator.Stable.V1.Make (T)
-      end
-    end
-
-    let sexp_of_t = Stable.V2.sexp_of_t
-    let t_of_sexp = Stable.V2.t_of_sexp
-
-    include Identifiable.Make (struct
-        type nonrec t = t [@@deriving sexp, compare, bin_io, hash]
-
-        let module_name = "Time_ns_unix.Span.Option"
-
-        include Sexpable.To_stringable (struct
-            type nonrec t = t [@@deriving sexp]
-          end)
-      end)
-
-    include (Int63 : Core.Comparisons.S with type t := t)
-  end
-end
+module Span = Time_ns.Span
 
 let nanosleep t = Span.of_sec (Unix.nanosleep (Span.to_sec t))
 
@@ -403,9 +236,10 @@ module Ofday = struct
     ;;
 
     let value t ~default =
-      match is_some t with
-      | true -> of_span_since_start_of_day_unchecked (Span.Option.unchecked_value t)
-      | false -> default
+      Bool.select
+        (is_none t)
+        default
+        (of_span_since_start_of_day_unchecked (Span.Option.unchecked_value t))
     ;;
 
     let of_span_since_start_of_day span =
@@ -544,7 +378,7 @@ module Stable0 = struct
     module T0 = struct
       (* We use the unstable serialization here, and rely on comprehensive tests of the
          stable conversion to make sure we don't change it. *)
-      type nonrec t = t [@@deriving bin_io, compare, sexp, hash]
+      type nonrec t = t [@@deriving bin_io, compare, equal, hash, sexp]
 
       let stable_witness : t Stable_witness.t = Stable_witness.assert_stable
       let of_int63_exn t = of_span_since_epoch (Span.of_int63_ns t)

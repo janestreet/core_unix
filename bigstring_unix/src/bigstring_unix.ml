@@ -42,6 +42,16 @@ let read ?min_len fd ?(pos = 0) ?len bstr =
   let min_len = check_min_len ~loc ~len min_len in
   unsafe_read ~min_len fd ~pos ~len bstr
 
+external unsafe_pread_stub
+  : Unix.File_descr.t -> offset : int -> pos : int -> len : int -> t -> int
+  = "bigstring_pread_stub"
+
+let pread fd ~offset ?(pos = 0) ?len bstr =
+  let len = get_opt_len bstr ~pos len in
+  let loc = "pread" in
+  check_args ~loc ~pos ~len bstr;
+  unsafe_pread_stub fd ~offset ~pos ~len bstr
+
 external unsafe_pread_assume_fd_is_nonblocking_stub
   : Unix.File_descr.t -> offset : int -> pos : int -> len : int -> t -> int
   = "bigstring_pread_assume_fd_is_nonblocking_stub"

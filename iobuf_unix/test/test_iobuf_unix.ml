@@ -239,7 +239,7 @@ let sendto_and_recvfrom recvfrom recv_fd sendto ~sendto_name =
                  Unix.Syscall_result.Unit.ok_or_unix_error_exn
                    (sendto t send_fd send_addr)
                    ~syscall_name:sendto_name);
-               [%test_pred: (_, _) Iobuf.Hexdump.t] Iobuf.is_empty t))
+               [%test_pred: (_, _) Iobuf.Hexdump.t] (fun buf -> Iobuf.is_empty buf) t))
           ~on_uncaught_exn:`Print_to_stderr
           ()
       in
@@ -293,8 +293,14 @@ let create_sample_file ~int_size ~be ~msgcount =
       let open Bigstring in
       let unsafe_set_int =
         match int_size with
-        | 2 -> if be then unsafe_set_int16_be else unsafe_set_int16_le
-        | 4 -> if be then unsafe_set_int32_be else unsafe_set_int32_le
+        | 2 ->
+          if be
+          then fun buf ~pos value -> unsafe_set_int16_be buf ~pos value
+          else fun buf ~pos value -> unsafe_set_int16_le buf ~pos value
+        | 4 ->
+          if be
+          then fun buf ~pos value -> unsafe_set_int32_be buf ~pos value
+          else fun buf ~pos value -> unsafe_set_int32_le buf ~pos value
         | 8 -> if be then unsafe_set_int64_be else unsafe_set_int64_le
         | _ -> failwithf "Unknown int size %d" int_size ()
       in
@@ -313,7 +319,7 @@ let create_sample_file ~int_size ~be ~msgcount =
       Fill.stringo t s;
       flip_lo t;
       write_assume_fd_is_nonblocking t fd;
-      [%test_pred: (_, _) t] Iobuf.is_empty t;
+      [%test_pred: (_, _) t] (fun buf -> Iobuf.is_empty buf) t;
       (* no short writes *)
       reset t)
   done;

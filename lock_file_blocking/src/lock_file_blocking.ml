@@ -94,19 +94,29 @@ let create_exn ?message ?close_on_exec ?unlink_on_exit path =
 
 let random = lazy (Random.State.make_self_init ())
 
+let default_max_retry_delay ~timeout =
+  let default_delay = (Time_float.Span.of_int_ms 300) in
+  match timeout with
+  | None -> default_delay
+  | Some timeout -> Time_float.Span.min default_delay (Time_float.Span.( / ) timeout 3.)
+
+let wait_at_most max_delay random =
+  let delay = Random.State.float (Lazy.force random) (Time_float.Span.to_sec max_delay) in
+  ignore (Unix.nanosleep delay : float)
+
 (* no timeout specified = wait indefinitely *)
-let repeat_with_timeout ?timeout lockf path =
-  let max_delay = 0.3 in
+let repeat_with_timeout ?max_retry_delay ?(random=random) ?timeout lockf path =
+  let max_retry_delay =
+    match max_retry_delay with
+    | Some delay -> delay
+    | None -> default_max_retry_delay ~timeout
+  in
   match timeout with
   | None ->
     let rec loop () =
-      try (lockf path)
-      with | _ -> begin
-          let (_ : float) =
-            Unix.nanosleep (Random.State.float (Lazy.force random) max_delay)
-          in
-          loop ()
-        end
+      try lockf path with _ ->
+        wait_at_most max_retry_delay random;
+        loop ()
     in
     loop ()
   | Some timeout ->
@@ -120,9 +130,7 @@ let repeat_with_timeout ?timeout lockf path =
             failwithf "Lock_file: '%s' timed out waiting for existing lock. \
                        Last error was %s" path (Exn.to_string e) ()
           else begin
-            let (_ : float) =
-              Unix.nanosleep (Random.State.float (Lazy.force random) max_delay)
-            in
+            wait_at_most max_retry_delay random;
             loop ()
           end
         end
@@ -130,8 +138,8 @@ let repeat_with_timeout ?timeout lockf path =
     loop ()
 
 (* default timeout is to wait indefinitely *)
-let blocking_create ?timeout ?message ?close_on_exec ?unlink_on_exit path =
-  repeat_with_timeout ?timeout
+let blocking_create ?max_retry_delay ?random ?timeout ?message ?close_on_exec ?unlink_on_exit path =
+  repeat_with_timeout ?max_retry_delay ?random ?timeout
     (fun path -> create_exn ?message ?close_on_exec ?unlink_on_exit path) path
 
 let is_locked path =
@@ -318,7 +326,7 @@ module Nfs = struct
              remove it ourselves *)
           try
             let out_channel = Unix.out_channel_of_descr fd in
-            cleanup := (fun () -> Caml.close_out_noerr out_channel);
+            cleanup := (fun () -> Stdlib.close_out_noerr out_channel);
             fprintf out_channel "%s\n%!"
               (Sexp.to_string_hum (Info.sexp_of_t info))
           with | (Sys_error _) as err -> begin

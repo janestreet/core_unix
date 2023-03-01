@@ -884,6 +884,10 @@ module Ofday = struct
     let of_string = of_string
 
     let%bench "of_string" = of_string example_string
+
+    let to_string_trimmed = to_string_trimmed
+
+    let%bench "to_string_trimmed" = to_string_trimmed example
   end
 end
 
@@ -895,7 +899,7 @@ module Hash_queue = Hash_queue
 module Exposed_for_tests = Exposed_for_tests
 
 type nonrec underlying = underlying
-type nonrec t = t [@@deriving bin_io, quickcheck, typerep]
+type nonrec t = t [@@deriving bin_io, quickcheck, sexp_grammar, typerep]
 type nonrec comparator_witness = comparator_witness
 
 let arg_type = arg_type
@@ -1412,7 +1416,7 @@ module Zone = struct
   module Hash_set = Hash_set
   module Hash_queue = Hash_queue
 
-  type nonrec t = t [@@deriving bin_io]
+  type nonrec t = t [@@deriving bin_io, sexp_grammar]
   type nonrec comparator_witness = comparator_witness
 
   let arg_type = arg_type
@@ -1744,7 +1748,7 @@ module Stable = struct
     module Map = Map
     module Set = Set
 
-    type nonrec t = t [@@deriving bin_io, hash, typerep, stable_witness]
+    type nonrec t = t [@@deriving bin_io, hash, typerep, sexp_grammar, stable_witness]
     type nonrec comparator_witness = comparator_witness
 
     let comparator = comparator
@@ -1877,7 +1881,7 @@ module Stable = struct
       open Time.Stable.Span.V2
       open Span_constants
 
-      type nonrec t = t [@@deriving bin_io, stable_witness]
+      type nonrec t = t [@@deriving bin_io, sexp_grammar, stable_witness]
 
       let compare = compare
 
@@ -1911,7 +1915,7 @@ module Stable = struct
       open Time.Stable.Span.V3
       open Span_constants
 
-      type nonrec t = t [@@deriving bin_io, typerep, stable_witness]
+      type nonrec t = t [@@deriving bin_io, typerep, sexp_grammar, stable_witness]
 
       let compare = compare
 

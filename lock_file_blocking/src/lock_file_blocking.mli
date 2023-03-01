@@ -42,9 +42,13 @@ val create_exn
   -> unit
 
 (** [blocking_create t] tries to create the lock. If another process holds the lock this
-    function will wait until it is released or until [timeout] expires. *)
+    function will retry periodically until it is released or until [timeout] expires. The
+    delay between retries is chosen uniformly at random between 0 and [max_retry_delay].
+*)
 val blocking_create
-  :  ?timeout : Time_float.Span.t (** defaults to wait indefinitely *)
+  :  ?max_retry_delay: Time_float.Span.t (** defaults to [min(300ms, timeout / 3)] *)
+  -> ?random : Random.State.t Lazy.t (** defaults to a system-dependent low-entropy seed *)
+  -> ?timeout : Time_float.Span.t (** defaults to wait indefinitely *)
   -> ?message : string
   -> ?close_on_exec : bool (** defaults to true *)
   -> ?unlink_on_exit : bool (** defaults to false *)

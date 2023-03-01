@@ -238,12 +238,11 @@ module type Interval = sig
 
   (** {3 Specialized interval types} *)
 
-  module Ofday : S with type bound = Time_float.Ofday.t
-  module Ofday_ns : S with type bound = Time_ns.Ofday.t
+  module Ofday : S with type bound = Time_float.Ofday.t and type t = Time_float.Ofday.t t
+  module Ofday_ns : S with type bound = Time_ns.Ofday.t and type t = Time_ns.Ofday.t t
   module Time : sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
   module Time_ns : sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
-
-  module Float : S with type bound = Float.t
+  module Float : S with type bound = Float.t and type t = Float.t t
 
   module Int : sig
     include S with type bound = Int.t (** @open *)
@@ -297,7 +296,7 @@ module type Interval = sig
       type t [@@deriving bin_io, sexp, hash]
 
       include Comparable.S with type t := t
-    end) : S with type bound = Bound.t
+    end) : S with type bound = Bound.t and type t = Bound.t t
 
   (**
      [Stable] is used to build stable protocols. It ensures backwards compatibility by

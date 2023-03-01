@@ -458,7 +458,9 @@ let%test_unit "PGID set by setpgid is inherited by child" =
     | `In_the_child ->
       let child_pid = getpid () in
       let oc = Out_channel.create temp_file in
-      Out_channel.output_string oc (Pid.to_string (getpgid child_pid));
+      Out_channel.output_string
+        oc
+        (getpgid child_pid |> Option.value_exn |> Pid.to_string);
       Out_channel.close oc;
       exit_immediately 0
     | `In_the_parent child_pid ->

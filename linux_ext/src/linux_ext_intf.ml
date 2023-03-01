@@ -3,26 +3,26 @@ open Core_unix
 module Thread = Core_thread
 
 module type S = sig
-
   (** {2 sysinfo} *)
 
   module Sysinfo : sig
     (** Result of sysinfo syscall (man 2 sysinfo). *)
     type t =
-      { uptime : Time_float.Span.t;  (** Time since boot *)
-        load1 : int;      (** Load average over the last minute *)
-        load5 : int;      (** Load average over the last 5 minutes*)
-        load15 : int;     (** Load average over the last 15 minutes *)
-        total_ram : int;  (** Total usable main memory *)
-        free_ram : int;   (** Available memory size *)
-        shared_ram : int; (** Amount of shared memory *)
-        buffer_ram : int; (** Memory used by buffers *)
-        total_swap : int; (** Total swap page size *)
-        free_swap : int;  (** Available swap space *)
-        procs : int;      (** Number of current processes *)
-        totalhigh : int;  (** Total high memory size *)
-        freehigh : int;   (** Available high memory size *)
-        mem_unit : int;   (** Memory unit size in bytes *)
+      { uptime : Time_float.Span.t (** Time since boot *)
+      ; load1 : int (** Load average over the last minute *)
+      ; load5 : int (** Load average over the last 5 minutes*)
+      ; load15 : int (** Load average over the last 15 minutes *)
+      ;
+        total_ram : int (** Total usable main memory *)
+      ; free_ram : int (** Available memory size *)
+      ; shared_ram : int (** Amount of shared memory *)
+      ; buffer_ram : int (** Memory used by buffers *)
+      ; total_swap : int (** Total swap page size *)
+      ; free_swap : int (** Available swap space *)
+      ; procs : int (** Number of current processes *)
+      ; totalhigh : int (** Total high memory size *)
+      ; freehigh : int (** Available high memory size *)
+      ; mem_unit : int (** Memory unit size in bytes *)
       }
     [@@deriving sexp, bin_io]
 
@@ -45,16 +45,21 @@ module type S = sig
 
       Raises [Unix_error] on Unix-errors. *)
   val sendfile
-    : (?pos : int (** Defaults to 0. *)
-       -> ?len : int (** Defaults to length of data (file) associated with descriptor [fd]. *)
-       -> fd : File_descr.t
+    : (?pos:int (** Defaults to 0. *)
+       -> ?len:int
+       (** Defaults to length of data (file) associated with descriptor [fd]. *)
+       -> fd:File_descr.t
        -> File_descr.t
-       -> int) Or_error.t
+       -> int)
+        Or_error.t
 
   (** Type for status of SO_BINDTODEVICE socket option. The socket may either restrict the
       traffic to a given (by name, e.g. "eth0") interface, or do no restriction at all. *)
   module Bound_to_interface : sig
-    type t = Any | Only of string [@@deriving sexp_of]
+    type t =
+      | Any
+      | Only of string
+    [@@deriving sexp_of]
   end
 
   (** {2 Non-portable TCP functionality} *)
@@ -104,8 +109,7 @@ module type S = sig
 
   (** [settcpopt_bool sock opt v] sets the current value of the boolean TCP socket option
       [opt] for socket [sock] to value [v]. *)
-  val settcpopt_bool
-    : (File_descr.t -> tcp_bool_option -> bool -> unit) Or_error.t
+  val settcpopt_bool : (File_descr.t -> tcp_bool_option -> bool -> unit) Or_error.t
 
   (** [gettcpopt_string sock opt] Returns the current value of the string TCP socket
       option [opt] for socket [sock]. *)
@@ -113,8 +117,7 @@ module type S = sig
 
   (** [settcpopt_string sock opt v] sets the current value of the string TCP socket option
       [opt] for socket [sock] to value [v]. *)
-  val settcpopt_string
-    : (File_descr.t -> tcp_string_option -> string -> unit) Or_error.t
+  val settcpopt_string : (File_descr.t -> tcp_string_option -> string -> unit) Or_error.t
 
   (** [send_nonblocking_no_sigpipe sock ?pos ?len buf] tries to do a nonblocking send on
       socket [sock] given buffer [buf], offset [pos] and length [len].  Prevents
@@ -125,10 +128,11 @@ module type S = sig
       Raises [Unix_error] on Unix-errors. *)
   val send_nonblocking_no_sigpipe
     : (File_descr.t
-       -> ?pos : int (** default = 0 *)
-       -> ?len : int (** default = [Bytes.length buf - pos] *)
+       -> ?pos:int (** default = 0 *)
+       -> ?len:int (** default = [Bytes.length buf - pos] *)
        -> Bytes.t
-       -> int option) Or_error.t
+       -> int option)
+        Or_error.t
 
   (** [send_no_sigpipe sock ?pos ?len buf] tries to do a blocking send on socket [sock]
       given buffer [buf], offset [pos] and length [len]. Prevents [SIGPIPE], i.e., raises
@@ -138,10 +142,11 @@ module type S = sig
       Raises [Unix_error] on Unix-errors. *)
   val send_no_sigpipe
     : (File_descr.t
-       -> ?pos : int (** default = 0 *)
-       -> ?len : int (** default = [Bytes.length buf - pos] *)
+       -> ?pos:int (** default = 0 *)
+       -> ?len:int (** default = [Bytes.length buf - pos] *)
        -> Bytes.t
-       -> int) Or_error.t
+       -> int)
+        Or_error.t
 
   (** [sendmsg_nonblocking_no_sigpipe sock ?count iovecs] tries to do a nonblocking send
       on socket [sock] using [count] I/O-vectors [iovecs].  Prevents [SIGPIPE],
@@ -151,11 +156,7 @@ module type S = sig
       Raises [Invalid_argument] if the designated ranges are invalid.
       Raises [Unix_error] on Unix-errors. *)
   val sendmsg_nonblocking_no_sigpipe
-    : (File_descr.t
-       -> ?count : int
-       -> string IOVec.t array
-       -> int option) Or_error.t
-
+    : (File_descr.t -> ?count:int -> string IOVec.t array -> int option) Or_error.t
 
   (** {2 Non-portable socket functionality} *)
 
@@ -189,9 +190,7 @@ module type S = sig
     val get : (Thread.t -> t) Or_error.t
 
     val get_time : (t -> Time_float.Span.t) Or_error.t
-
     val set_time : (t -> Time_float.Span.t -> unit) Or_error.t
-
     val get_resolution : (t -> Time_float.Span.t) Or_error.t
 
     (** The clock measuring the CPU time of a process. *)
@@ -209,11 +208,14 @@ module type S = sig
 
       include Flags.S with type t := t
 
-      val cloexec   : t (** [EFD_CLOEXEC] *)
+      (** [EFD_CLOEXEC] *)
+      val cloexec : t
 
-      val nonblock  : t (** [EFD_NONBLOCK] *)
+      (** [EFD_NONBLOCK] *)
+      val nonblock : t
 
-      val semaphore : t (** [EFD_SEMAPHORE] *)
+      (** [EFD_SEMAPHORE] *)
+      val semaphore : t
     end
 
     type t = private File_descr.t [@@deriving compare, sexp_of]
@@ -265,9 +267,11 @@ module type S = sig
 
       include Flags.S with type t := t
 
-      val nonblock : t (** [TFD_NONBLOCK] *)
+      (** [TFD_NONBLOCK] *)
+      val nonblock : t
 
-      val cloexec  : t (** [TFD_CLOEXEC]  *)
+      (** [TFD_CLOEXEC]  *)
+      val cloexec : t
     end
 
     type t = private File_descr.t [@@deriving compare, sexp_of]
@@ -289,28 +293,25 @@ module type S = sig
         [set_repeating_at t start interval] sets [t] to fire every [interval] starting at
         [start] and raising if [interval <= 0].  A [start] time in the past will cause the
         timer to start immediately. *)
-    val set_at           :                          t -> Time_ns.t                   -> unit
-    val set_after        :                          t -> Time_ns.Span.t              -> unit
-    val set_repeating    : ?after:Time_ns.Span.t -> t -> Time_ns.Span.t              -> unit
-    val set_repeating_at :                          t -> Time_ns.t -> Time_ns.Span.t -> unit
+    val set_at : t -> Time_ns.t -> unit
+
+    val set_after : t -> Time_ns.Span.t -> unit
+    val set_repeating : ?after:Time_ns.Span.t -> t -> Time_ns.Span.t -> unit
+    val set_repeating_at : t -> Time_ns.t -> Time_ns.Span.t -> unit
 
     (** [clear t] causes [t] to not fire anymore. *)
     val clear : t -> unit
 
     type repeat =
       { fire_after : Time_ns.Span.t
-      ; interval   : Time_ns.Span.t
+      ; interval : Time_ns.Span.t
       }
 
     (** [get t] returns the current state of the timer [t]. *)
-    val get
-      :  t
-      -> [ `Not_armed
-         | `Fire_after of Time_ns.Span.t
-         | `Repeat     of repeat
-         ]
+    val get : t -> [ `Not_armed | `Fire_after of Time_ns.Span.t | `Repeat of repeat ]
 
     (**/**)
+
     (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
       https://opensource.janestreet.com/standards/#private-submodules *)
@@ -318,8 +319,8 @@ module type S = sig
       val unsafe_timerfd_settime
         :  File_descr.t
         -> bool
-        -> initial  : Int63.t
-        -> interval : Int63.t
+        -> initial:Int63.t
+        -> interval:Int63.t
         -> Syscall_result.Unit.t
     end
   end
@@ -339,7 +340,6 @@ module type S = sig
       process when its parent dies. *)
   val pr_get_pdeathsig : (unit -> Signal.t) Or_error.t
 
-
   (** {2 Task name} *)
 
   (** [pr_set_name_first16 name] sets the name of the executing thread to [name].  Only
@@ -349,7 +349,6 @@ module type S = sig
   (** [pr_get_name ()] gets the name of the executing thread.  The name is at most 16
       bytes long. *)
   val pr_get_name : (unit -> string) Or_error.t
-
 
   (** {2 Pathname resolution} *)
 
@@ -374,17 +373,29 @@ module type S = sig
 
   (** {2 Affinity} *)
 
-  (** Setting the CPU affinity causes a process to only run on the cores chosen.  You can
-      find out how many cores a system has in /proc/cpuinfo.  This can be useful in two
+  (** Setting the CPU affinity causes a thread to only run on the cores chosen. You can
+      find out how many cores a system has in /proc/cpuinfo. This can be useful in two
       ways: first, it limits a process to a core so that it won't interfere with processes
-      on other cores.  Second, you save time by not moving the process back and forth
-      between CPUs, which sometimes invalidates their cache.  See [man sched_setaffinity]
-      for details. *)
-  val sched_setaffinity : (?pid : Pid.t -> cpuset : int list -> unit -> unit) Or_error.t
+      on other cores. Second, you save time by not moving the process back and forth
+      between CPUs, which sometimes invalidates their cache.
 
-  val sched_getaffinity : (?pid : Pid.t -> unit -> int list) Or_error.t
+      See [man sched_setaffinity] for details.
 
-  val sched_setaffinity_this_thread : (cpuset : int list -> unit) Or_error.t
+      Note, in particular, that affinity is a "per-thread attribute that can be adjusted
+      independently for each of the threads in a thread group", and so omitting [~pid] (or
+      specifying [?pid] as [None]) "will set the attribute for the calling thread", and
+      "passing the value returned from a call to getpid will set the attribute for the
+      main thread of the thread group". (A thread group is what you might think of as
+      a process.) *)
+  val sched_setaffinity : (?pid:Pid.t -> cpuset:int list -> unit -> unit) Or_error.t
+
+  val sched_getaffinity : (?pid:Pid.t -> unit -> int list) Or_error.t
+
+  (** [sched_setaffinity_this_thread] is equivalent to [sched_setaffinity ?pid:None],
+      though happens to be implemented by using [gettid] rather than passing [pid=0] to
+      [sched_setaffinity]. It exists for historical reasons, and may be removed in the
+      future. *)
+  val sched_setaffinity_this_thread : (cpuset:int list -> unit) Or_error.t
 
   (** [cores ()] returns the number of cores on the machine.  This may be different
       than the number of cores available to the calling process. *)
@@ -400,7 +411,7 @@ module type S = sig
   val online_cpus : (unit -> int list) Or_error.t
 
   (** [cpus_local_to_nic ~ifname] returns the list of cores NUMA-local to [ifname]. *)
-  val cpus_local_to_nic : (ifname : string -> int list) Or_error.t
+  val cpus_local_to_nic : (ifname:string -> int list) Or_error.t
 
   (** [get_terminal_size term] returns [(rows, cols)], the number of rows and columns of
       the controlling terminal (raises if no controlling terminal), or of the specified
@@ -422,11 +433,25 @@ module type S = sig
     val decr : t -> t
   end
 
-  (** Set the calling thread's priority in the Linux scheduler *)
-  val setpriority : (Priority.t -> unit) Or_error.t
+  (** The meaning of [pid]s for [get/setpriority] is a bit weird. According to the POSIX
+      standard the priority is per process (pid), however in Linux the priority is per
+      thread (tid/LWP): [man 2 setpriority] says, in the "BUGS" section, that "According
+      to POSIX, the nice value is a per-process setting. However, under the current
+      Linux/NPTL implementation of POSIX threads, the nice value is a per-thread attribute
+      ... portable applications should avoid relying on the Linux behavior".
 
-  (** Get the calling thread's priority in the Linux scheduler *)
-  val getpriority : (unit -> Priority.t) Or_error.t
+      As a result, if you omit [?pid] or pass [?pid:None], only the current thread will be
+      affected; passing [~pid:(getpid ())] will only affect the main thread of the current
+      process. *)
+
+  (** Set the thread's priority in the Linux scheduler. Omitting the [pid] argument means
+      that (only) the calling thread will be affected. *)
+  val setpriority : (?pid:Pid.t -> Priority.t -> unit) Or_error.t
+
+  (** Get the thread's priority in the Linux scheduler. Omitting the [pid] argument means
+      that the calling thread's priority will be retrieved. *)
+  val getpriority : (?pid:Pid.t -> unit -> Priority.t) Or_error.t
+
 
   (** [get_ipv4_address_for_interface "eth0"] returns the IP address assigned to eth0, or
       throws an exception if no IP address is configured. *)
@@ -434,7 +459,7 @@ module type S = sig
 
   (** [get_mac_address] returns the mac address of [ifname] in the canonical form, e.g.
       "aa:bb:cc:12:34:56". *)
-  val get_mac_address : (ifname : string -> string) Or_error.t
+  val get_mac_address : (ifname:string -> string) Or_error.t
 
   (** [bind_to_interface fd (Only "eth0")] restricts packets from being
       received/sent on the given file descriptor [fd] on any interface other than "eth0".
@@ -445,16 +470,14 @@ module type S = sig
       Linux-specific socket option ([SO_BINDTODEVICE]) is used for applications on
       multi-homed machines with specific security concerns.  For similar functionality
       when using multicast, see {!Core_unix.mcast_set_ifname}. *)
-  val bind_to_interface
-    : (File_descr.t -> Bound_to_interface.t -> unit) Or_error.t
+  val bind_to_interface : (File_descr.t -> Bound_to_interface.t -> unit) Or_error.t
 
   (** [get_bind_to_interface fd] returns the current interface the socket is bound to. It
       uses getsockopt() with Linux-specific [SO_BINDTODEVICE] option. Empty string means
       it is not bound to any specific interface. See [man 7 socket] for more information.
   *)
 
-  val get_bind_to_interface
-    : (File_descr.t -> Bound_to_interface.t) Or_error.t
+  val get_bind_to_interface : (File_descr.t -> Bound_to_interface.t) Or_error.t
 
   (** epoll(): a Linux I/O multiplexer of the same family as select() or poll().  Its main
       differences are support for Edge- or Level-triggered notifications (we're using
@@ -464,7 +487,6 @@ module type S = sig
       See the man pages for a full description of the epoll facility. *)
 
   module Epoll : sig
-
     module Flags : sig
       (** An [Epoll.Flags.t] is an immutable set of flags for which one can register
           interest in a file descriptor.  It is implemented as a bitmask, and so all
@@ -478,23 +500,31 @@ module type S = sig
       (** The names of the flags match the man pages.  E.g. [in_] = "EPOLLIN", [out] =
           "EPOLLOUT", etc. *)
 
-      val none    : t (** Associated fd is readable                      *)
+      (** Associated fd is readable                      *)
+      val none : t
 
-      val in_     : t (** Associated fd is readable                      *)
+      (** Associated fd is readable                      *)
+      val in_ : t
 
-      val out     : t (** Associated fd is writable                      *)
+      (** Associated fd is writable                      *)
+      val out : t
 
       (*_ val rdhup   : t (\* Event flag For detecting tcp half-close        *\) *)
 
-      val pri     : t (** Urgent data available                          *)
+      (** Urgent data available                          *)
+      val pri : t
 
-      val err     : t (** Error condition (always on, no need to set it) *)
+      (** Error condition (always on, no need to set it) *)
+      val err : t
 
-      val hup     : t (** Hang up happened (always on)                   *)
+      (** Hang up happened (always on)                   *)
+      val hup : t
 
-      val et      : t (** Edge-Triggered behavior (see man page)         *)
+      (** Edge-Triggered behavior (see man page)         *)
+      val et : t
 
-      val oneshot : t (** One-shot behavior for the associated fd        *)
+      (** One-shot behavior for the associated fd        *)
+      val oneshot : t
     end
 
     (** An [Epoll.t] maintains a map from [File_descr.t] to [Flags.t], where the domain is
@@ -519,19 +549,21 @@ module type S = sig
         in \[0, [num_file_descrs]).  Additionally, the set allocates space for reading the
         "ready" events when [wait] returns, allowing for up to [max_ready_events] to be
         returned in a single call to [wait]. *)
-    val create  : (num_file_descrs:int -> max_ready_events:int -> t) Or_error.t
+    val create : (num_file_descrs:int -> max_ready_events:int -> t) Or_error.t
 
     val close : t -> unit
 
     (** Map operations *)
 
     (** [find] raises in the case that [t] is closed. *)
-    val find     : t -> File_descr.t -> Flags.t option
+    val find : t -> File_descr.t -> Flags.t option
+
     val find_exn : t -> File_descr.t -> Flags.t
-    val set      : t -> File_descr.t -> Flags.t -> unit
-    val remove   : t -> File_descr.t -> unit
-    val iter     : t -> f:(File_descr.t -> Flags.t -> unit) -> unit
-    val fold     : t -> init:'a -> f:(File_descr.t -> Flags.t -> 'a -> 'a) -> 'a
+    val set : t -> File_descr.t -> Flags.t -> unit
+    val remove : t -> File_descr.t -> unit
+    val iter : t -> f:(File_descr.t -> Flags.t -> unit) -> unit
+    val fold : t -> init:'a -> f:(File_descr.t -> Flags.t -> 'a -> 'a) -> 'a
+
 
     (** [wait t ~timeout] blocks until at least one file descriptor in [t] is ready for
         one of the events it is being watched for, or [timeout] passes.  [wait] side
@@ -557,6 +589,7 @@ module type S = sig
     (** [iter_ready] and [fold_ready] iterate over the ready set computed by the last
         call to [wait]. *)
     val iter_ready : t -> f:(File_descr.t -> Flags.t -> unit) -> unit
+
     val fold_ready : t -> init:'a -> f:('a -> File_descr.t -> Flags.t -> 'a) -> 'a
 
     module Expert : sig
@@ -630,11 +663,12 @@ module type S = sig
     end
 
     val setxattr
-      :  (?how:[`Set | `Create | `Replace]
-          -> path:string
-          -> name:string
-          -> value:string
-          -> unit
-          -> Set_attr_result.t) Or_error.t
+      : (?how:[ `Set | `Create | `Replace ]
+         -> path:string
+         -> name:string
+         -> value:string
+         -> unit
+         -> Set_attr_result.t)
+          Or_error.t
   end
 end

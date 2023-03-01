@@ -3169,6 +3169,10 @@ module Stable = struct
 
     let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
 
+    let equal = equal
+
+    let%bench "equal" = equal min_value_for_1us_rounding max_value_for_1us_rounding
+
     let sexp_of_t = sexp_of_t
 
     let%bench "sexp_of_t (w/ dst)" = sexp_of_t dst_t

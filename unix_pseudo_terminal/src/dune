@@ -1,7 +1,7 @@
 (library (name unix_pseudo_terminal)
  (public_name core_unix.unix_pseudo_terminal)
  (libraries core_kernel.caml_unix core) (c_names unix_pseudo_terminal_stubs)
- (preprocessor_deps config_ext.h) (preprocess (pps ppx_jane)))
+ (preprocessor_deps config_ext.h) (preprocess (pps ppx_jane ppx_optcomp)))
 
 (install (section lib)
  (files (config_ext.h as unix_pseudo_terminal/config_ext.h)))

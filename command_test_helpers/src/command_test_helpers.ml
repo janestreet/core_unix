@@ -37,6 +37,20 @@ let parse_command_line ?path ?(summary = default_command_name ^ " SUMMARY") ?rea
     | Ok x -> on_success x)
 ;;
 
+let parse_command_line_or_error
+      ?path
+      ?(summary = default_command_name ^ " SUMMARY")
+      ?readme
+      param
+  =
+  stage (fun args ->
+    match parse_command_line_raw ~path ~summary ?readme param args with
+    | Error `Aborted_command_line_parsing__exit_code_already_printed ->
+      Or_error.error_string
+        "Aborted command line parsing -- exit code has already been printed."
+    | Ok param -> Ok param)
+;;
+
 let cannot_validate_exec_error (exec_info : Command.Shape.Exec_info.t) =
   let s =
     "[Exec _] commands are not validated to avoid unexpected external dependencies."

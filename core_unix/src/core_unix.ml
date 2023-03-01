@@ -260,6 +260,8 @@ type sysconf =
   | AVPHYS_PAGES
   | IOV_MAX
   | CLK_TCK
+  | NPROCESSORS_CONF
+  | NPROCESSORS_ONLN
 [@@deriving sexp]
 
 external sysconf : sysconf -> int64 option = "core_unix_sysconf"
@@ -1789,7 +1791,10 @@ let setpgid ~of_ ~to_ =
   setpgid (Pid.to_int of_) (Pid.to_int to_)
 
 let getpgid pid =
-  Pid.of_int (getpgid (Pid.to_int pid))
+  match getpgid (Pid.to_int pid) with
+  | 0 -> None
+  | pgid -> Some (Pid.of_int pgid)
+;;
 
 let symlink ~target ~link_name =
   improve (fun () -> Unix.symlink ?to_dir:None ~src:target ~dst:link_name)
@@ -1972,8 +1977,8 @@ let with_buffer_increased_on_ERANGE f =
   go 10000
 
 let make_by f make_exn =
-  let normal arg = try Some (f arg) with Not_found_s _ | Caml.Not_found -> None in
-  let exn arg = try f arg with Not_found_s _ | Caml.Not_found -> raise (make_exn arg) in
+  let normal arg = try Some (f arg) with Not_found_s _ | Stdlib.Not_found -> None in
+  let exn arg = try f arg with Not_found_s _ | Stdlib.Not_found -> raise (make_exn arg) in
   (normal, exn)
 ;;
 
@@ -2125,10 +2130,10 @@ module Group = struct
   ;;
 end
 
+let username () = (Passwd.getbyuid_exn (getuid ())).name
 (* The standard getlogin function goes through utmp which is unreliable,
    see the BUGS section of getlogin(3) *)
-let _getlogin_orig = Unix.getlogin
-let getlogin () = (Passwd.getbyuid_exn (getuid ())).name
+let getlogin = username
 
 module Protocol_family = struct
   type t = [ `Unix | `Inet | `Inet6 ]
@@ -2453,7 +2458,7 @@ module Service = struct
 
   let getbyname_exn name ~protocol =
     try of_unix (Unix.getservbyname name ~protocol)
-    with Not_found_s _ | Caml.Not_found -> raise (Getbyname (name, protocol))
+    with Not_found_s _ | Stdlib.Not_found -> raise (Getbyname (name, protocol))
   ;;
 
   let getbyname name ~protocol =
@@ -2465,12 +2470,12 @@ module Service = struct
 
   let getbyport_exn num ~protocol =
     try of_unix (Unix.getservbyport num ~protocol)
-    with Not_found_s _ | Caml.Not_found -> raise (Getbyport (num, protocol))
+    with Not_found_s _ | Stdlib.Not_found -> raise (Getbyport (num, protocol))
   ;;
 
   let getbyport num ~protocol =
     try Some (of_unix (Unix.getservbyport num ~protocol))
-    with Not_found_s _ | Caml.Not_found -> None
+    with Not_found_s _ | Stdlib.Not_found -> None
   ;;
 end
 
@@ -2828,7 +2833,7 @@ type getnameinfo_option =
 let getnameinfo addr opts =
   improve (fun () ->
     try Unix.getnameinfo addr opts
-    with Caml.Not_found ->
+    with Stdlib.Not_found ->
       raise
         (Not_found_s
            [%message

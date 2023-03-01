@@ -14,7 +14,7 @@ let arg_type ~case_sensitive =
 ;;
 
 let parse ~arg_type str =
-  print_s [%sexp (Command.Arg_type.For_testing.parse arg_type str : t Or_error.t)]
+  print_s [%sexp (Command.Arg_type.parse arg_type str : t Or_error.t)]
 ;;
 
 let complete ~arg_type part =
@@ -118,10 +118,7 @@ module _ = struct
   include T
 
   let arg_type = Command.Arg_type.enumerated (module T)
-
-  let parse str =
-    print_s [%sexp (Command.Arg_type.For_testing.parse arg_type str : t Or_error.t)]
-  ;;
+  let parse str = print_s [%sexp (Command.Arg_type.parse arg_type str : t Or_error.t)]
 
   let%expect_test "basic test" =
     parse "alpha";
@@ -172,10 +169,7 @@ module _ = struct
   include T
 
   let arg_type = Command.Arg_type.enumerated_sexpable (module T)
-
-  let parse str =
-    print_s [%sexp (Command.Arg_type.For_testing.parse arg_type str : t Or_error.t)]
-  ;;
+  let parse str = print_s [%sexp (Command.Arg_type.parse arg_type str : t Or_error.t)]
 
   let%expect_test "basic test" =
     parse "B";
@@ -232,7 +226,7 @@ module _ = struct
   ;;
 
   let test str =
-    let parse arg_type = Command.Arg_type.For_testing.parse arg_type str in
+    let parse arg_type = Command.Arg_type.parse arg_type str in
     let partials_allowed = parse arg_type in
     let no_partials_allowed = parse fully_specified_arg_type in
     if [%compare.equal: t Or_error.t] partials_allowed no_partials_allowed

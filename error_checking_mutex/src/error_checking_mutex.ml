@@ -12,7 +12,7 @@ include Mutex
 external create : unit -> Mutex.t = "unix_create_error_checking_mutex"
 
 let create = create
-let phys_equal = Caml.( == )
+let phys_equal = Stdlib.( == )
 let equal (t : t) t' = phys_equal t t'
 
 let critical_section l ~f =

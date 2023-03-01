@@ -5,7 +5,7 @@ module LargeFile = Unix.LargeFile
 
 let getenv_f ~f var =
   try Some (f var) with
-  | Not_found_s _ | Caml.Not_found -> None
+  | Not_found_s _ | Stdlib.Not_found -> None
 ;;
 
 let unsafe_getenv = getenv_f ~f:Unix.unsafe_getenv
@@ -48,7 +48,7 @@ let is_file_exn =
 ;;
 
 include struct
-  open Caml.Sys
+  open Stdlib.Sys
 
   let executable_name = executable_name
   let remove = remove
@@ -61,6 +61,16 @@ include struct
   exception Break = Break
 
   let catch_break = catch_break
+
+  [%%if flambda_backend]
+
+  let with_async_exns = with_async_exns
+
+  [%%else]
+
+  let with_async_exns f = f ()
+
+  [%%endif]
 end
 
 exception Command_failed_with_status of Int.t * String.t [@@deriving sexp]
@@ -107,7 +117,7 @@ let override_argv args =
   let len = Array.length args in
   assert (len <= Array.length Sys.argv);
   Array.blit ~src:args ~src_pos:0 ~dst:Sys.argv ~dst_pos:0 ~len;
-  (Caml.Obj.truncate [@ocaml.alert "-deprecated"]) (Obj.repr Sys.argv) len;
+  (Stdlib.Obj.truncate [@ocaml.alert "-deprecated"]) (Obj.repr Sys.argv) len;
   Arg.current := 0
 ;;
 

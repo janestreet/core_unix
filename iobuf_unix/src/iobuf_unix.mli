@@ -138,5 +138,9 @@ module Expert : sig
     -> float
     -> [ `Ok | `Truncated | `Format_error ]
 
-  val to_iovec_shared : ?pos:int -> ?len:int -> (_, _) t -> Bigstring.t Unix.IOVec.t
+  val to_iovec_shared
+    :  ?pos:int
+    -> ?len:int
+    -> ((_, _) t[@local])
+    -> Bigstring.t Unix.IOVec.t
 end

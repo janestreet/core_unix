@@ -46,6 +46,10 @@ module type S = sig
       (** Strings look like "12:01 nyc" *)
       include Stringable with type t := t
 
+      (** Like [to_string] but uses [Time_float.Ofday.to_string_trimmed] to format the
+          ofday *)
+      val to_string_trimmed : t -> string
+
       val arg_type : t Core.Command.Arg_type.t
       val create : Time.Ofday.t -> Zone.t -> t
       val create_local : Time.Ofday.t -> t
@@ -66,7 +70,7 @@ module type S = sig
   end
 
   (** A fully qualified point in time, independent of timezone. *)
-  type t = Time.t [@@deriving bin_io, compare, hash, sexp, typerep]
+  type t = Time.t [@@deriving bin_io, compare, hash, sexp, sexp_grammar, typerep]
 
   include
     module type of Time

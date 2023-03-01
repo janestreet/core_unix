@@ -1683,7 +1683,7 @@ let%test_module "Time_ns.Span.Option" =
         some (Time_ns.Span.of_int63_ns (Time_ns.Span.Option.Stable.V1.to_int63 none)));
       [%expect
         {|
-          (lib/time_ns_unix/src/time_ns_unix.ml:LINE:COL
+          (lib/core/src/span_ns.ml:LINE:COL
            "Span.Option.some value not representable"
            (span -53375d23h53m38.427387904s)) |}]
     ;;
@@ -2180,8 +2180,7 @@ let%test_module "Time_ns.Option" =
 
     let%expect_test "value_exn none" =
       require_does_raise [%here] ~hide_positions:true (fun () -> value_exn none);
-      [%expect
-        {| (lib/time_ns_unix/src/time_ns_unix.ml:LINE:COL "Span.Option.value_exn none") |}]
+      [%expect {| (lib/core/src/span_ns.ml:LINE:COL "Span.Option.value_exn none") |}]
     ;;
   end)
 ;;
@@ -2214,8 +2213,7 @@ let%test_module "Time_ns.Ofday.Option" =
 
     let%expect_test "value_exn none" =
       require_does_raise [%here] ~hide_positions:true (fun () -> value_exn none);
-      [%expect
-        {| (lib/time_ns_unix/src/time_ns_unix.ml:LINE:COL "Span.Option.value_exn none") |}]
+      [%expect {| (lib/core/src/span_ns.ml:LINE:COL "Span.Option.value_exn none") |}]
     ;;
 
     let%expect_test "of_span_since_start_of_day" =

@@ -100,6 +100,16 @@ val read_assume_fd_is_nonblocking
 
     Raises [Invalid_argument] if the designated range is out of bounds. *)
 
+val pread
+  :  Unix.File_descr.t
+  -> offset : int
+  -> ?pos : int (** default = 0 *)
+  -> ?len : int (** default = [length bstr - pos] *)
+  -> t
+  -> int
+(** Like [pread_assume_fd_is_nonblocking] but works on blocking file descriptors. It will
+    release the OCaml lock. *)
+
 val pread_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> offset : int

@@ -22,5 +22,5 @@ let () =
   Command.async_spec
     ~summary:"demonstrate thread ID call"
     Command.Spec.empty
-    main
+    main ~behave_nicely_in_pipeline:(false)
   |> Command_unix.run

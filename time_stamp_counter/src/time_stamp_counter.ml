@@ -154,9 +154,10 @@ module Calibrator = struct
   let tsc_to_nanos_since_epoch =
     let[@inline] convert t tsc base mul =
       (* Scale an int by a float without intermediate allocation and overflow. *)
-      Int63.( + )
+      (Int63.( + ) [@inlined hint])
         base
-        (Float.int63_round_nearest_exn (mul *. Int63.to_float (diff tsc t.tsc)))
+        ((Float.int63_round_nearest_exn [@inlined hint])
+           (mul *. (Int63.to_float [@inlined hint]) (diff tsc t.tsc)))
     in
     fun [@inline] t tsc ->
       if tsc < t.monotonic_until_tsc
@@ -194,7 +195,7 @@ module Calibrator = struct
   let iround_up_and_add int ~if_iround_up_fails float =
     if Float.( > ) float 0.0
     then (
-      let float' = Caml.ceil float in
+      let float' = Stdlib.ceil float in
       if Float.( <= ) float' Float.iround_ubound
       then Int63.( + ) int (Int63.of_float_unchecked float')
       else if_iround_up_fails)
@@ -395,7 +396,8 @@ module Span = struct
   [%%ifdef JSC_ARCH_SIXTYFOUR]
 
   let to_ns t ~(calibrator : Calibrator.t) =
-    Float.int63_round_nearest_exn (Int63.to_float t *. calibrator.floats.nanos_per_cycle)
+    (Float.int63_round_nearest_exn [@inlined hint])
+      (Int63.to_float t *. calibrator.floats.nanos_per_cycle)
   ;;
 
   (* If the calibrator has not been well calibrated and [ns] is a large value, the

@@ -43,6 +43,8 @@
 #define Bytes_val String_val
 #endif
 
+
+
 extern int core_unix_close_durably(int fd);
 extern struct in_addr core_unix_get_in_addr_for_interface(value v_interface);
 extern struct ifreq core_build_ifaddr_request(const char *interface);
@@ -342,39 +344,38 @@ CAMLprim value core_linux_pr_get_name(value __unused v_unit)
   return caml_copy_string(buf);
 }
 
-CAMLprim value core_linux_setpriority(value v_priority)
+CAMLprim value core_linux_setpriority(value v_tid, value v_priority)
 {
-  int tid;
-
+  CAMLparam2(v_tid, v_priority);
   assert(!Is_block(v_priority));
 
-  tid = syscall(SYS_gettid);
-  if (setpriority(PRIO_PROCESS, tid, Long_val(v_priority)) == -1)
+  if (setpriority(PRIO_PROCESS, Long_val(v_tid), Long_val(v_priority)) == -1)
     uerror("setpriority", Nothing);
 
-  return Val_unit;
+  CAMLreturn(Val_unit);
 }
 
-CAMLprim value core_linux_getpriority(value v_unit)
+CAMLprim value core_linux_getpriority(value v_tid)
 {
-  int tid;
-  int old_errno;
-  int priority;
+  CAMLparam1(v_tid);
 
-  assert(v_unit == Val_unit);
+  int old_errno = 0;
+  int this_errno = 0;
+  int priority = 0;
 
-  tid = syscall(SYS_gettid);
-
+  /* As [man getpriority] states, since getpriority() can legitimately return the value
+    -1, it is necessary to clear errno prior to the call, then check it afterwards to
+    determine if [priority == -1] is an error or legitimate value. */
   old_errno = errno;
   errno = 0;
-  priority = getpriority(PRIO_PROCESS, tid);
-  if (errno != 0) {
-    errno = old_errno;
-    uerror("getpriority", Nothing);
-  }
+  priority = getpriority(PRIO_PROCESS, Long_val(v_tid));
+  this_errno = errno;
   errno = old_errno;
 
-  return Val_long(priority);
+  if (this_errno != 0)
+    uerror("getpriority", Nothing);
+
+  CAMLreturn(Val_long(priority));
 }
 
 CAMLprim value core_linux_get_terminal_size(value vfd)

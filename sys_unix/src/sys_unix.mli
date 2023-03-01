@@ -120,6 +120,13 @@ exception Break
 *)
 val catch_break : bool -> unit
 
+(** [with_async_exns f] runs [f] and returns its result, in addition to
+    causing any asynchronous [Break] or [Stack_overflow] exceptions
+    (e.g. from finalisers, signal handlers or the GC) to be raised from the
+    call site of [with_async_exns].
+*)
+val with_async_exns : (unit -> 'a) -> 'a
+
 
 (** [execution_mode] tests whether the code being executed was compiled natively
     or to bytecode. *)

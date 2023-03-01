@@ -11,25 +11,6 @@ module type Span = sig
     include Time_ns.Span
   end [@ocaml.remove_aliases]
   with module Private := Time_ns.Span.Private
-
-  include Comparable.With_zero with type t := t
-
-  val arg_type : t Core.Command.Arg_type.t
-
-  include Robustly_comparable with type t := t
-
-  (** [Span.Option.t] is like [Span.t option], except that the value is immediate on
-      architectures where [Int63.t] is immediate.  This module should mainly be used to
-      avoid allocations. *)
-  module Option : sig
-    include Option with type value := t
-    include Quickcheck.S with type t := t
-
-    module Stable : sig
-      module V1 : Stable_int63able_with_witness with type t = t
-      module V2 : Stable_int63able_with_witness with type t = t
-    end
-  end
 end
 
 module type Ofday = sig
@@ -261,9 +242,11 @@ module type Time_ns_unix = sig
 
   module Stable : sig
     module V1 : sig
+      type nonrec t = t [@@deriving equal]
+
       include
         Stable_int63able_with_witness
-        with type t = t
+        with type t := t
          and type comparator_witness = comparator_witness
 
       include
