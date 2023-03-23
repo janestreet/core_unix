@@ -570,20 +570,12 @@ let%expect_test "occurrence_distance" =
     let od = Time.Ofday.of_string od_s in
     let prediction = Time.of_string prediction_s in
     let real = Time.occurrence `First_after_or_at now ~zone ~ofday:od in
-    require_equal
-      [%here]
-      (module Float)
-      (Time.Span.to_ms (Time.diff prediction real))
-      0.);
+    require_equal [%here] (module Float) (Time.Span.to_ms (Time.diff prediction real)) 0.);
   List.iter before_times ~f:(fun (od_s, prediction_s) ->
     let od = Time.Ofday.of_string od_s in
     let prediction = Time.of_string prediction_s in
     let real = Time.occurrence `Last_before_or_at now ~zone ~ofday:od in
-    require_equal
-      [%here]
-      (module Float)
-      (Time.Span.to_ms (Time.diff prediction real))
-      0.)
+    require_equal [%here] (module Float) (Time.Span.to_ms (Time.diff prediction real)) 0.)
 ;;
 
 let%expect_test "diff" =

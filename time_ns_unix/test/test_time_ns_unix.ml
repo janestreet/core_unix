@@ -65,9 +65,7 @@ let%test_module "Core.Time_ns.Utc.to_date_and_span_since_start_of_day" =
             let kernel_ofday =
               Time_ns.Ofday.of_span_since_start_of_day_exn kernel_span_since_start_of_day
             in
-            let core_date, core_ofday =
-              Time_ns.to_date_ofday time_ns ~zone:Time.Zone.utc
-            in
+            let core_date, core_ofday = Time_ns.to_date_ofday time_ns ~zone:Time.Zone.utc in
             require_compare_equal
               [%here]
               (module struct
@@ -1351,11 +1349,7 @@ let%test_module "Time_ns.Stable.Ofday.V1" =
         |> Core.Quickcheck.Generator.map ~f:V.of_int63_exn
       in
       quickcheck [%here] generator ~sexp_of:V.sexp_of_t ~f:(fun ofday ->
-        require_compare_equal
-          [%here]
-          (module V)
-          ofday
-          (V.of_int63_exn (V.to_int63 ofday));
+        require_compare_equal [%here] (module V) ofday (V.of_int63_exn (V.to_int63 ofday));
         require_compare_equal [%here] (module V) ofday (V.t_of_sexp (V.sexp_of_t ofday)));
       [%expect {| |}]
     ;;
@@ -1622,9 +1616,7 @@ let%test_module "Time_ns.Span" =
         Core.Option.try_with (fun () ->
           Time_ns.Span.( + )
             span_ns
-            (Time_ns.Span.scale
-               Time_ns.Span.microsecond
-               (float number_of_microseconds))))
+            (Time_ns.Span.scale Time_ns.Span.microsecond (float number_of_microseconds))))
     ;;
 
     let nearest_microsecond_to_span_ns span_ns =
@@ -2577,18 +2569,12 @@ let%test_unit "ofday_zoned conversion consistency" =
       assert (Time.Zone.( = ) (Time_ns.Ofday.Zoned.zone ofday_zoned_utc) utc);
       assert (Time.Zone.( = ) (Time_ns.Ofday.Zoned.zone ofday_zoned_nyc) nyc);
       assert (Time.Zone.( = ) (Time_ns.Ofday.Zoned.zone ofday_zoned_hkg) hkg);
-      assert (
-        Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_utc) ofday_utc);
-      assert (
-        Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_nyc) ofday_nyc);
-      assert (
-        Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_hkg) ofday_hkg);
-      assert (
-        Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_utc2) ofday_utc);
-      assert (
-        Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_nyc2) ofday_nyc);
-      assert (
-        Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_hkg2) ofday_hkg);
+      assert (Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_utc) ofday_utc);
+      assert (Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_nyc) ofday_nyc);
+      assert (Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_hkg) ofday_hkg);
+      assert (Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_utc2) ofday_utc);
+      assert (Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_nyc2) ofday_nyc);
+      assert (Time_ns.Ofday.( = ) (Time_ns.Ofday.Zoned.ofday ofday_zoned_hkg2) ofday_hkg);
       assert (Date.( = ) date_utc2 date_utc);
       assert (Date.( = ) date_nyc2 date_nyc);
       assert (Date.( = ) date_hkg2 date_hkg);
@@ -2617,8 +2603,7 @@ let%test_module "format" =
     let test_time time =
       print_endline (Time_ns.to_string_abs time ~zone:Time_ns.Zone.utc);
       List.iter zones ~f:(fun zone ->
-        print_endline
-          (Time_ns.format time ~zone "%F %T" ^ " -- " ^ Time_ns.Zone.name zone))
+        print_endline (Time_ns.format time ~zone "%F %T" ^ " -- " ^ Time_ns.Zone.name zone))
     ;;
 
     let time1 = Time_ns.of_string_abs "2015-01-01 10:00:00 Europe/London"

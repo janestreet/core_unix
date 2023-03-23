@@ -39,8 +39,7 @@ let%expect_test "anon after [anon_escape]" =
       (let%map_open.Command () = return ()
        and last, rest = escape_anon ~final_anon:("LAST" %: string)
        and after = anon ("AFTER" %: string) in
-       fun () ->
-         print_s [%message (last : string) (rest : string list) (after : string)]));
+       fun () -> print_s [%message (last : string) (rest : string list) (after : string)]));
   [%expect
     {|
     (Failure

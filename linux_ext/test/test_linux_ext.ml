@@ -143,9 +143,7 @@ let%test_module _ =
           let timerfd = timerfd_create Timerfd.Clock.realtime in
           Epoll.set epoll (timerfd :> File_descr.t) Epoll.Flags.in_;
           List.iter [ 0; 1 ] ~f:(fun span_ns ->
-            Timerfd.set_after
-              timerfd
-              (Time_ns.Span.of_int63_ns (Int63.of_int span_ns));
+            Timerfd.set_after timerfd (Time_ns.Span.of_int63_ns (Int63.of_int span_ns));
             match Epoll.wait epoll ~timeout:`Never with
             | `Timeout -> assert false
             | `Ok -> ());
@@ -497,9 +495,7 @@ let%test_module "getxattr and setxattr" =
     let%expect_test "test setxattr [`Create] semantics" =
       with_tmpfile (fun path ->
         let name = "user.foo" in
-        let set_and_create () =
-          set_and_print ~how:`Create ~path ~name ~value:"blah" ()
-        in
+        let set_and_create () = set_and_print ~how:`Create ~path ~name ~value:"blah" () in
         set_and_create ();
         [%expect {| Ok |}];
         get_and_print ~path ~name;
@@ -575,9 +571,7 @@ let%test_unit "peer_credentials" =
          with
          | Unix.Unix_error (ENOTSOCK, _, _) -> ());
         with_listening_server_unix_socket (fname ^ ".peercredsocket") ~f:(fun fname ->
-          let client_sock =
-            Unix.socket ~domain:PF_UNIX ~kind:SOCK_STREAM ~protocol:0 ()
-          in
+          let client_sock = Unix.socket ~domain:PF_UNIX ~kind:SOCK_STREAM ~protocol:0 () in
           let rec connect count =
             try Unix.connect client_sock ~addr:(ADDR_UNIX fname) with
             | Unix_error (ECONNREFUSED, _, _) when count < 100 ->

@@ -9,7 +9,6 @@ let ldn = Time.Zone.find_exn "Europe/London"
 let nyc = Time.Zone.find_exn "America/New_York"
 let utc = Time.Zone.utc
 let next_clock_shift zone time = Time.Zone.next_clock_shift zone ~strictly_after:time
-
 let%bench "next_clock_shift hkg epoch" = next_clock_shift hkg epoch
 let%bench "next_clock_shift hkg winter" = next_clock_shift hkg winter
 let%bench "next_clock_shift hkg summer" = next_clock_shift hkg summer
@@ -22,9 +21,7 @@ let%bench "next_clock_shift nyc summer" = next_clock_shift nyc summer
 let%bench "next_clock_shift utc epoch" = next_clock_shift utc epoch
 let%bench "next_clock_shift utc winter" = next_clock_shift utc winter
 let%bench "next_clock_shift utc summer" = next_clock_shift utc summer
-
 let prev_clock_shift zone time = Time.Zone.prev_clock_shift zone ~at_or_before:time
-
 let%bench "prev_clock_shift hkg epoch" = prev_clock_shift hkg epoch
 let%bench "prev_clock_shift hkg winter" = prev_clock_shift hkg winter
 let%bench "prev_clock_shift hkg summer" = prev_clock_shift hkg summer
@@ -37,9 +34,7 @@ let%bench "prev_clock_shift nyc summer" = prev_clock_shift nyc summer
 let%bench "prev_clock_shift utc epoch" = prev_clock_shift utc epoch
 let%bench "prev_clock_shift utc winter" = prev_clock_shift utc winter
 let%bench "prev_clock_shift utc summer" = prev_clock_shift utc summer
-
 let to_date_ofday zone time = Time.to_date_ofday ~zone time
-
 let%bench "to_date_ofday hkg epoch" = to_date_ofday hkg epoch
 let%bench "to_date_ofday hkg winter" = to_date_ofday hkg winter
 let%bench "to_date_ofday hkg summer" = to_date_ofday hkg summer

@@ -208,9 +208,7 @@ let%expect_test "random test against Unix.localtime" =
         Unix.unsetenv "TZ";
         ignore (Unix.localtime 1000. : Unix.tm);
         let our_date, our_ofday =
-          Time.to_date_ofday
-            (Time.of_span_since_epoch (Time.Span.of_sec unix_time))
-            ~zone
+          Time.to_date_ofday (Time.of_span_since_epoch (Time.Span.of_sec unix_time)) ~zone
         in
         require_equal
           [%here]

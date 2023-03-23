@@ -5,7 +5,9 @@ open Poly
 open Bigstring_test
 
 let io_test ~n =
-  fdpair_test ~n socketpair
+  fdpair_test
+    ~n
+    socketpair
     (fun buf fd ->
        let oc = out_channel_of_descr fd in
        Bigbuffer_blocking.output_buffer oc buf;
@@ -26,8 +28,7 @@ let%expect_test "adding/extracting data" =
   Bigbuffer.add_buffer buf buf;
   let str = "xyasdfds" in
   "contents" @? (Bigbuffer.contents buf = str ^ str);
-  "big_contents" @?
-  (Bigstring.to_string (Bigbuffer.big_contents buf) = str ^ str );
-  "sub" @? (Bigbuffer.sub buf ~pos:5 ~len:5 = (Bytes.of_string "fdsxy"));
+  "big_contents" @? (Bigstring.to_string (Bigbuffer.big_contents buf) = str ^ str);
+  "sub" @? (Bigbuffer.sub buf ~pos:5 ~len:5 = Bytes.of_string "fdsxy");
   io_test ~n:"" buf
 ;;

@@ -229,9 +229,7 @@ let sendto_and_recvfrom recvfrom recv_fd sendto ~sendto_name =
       let sender =
         Thread.create
           (fun () ->
-             let send_fd =
-               Unix.(socket ~domain:PF_INET ~kind:SOCK_DGRAM ~protocol:0 ())
-             in
+             let send_fd = Unix.(socket ~domain:PF_INET ~kind:SOCK_DGRAM ~protocol:0 ()) in
              iter_examples ~f:(fun t string ~pos:_ ->
                Fill.stringo t string;
                Iobuf.flip_lo t;
@@ -416,8 +414,7 @@ let%expect_test "[In_channel.input_lines]" =
   let test_file ~filename =
     List.iter Bool.all ~f:(fun fix_win_eol ->
       let base =
-        In_channel.input_lines ~fix_win_eol (In_channel.create filename)
-        |> Array.of_list
+        In_channel.input_lines ~fix_win_eol (In_channel.create filename) |> Array.of_list
       in
       let fast =
         In_channel_optimized.input_lines ~fix_win_eol (In_channel.create filename)

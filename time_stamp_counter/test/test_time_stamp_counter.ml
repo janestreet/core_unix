@@ -137,8 +137,7 @@ let%test_module _ =
       List.iter samples ~f:(fun (tsc, time) ->
         let cur_error =
           scale_us_abs
-            (time
-             -. Time.Span.to_sec (Time.to_span_since_epoch (to_time ~calibrator tsc)))
+            (time -. Time.Span.to_sec (Time.to_span_since_epoch (to_time ~calibrator tsc)))
         in
         ewma_error := ewma ~alpha ~old:!ewma_error ~add:cur_error;
         if verbose

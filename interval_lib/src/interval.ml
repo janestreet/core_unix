@@ -389,6 +389,7 @@ struct
     include C.Set
 
     let to_poly (t : t) = t
+    let to_list (t : t) : interval list = t
   end
 end
 

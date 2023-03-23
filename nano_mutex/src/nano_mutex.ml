@@ -48,7 +48,7 @@ end = struct
 end
 
 module Thread_id_option : sig
-  type t [@@deriving equal, sexp_of]
+  type t [@@deriving equal, sexp_of] [@@immediate]
 
   val none : t
   val some : int -> t

@@ -358,7 +358,6 @@ let%test_module "" =
     ;;
 
     let to_int = core_unix_iff_to_int
-
     let%test_unit _ = [%test_result: Set.t] (set_of_int 0) ~expect:Set.empty
 
     let%test_unit _ =
@@ -458,9 +457,7 @@ let%test_unit "PGID set by setpgid is inherited by child" =
     | `In_the_child ->
       let child_pid = getpid () in
       let oc = Out_channel.create temp_file in
-      Out_channel.output_string
-        oc
-        (getpgid child_pid |> Option.value_exn |> Pid.to_string);
+      Out_channel.output_string oc (getpgid child_pid |> Option.value_exn |> Pid.to_string);
       Out_channel.close oc;
       exit_immediately 0
     | `In_the_parent child_pid ->

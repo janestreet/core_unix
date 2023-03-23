@@ -249,9 +249,7 @@ let%test_module "vs array" =
         interval_and_nearby_int
         ~sexp_of:[%sexp_of: t * int]
         ~f:(fun (t, i) ->
-          [%test_result: bool]
-            ~expect:(Array.mem ~equal:Int.equal (to_array t) i)
-            (mem t i))
+          [%test_result: bool] ~expect:(Array.mem ~equal:Int.equal (to_array t) i) (mem t i))
     ;;
 
     let%test_unit "binary_search" =
@@ -313,7 +311,6 @@ let%test_module _ =
     ;;
 
     let intervals = [ Int.empty; Int.empty ]
-
     let%test _ = Int.is_empty (Int.convex_hull intervals)
   end)
 ;;

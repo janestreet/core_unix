@@ -14,9 +14,7 @@ let run ~argv ?when_parsing_succeeds ?verbose_on_parse_error command =
 let%test_module "word wrap" =
   (module struct
     let%test _ = word_wrap "" 10 = []
-
     let short_word = "abcd"
-
     let%test _ = word_wrap short_word (String.length short_word) = [ short_word ]
     let%test _ = word_wrap "abc\ndef\nghi" 100 = [ "abc"; "def"; "ghi" ]
 

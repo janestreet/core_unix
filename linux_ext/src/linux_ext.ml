@@ -177,9 +177,7 @@ let cpu_list_of_string_exn str =
       else (
         (* This is probably simpler with procedural code, but
            we'll do it functional-style :o).  *)
-        let n_sublists =
-          Float.round_up ((last - first + 1) // stride) |> Float.to_int
-        in
+        let n_sublists = Float.round_up ((last - first + 1) // stride) |> Float.to_int in
         let starts = List.init n_sublists ~f:(fun li -> first + (li * stride)) in
         let rlist =
           List.concat_map starts ~f:(fun start ->
@@ -1117,7 +1115,11 @@ module Epoll = struct
            ~ready_events:ignore
        with
        | exn ->
-         failwiths ~here:[%here] "Epoll.invariant failed" (exn, t) [%sexp_of: exn * in_use])
+         failwiths
+           ~here:[%here]
+           "Epoll.invariant failed"
+           (exn, t)
+           [%sexp_of: exn * in_use])
   ;;
 
   let create ~num_file_descrs ~max_ready_events =

@@ -169,6 +169,10 @@ module type S = sig
     include Gen_set with type 'a t := t with type 'a bound := bound (** @inline *)
 
     val to_poly : t -> bound poly_set
+
+    (** [to_list] will return a list of non-overlapping intervals defining the set, in
+        ascending order.  *)
+    val to_list : t -> bound interval list
   end
   with type 'a interval := t
 end

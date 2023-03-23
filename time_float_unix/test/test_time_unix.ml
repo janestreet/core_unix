@@ -595,18 +595,14 @@ let%test_module "Time.Stable" =
            print them out, as we don't want to read thousands of examples, so we won't
            know if their representation changes, but at least we will know they
            round-trip. *)
-        quickcheck
-          [%here]
-          M.quickcheck_generator
-          ~sexp_of:M.sexp_of_t
-          ~f:(fun example ->
-            require_does_not_raise [%here] (fun () ->
-              let sexp = M.sexp_of_t example in
-              let sexp_round_trip = M.t_of_sexp sexp in
-              require_compare_equal [%here] (module M) example sexp_round_trip;
-              let string = Binable.to_string (module M) example in
-              let binio_round_trip = Binable.of_string (module M) string in
-              require_compare_equal [%here] (module M) example binio_round_trip)))
+        quickcheck [%here] M.quickcheck_generator ~sexp_of:M.sexp_of_t ~f:(fun example ->
+          require_does_not_raise [%here] (fun () ->
+            let sexp = M.sexp_of_t example in
+            let sexp_round_trip = M.t_of_sexp sexp in
+            require_compare_equal [%here] (module M) example sexp_round_trip;
+            let string = Binable.to_string (module M) example in
+            let binio_round_trip = Binable.of_string (module M) string in
+            require_compare_equal [%here] (module M) example binio_round_trip)))
     ;;
 
     module For_time = struct
@@ -792,8 +788,7 @@ let%test_module "Time.Stable" =
       let test string =
         require_does_not_raise [%here] (fun () ->
           print_s
-            [%sexp
-              (Time.Stable.V1.t_of_sexp (Sexp.of_string string) : Time.Stable.V1.t)])
+            [%sexp (Time.Stable.V1.t_of_sexp (Sexp.of_string string) : Time.Stable.V1.t)])
       in
       test "(2012-04-09 12:00:00.000000-04:00:00)";
       test "(2012-04-09 12:00:00.000000 America/New_York)";

@@ -6,6 +6,7 @@
 
 open! Core
 open! Import
+open Stable_witness.Export
 
 module Time_ns = Core.Core_private.Time_ns_alternate_sexp
 
@@ -496,7 +497,7 @@ module Utsname = struct
           version: string;
           machine: string;
         }
-      [@@deriving fields, bin_io, sexp, compare]
+      [@@deriving fields, bin_io, sexp, compare, stable_witness]
     end
   end
   include Stable.V1
@@ -2154,6 +2155,7 @@ module Inet_addr0 = struct
       module T0 = struct
         type t = Unix.inet_addr
 
+        let stable_witness = Stable_witness.assert_stable
         let of_string = Unix.inet_addr_of_string
         let to_string = Unix.string_of_inet_addr
 
@@ -2323,7 +2325,7 @@ module Cidr = struct
           { address : int32; (* IPv4 only *)
             bits    : int;
           }
-        [@@deriving fields, bin_io, compare, hash]
+        [@@deriving fields, bin_io, compare, hash, stable_witness]
 
         let normalized_address ~base ~bits =
           if bits = 0
@@ -2353,7 +2355,7 @@ module Cidr = struct
       end
       module T1 = Sexpable.Stable.Of_stringable.V1(T0)
       module T2 = Comparator.Stable.V1.Make(struct include T0 include T1 end)
-      module T3 = Comparable.Stable.V1.Make(struct include T0 include T1 include T2 end)
+      module T3 = Comparable.Stable.V1.With_stable_witness.Make(struct include T0 include T1 include T2 end)
       include T0
       include T1
       include T2

@@ -79,6 +79,7 @@ let%expect_test _ = invariant "172.16.0.0/12"
 let%expect_test _ = invariant "172.25.42.0/18"
 let%expect_test _ = invariant "192.168.0.0/16"
 let%expect_test _ = invariant "192.168.13.0/24"
+
 (* Do we properly fail on some nonsense? *)
 let%expect_test _ = invariant ~expected:(Error ()) "172.25.42.0"
 let%expect_test _ = invariant ~expected:(Error ()) "172.25.42.0/35"
@@ -89,6 +90,7 @@ let%expect_test _ = invariant ~expected:(Error ()) "sandwich/16"
 let%expect_test _ = invariant ~expected:(Error ()) "sandwich"
 let%expect_test _ = invariant ~expected:(Error ()) "172.52.43/16"
 let%expect_test _ = invariant ~expected:(Error ()) "172.52.493/16"
+
 (* Basic match tests *)
 let%expect_test _ = match_strings "127.0.0.1/32" (Inet_addr.to_string Inet_addr.localhost)
 let%expect_test _ = match_strings "127.0.0.0/8" (Inet_addr.to_string Inet_addr.localhost)
@@ -106,6 +108,7 @@ let%expect_test _ = match_strings "172.25.42.0/16" "172.25.0.1"
 let%expect_test _ = match_strings "172.25.42.0/16" "172.25.255.254"
 let%expect_test _ = match_strings "172.25.42.0/16" "172.25.42.1"
 let%expect_test _ = match_strings "172.25.42.0/16" "172.25.105.237"
+
 (* And some that should fail *)
 let%expect_test _ = match_strings "10.0.0.0/8" "9.255.255.255" ~expected:false
 let%expect_test _ = match_strings "10.0.0.0/8" "11.0.0.1" ~expected:false
@@ -142,6 +145,7 @@ let%expect_test _ = is_subset_strings "10.1.2.0/24" ~of_:"11.0.0.0/8" ~expected:
 let%expect_test _ = is_subset_strings "10.1.2.0/24" ~of_:"10.0.0.0/16" ~expected:false
 let%expect_test _ = is_subset_strings "10.1.2.123/32" ~of_:"10.1.2.124/32" ~expected:false
 let%expect_test _ = is_subset_strings "10.0.0.0/8" ~of_:"10.0.0.0/9" ~expected:false
+
 (* Multicast tests *)
 let%expect_test _ = is_multicast "0.0.0.0" ~expected:false
 let%expect_test _ = is_multicast "127.0.0.1" ~expected:false
@@ -219,6 +223,7 @@ let%expect_test _ = diff "0.0.0.0/24" "0.0.0.0/0"
 let%expect_test _ = diff "0.0.0.0/16" "0.0.0.0/0"
 let%expect_test _ = diff "0.0.0.0/8" "0.0.0.0/0"
 let%expect_test _ = same "0.0.0.0/0" "0.0.0.0/0"
+
 (* normalize base addresses *)
 let%expect_test _ = diff "0.0.0.0/32" "0.0.0.1/32"
 let%expect_test _ = same "0.0.0.0/31" "0.0.0.1/31"

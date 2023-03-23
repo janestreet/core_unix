@@ -45,3 +45,22 @@ let%expect_test "half_open_intervals_are_a_partition" =
        (Interval.half_open_intervals_are_a_partition
           [ Interval.create 0 2; Interval.create 2 4; Interval.create 5 8 ])
 ;;
+
+let%expect_test "create_list_from_set" =
+  let module Iv = Interval.Int in
+  let test l =
+    let l' =
+      List.map ~f:(fun (x, y) -> Iv.create x y) l
+      |> Iv.Set.create_from_intervals
+      |> Iv.Set.to_list
+    in
+    [%test_pred: Iv.t list] (List.is_sorted_strictly ~compare:Iv.compare) l';
+    print_s [%sexp (l' : Iv.t list)]
+  in
+  test [ 1, 2; 23, 42; 3, 4; -4, -2 ];
+  [%expect {| ((-4 -2) (1 2) (3 4) (23 42)) |}];
+  test [];
+  [%expect {| () |}];
+  test [ 1, 10 ];
+  [%expect {| ((1 10)) |}]
+;;

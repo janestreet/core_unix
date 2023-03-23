@@ -1423,7 +1423,7 @@ module Inet_addr : sig
   module Stable : sig
     module V1 : sig
       type nonrec t = t [@@deriving hash]
-      include Stable with type t := t and type comparator_witness = comparator_witness
+      include Stable_with_witness with type t := t and type comparator_witness = comparator_witness
     end
   end
 end
@@ -1482,7 +1482,7 @@ module Cidr : sig
   val is_subset : t -> of_:t -> bool
 
   module Stable : sig
-    module V1 : Stable_comparable.V1
+    module V1 : Stable_comparable.With_stable_witness.V1
       with type t = t
       with type comparator_witness = comparator_witness
   end
@@ -1701,9 +1701,8 @@ type socket_int_option =
     and modified with {!UnixLabels.setsockopt_optint}.  These options have a
     value of type [int option], with [None] meaning ``disabled''. *)
 type socket_optint_option =
-    SO_LINGER              (** Whether to linger on closed connections
-                               with sexp                      that have data present, and for how long
-                               (in seconds) *)
+    SO_LINGER              (** Whether to linger on closed connections with sexp that have
+                               data present, and for how long (in seconds) *)
 
 (** The socket options that can be consulted with {!UnixLabels.getsockopt_float}
     and modified with {!UnixLabels.setsockopt_float}.  These options have a
@@ -2357,7 +2356,7 @@ module Utsname : sig
   val machine : t -> string
 
   module Stable : sig
-    module V1 : Stable_without_comparator
+    module V1 : Stable_without_comparator_with_witness
       with type t = t
   end
 end

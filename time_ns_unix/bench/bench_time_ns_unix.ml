@@ -142,65 +142,39 @@ module Span = struct
   open Span_constants
 
   let hash = hash
-
   let%bench "hash" = hash zero
-
   let hash_fold_t = hash_fold_t
-
   let%bench "hash_fold_t" = hash_fold_t hash_state zero
 
   module Replace_polymorphic_compare = struct
     open Replace_polymorphic_compare
 
     let compare = compare
-
     let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
     let equal = equal
-
     let%bench "equal" = equal min_value_for_1us_rounding max_value_for_1us_rounding
-
     let min = min
-
     let%bench "min" = min min_value_for_1us_rounding max_value_for_1us_rounding
-
     let max = max
-
     let%bench "max" = max min_value_for_1us_rounding max_value_for_1us_rounding
-
     let ( = ) = ( = )
-
     let%bench "(=)" = min_value_for_1us_rounding = max_value_for_1us_rounding
-
     let ( < ) = ( < )
-
     let%bench "(<)" = min_value_for_1us_rounding < max_value_for_1us_rounding
-
     let ( > ) = ( > )
-
     let%bench "(>)" = min_value_for_1us_rounding > max_value_for_1us_rounding
-
     let ( <> ) = ( <> )
-
     let%bench "(<>)" = min_value_for_1us_rounding <> max_value_for_1us_rounding
-
     let ( <= ) = ( <= )
-
     let%bench "(<=)" = min_value_for_1us_rounding <= max_value_for_1us_rounding
-
     let ( >= ) = ( >= )
-
     let%bench "(>=)" = min_value_for_1us_rounding >= max_value_for_1us_rounding
   end
 
   let compare = compare
-
   let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
   let ascending = ascending
-
   let%bench "ascending" = ascending min_value_for_1us_rounding max_value_for_1us_rounding
-
   let descending = descending
 
   let%bench "descending" =
@@ -208,41 +182,23 @@ module Span = struct
   ;;
 
   let equal = equal
-
   let%bench "equal" = equal min_value_for_1us_rounding max_value_for_1us_rounding
-
   let min = min
-
   let%bench "min" = min min_value_for_1us_rounding max_value_for_1us_rounding
-
   let max = max
-
   let%bench "max" = max min_value_for_1us_rounding max_value_for_1us_rounding
-
   let ( = ) = ( = )
-
   let%bench "(=)" = min_value_for_1us_rounding = max_value_for_1us_rounding
-
   let ( < ) = ( < )
-
   let%bench "(<)" = min_value_for_1us_rounding < max_value_for_1us_rounding
-
   let ( > ) = ( > )
-
   let%bench "(>)" = min_value_for_1us_rounding > max_value_for_1us_rounding
-
   let ( <> ) = ( <> )
-
   let%bench "(<>)" = min_value_for_1us_rounding <> max_value_for_1us_rounding
-
   let ( <= ) = ( <= )
-
   let%bench "(<=)" = min_value_for_1us_rounding <= max_value_for_1us_rounding
-
   let ( >= ) = ( >= )
-
   let%bench "(>=)" = min_value_for_1us_rounding >= max_value_for_1us_rounding
-
   let between = between
 
   let%bench "between" =
@@ -340,25 +296,15 @@ module Span = struct
   ;;
 
   let is_positive = is_positive
-
   let%bench "is_positive" = is_positive zero
-
   let is_negative = is_negative
-
   let%bench "is_negative" = is_negative zero
-
   let is_non_positive = is_non_positive
-
   let%bench "is_non_positive" = is_non_positive zero
-
   let is_non_negative = is_non_negative
-
   let%bench "is_non_negative" = is_non_negative zero
-
   let sign = sign
-
   let%bench "sign" = sign day
-
   let robustly_compare = robustly_compare
 
   let%bench "robustly_compare" =
@@ -366,37 +312,21 @@ module Span = struct
   ;;
 
   let ( =. ) = ( =. )
-
   let%bench "(=.)" = min_value_for_1us_rounding =. max_value_for_1us_rounding
-
   let ( <. ) = ( <. )
-
   let%bench "(<.)" = min_value_for_1us_rounding <. max_value_for_1us_rounding
-
   let ( >. ) = ( >. )
-
   let%bench "(>.)" = min_value_for_1us_rounding >. max_value_for_1us_rounding
-
   let ( <>. ) = ( <>. )
-
   let%bench "(<>.)" = min_value_for_1us_rounding <>. max_value_for_1us_rounding
-
   let ( <=. ) = ( <=. )
-
   let%bench "(<=.)" = min_value_for_1us_rounding <=. max_value_for_1us_rounding
-
   let ( >=. ) = ( >=. )
-
   let%bench "(>=.)" = min_value_for_1us_rounding >=. max_value_for_1us_rounding
-
   let to_span_float_round_nearest = to_span_float_round_nearest
-
   let%bench "to_span_float_round_nearest" = to_span_float_round_nearest day
-
   let of_span_float_round_nearest = of_span_float_round_nearest
-
   let%bench "of_span_float_round_nearest" = of_span_float_round_nearest non_ns_day
-
   let to_span = to_span_float_round_nearest_microsecond
   let to_span_float_round_nearest_microsecond = to_span_float_round_nearest_microsecond
 
@@ -412,153 +342,79 @@ module Span = struct
   ;;
 
   let of_ns = of_ns
-
   let%bench "of_ns" = of_ns float_ten
-
   let of_us = of_us
-
   let%bench "of_us" = of_us float_ten
-
   let of_ms = of_ms
-
   let%bench "of_ms" = of_ms float_ten
-
   let of_sec = of_sec
-
   let%bench "of_sec" = of_sec float_ten
-
   let of_min = of_min
-
   let%bench "of_min" = of_min float_ten
-
   let of_hr = of_hr
-
   let%bench "of_hr" = of_hr float_ten
-
   let of_day = of_day
-
   let%bench "of_day" = of_day float_ten
-
   let to_ns = to_ns
-
   let%bench "to_ns" = to_ns zero
-
   let to_us = to_us
-
   let%bench "to_us" = to_us zero
-
   let to_ms = to_ms
-
   let%bench "to_ms" = to_ms zero
-
   let to_sec = to_sec
-
   let%bench "to_sec" = to_sec zero
-
   let to_min = to_min
-
   let%bench "to_min" = to_min zero
-
   let to_hr = to_hr
-
   let%bench "to_hr" = to_hr zero
-
   let to_day = to_day
-
   let%bench "to_day" = to_day zero
-
   let of_int_ns = of_int_ns
-
   let%bench "of_int_ns" = of_int_ns int_ten
-
   let of_int_us = of_int_us
-
   let%bench "of_int_us" = of_int_us int_ten
-
   let of_int_ms = of_int_ms
-
   let%bench "of_int_ms" = of_int_ms int_ten
-
   let of_int_sec = of_int_sec
-
   let%bench "of_int_sec" = of_int_sec int_ten
-
   let of_int_min = of_int_min
-
   let%bench "of_int_min" = of_int_min int_ten
-
   let of_int_hr = of_int_hr
-
   let%bench "of_int_hr" = of_int_hr int_ten
-
   let of_int_day = of_int_day
-
   let%bench "of_int_day" = of_int_day int_ten
-
   let to_int_ns = to_int_ns
-
   let%bench "to_int_ns" = to_int_ns second
-
   let to_int_us = to_int_us
-
   let%bench "to_int_us" = to_int_us second
-
   let to_int_ms = to_int_ms
-
   let%bench "to_int_ms" = to_int_ms second
-
   let to_int_sec = to_int_sec
-
   let%bench "to_int_sec" = to_int_sec second
-
   let to_int63_ns = to_int63_ns
-
   let%bench "to_int63_ns" = to_int63_ns second
-
   let of_int63_ns = of_int63_ns
-
   let%bench "of_int63_ns" = of_int63_ns int63_ten
-
   let ( + ) = ( + )
-
   let%bench "(+)" = day + hour
-
   let ( - ) = ( - )
-
   let%bench "(-)" = day - hour
-
   let abs = abs
-
   let%bench "abs" = abs min_value_for_1us_rounding
-
   let neg = neg
-
   let%bench "neg" = neg min_value_for_1us_rounding
-
   let scale = scale
-
   let%bench "scale" = scale day float_ten
-
   let scale_int = scale_int
-
   let%bench "scale_int" = scale_int day int_ten
-
   let div = div
-
   let%bench "div" = div day hour
-
   let ( // ) = ( // )
-
   let%bench "(//)" = day // hour
-
   let ( / ) = ( / )
-
   let%bench "(/)" = day / float_ten
-
   let to_proportional_float = to_proportional_float
-
   let%bench "to_proportional_float" = to_proportional_float day
-
   let create = create
 
   let%bench "create" =
@@ -575,11 +431,8 @@ module Span = struct
   ;;
 
   let to_parts = to_parts
-
   let%bench "to_parts" = to_parts day
-
   let to_unit_of_time = to_unit_of_time
-
   let%bench "to_unit_of_time (ns)" = to_unit_of_time pi_nanoseconds
   let%bench "to_unit_of_time (us)" = to_unit_of_time pi_microseconds
   let%bench "to_unit_of_time (ms)" = to_unit_of_time pi_milliseconds
@@ -587,9 +440,7 @@ module Span = struct
   let%bench "to_unit_of_time (m)" = to_unit_of_time pi_minutes
   let%bench "to_unit_of_time (h)" = to_unit_of_time pi_hours
   let%bench "to_unit_of_time (d)" = to_unit_of_time pi_days
-
   let of_unit_of_time = of_unit_of_time
-
   let%bench "of_unit_of_time (ns)" = of_unit_of_time Nanosecond
   let%bench "of_unit_of_time (us)" = of_unit_of_time Microsecond
   let%bench "of_unit_of_time (ms)" = of_unit_of_time Millisecond
@@ -597,17 +448,11 @@ module Span = struct
   let%bench "of_unit_of_time (m)" = of_unit_of_time Minute
   let%bench "of_unit_of_time (h)" = of_unit_of_time Hour
   let%bench "of_unit_of_time (d)" = of_unit_of_time Day
-
   let randomize = randomize
-
   let%bench "randomize" = randomize pi_microseconds ~percent:percent_half
-
   let random = random
-
   let%bench "random" = random ()
-
   let to_string_hum = to_string_hum
-
   let%bench "to_string_hum (ns)" = to_string_hum pi_nanoseconds
   let%bench "to_string_hum (us)" = to_string_hum pi_microseconds
   let%bench "to_string_hum (ms)" = to_string_hum pi_milliseconds
@@ -629,9 +474,7 @@ module Span = struct
   let%bench "to_string_hum (m, just)" = to_string_hum pi_minutes ~align_decimal:true
   let%bench "to_string_hum (h, just)" = to_string_hum pi_hours ~align_decimal:true
   let%bench "to_string_hum (d, just)" = to_string_hum pi_days ~align_decimal:true
-
   let to_short_string = to_short_string
-
   let%bench "to_short_string (ns)" = to_short_string nanosecond
   let%bench "to_short_string (us)" = to_short_string microsecond
   let%bench "to_short_string (ms)" = to_short_string millisecond
@@ -648,9 +491,7 @@ module Span = struct
   let%bench "to_short_string (h+)" = to_short_string pi_hours
   let%bench "to_short_string (d+)" = to_short_string pi_days
   let%bench "to_short_string (kd+)" = to_short_string pi_kilodays
-
   let to_string = to_string
-
   let%bench "to_string (ns)" = to_string nanosecond
   let%bench "to_string (us)" = to_string microsecond
   let%bench "to_string (ms)" = to_string millisecond
@@ -667,9 +508,7 @@ module Span = struct
   let%bench "to_string (h+)" = to_string pi_hours
   let%bench "to_string (d+)" = to_string pi_days
   let%bench "to_string (kd+)" = to_string pi_kilodays
-
   let of_string = of_string
-
   let%bench "of_string (ns)" = of_string string_of_nanosecond
   let%bench "of_string (us)" = of_string string_of_microsecond
   let%bench "of_string (ms)" = of_string string_of_millisecond
@@ -687,9 +526,7 @@ module Span = struct
   let%bench "of_string (d+)" = of_string string_of_pi_days
   let%bench "of_string (kd+)" = of_string string_of_pi_kilodays
   let%bench "of_string (d.)" = of_string string_of_decimal_pi_days
-
   let sexp_of_t = sexp_of_t
-
   let%bench "sexp_of_t (s)" = sexp_of_t second
   let%bench "sexp_of_t (ns+)" = sexp_of_t pi_nanoseconds
   let%bench "sexp_of_t (us+)" = sexp_of_t pi_microseconds
@@ -699,9 +536,7 @@ module Span = struct
   let%bench "sexp_of_t (h+)" = sexp_of_t pi_hours
   let%bench "sexp_of_t (d+)" = sexp_of_t pi_days
   let%bench "sexp_of_t (kd+)" = sexp_of_t pi_kilodays
-
   let t_of_sexp = t_of_sexp
-
   let%bench "t_of_sexp (s)" = t_of_sexp sexp_of_second
   let%bench "t_of_sexp (ns+)" = t_of_sexp sexp_of_pi_nanoseconds
   let%bench "t_of_sexp (us+)" = t_of_sexp sexp_of_pi_microseconds
@@ -712,23 +547,14 @@ module Span = struct
   let%bench "t_of_sexp (d+)" = t_of_sexp sexp_of_pi_days
   let%bench "t_of_sexp (kd+)" = t_of_sexp sexp_of_pi_kilodays
   let%bench "t_of_sexp (d.)" = t_of_sexp sexp_of_decimal_pi_days
-
   let since_unix_epoch = since_unix_epoch
-
   let%bench "since_unix_epoch" = since_unix_epoch ()
-
   let prev = prev
-
   let%bench "prev" = prev zero
-
   let next = next
-
   let%bench "next" = next zero
-
   let scale_int63 = scale_int63
-
   let%bench "scale_int63" = scale_int63 minute int63_ten
-
   let of_sec_with_microsecond_precision = of_sec_with_microsecond_precision
 
   let%bench "of_sec_with_microsecond_precision" =
@@ -736,15 +562,10 @@ module Span = struct
   ;;
 
   let to_int63_seconds_round_down_exn = to_int63_seconds_round_down_exn
-
   let%bench "to_int63_seconds_round_down_exn" = to_int63_seconds_round_down_exn minute
-
   let of_int63_seconds = of_int63_seconds
-
   let%bench "of_int63_seconds" = of_int63_seconds int63_ten
-
   let of_int32_seconds = of_int32_seconds
-
   let%bench "of_int32_seconds" = of_int32_seconds int32_ten
 
   module Stable = struct
@@ -758,15 +579,10 @@ module Span = struct
 
       let comparator = comparator
       let compare = compare
-
       let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
       let equal = equal
-
       let%bench "equal" = equal zero zero
-
       let sexp_of_t = sexp_of_t
-
       let%bench "sexp_of_t (s)" = sexp_of_t second
       let%bench "sexp_of_t (ns+)" = sexp_of_t pi_nanoseconds
       let%bench "sexp_of_t (us+)" = sexp_of_t pi_microseconds
@@ -776,9 +592,7 @@ module Span = struct
       let%bench "sexp_of_t (h+)" = sexp_of_t pi_hours
       let%bench "sexp_of_t (d+)" = sexp_of_t pi_days
       let%bench "sexp_of_t (kd+)" = sexp_of_t pi_kilodays
-
       let t_of_sexp = t_of_sexp
-
       let%bench "t_of_sexp (s)" = t_of_sexp v1_sexp_of_second
       let%bench "t_of_sexp (ns+)" = t_of_sexp v1_sexp_of_pi_nanoseconds
       let%bench "t_of_sexp (us+)" = t_of_sexp v1_sexp_of_pi_microseconds
@@ -789,13 +603,9 @@ module Span = struct
       let%bench "t_of_sexp (d+)" = t_of_sexp v1_sexp_of_pi_days
       let%bench "t_of_sexp (kd+)" = t_of_sexp v1_sexp_of_pi_kilodays
       let%bench "t_of_sexp (d.)" = t_of_sexp sexp_of_decimal_pi_days
-
       let to_int63 = to_int63
-
       let%bench "to_int63" = to_int63 day
-
       let of_int63_exn = of_int63_exn
-
       let%bench "of_int63_exn" = of_int63_exn int63_ten
     end
 
@@ -809,41 +619,26 @@ module Span = struct
 
       let comparator = comparator
       let compare = compare
-
       let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
       let equal = equal
-
       let%bench "equal" = equal zero zero
-
       let sexp_of_t = sexp_of_t
-
       let%bench "sexp_of_t (s)" = sexp_of_t second
       let%bench "sexp_of_t (kd+)" = sexp_of_t pi_kilodays
-
       let t_of_sexp = t_of_sexp
-
       let%bench "t_of_sexp (s)" = t_of_sexp sexp_of_second
       let%bench "t_of_sexp (kd+)" = t_of_sexp sexp_of_pi_kilodays
       let%bench "t_of_sexp (d.)" = t_of_sexp sexp_of_decimal_pi_days
-
       let to_string = to_string
-
       let%bench "to_string (s)" = to_string second
       let%bench "to_string (kd+)" = to_string pi_kilodays
-
       let of_string = of_string
-
       let%bench "of_string (s)" = of_string string_of_second
       let%bench "of_string (kd+)" = of_string string_of_pi_kilodays
       let%bench "of_string (d.)" = of_string string_of_decimal_pi_days
-
       let to_int63 = to_int63
-
       let%bench "to_int63" = to_int63 day
-
       let of_int63_exn = of_int63_exn
-
       let%bench "of_int63_exn" = of_int63_exn int63_ten
     end
   end
@@ -881,117 +676,65 @@ module Span = struct
     open Span_option_constants
 
     let hash = hash
-
     let%bench "hash" = hash none
-
     let hash_fold_t = hash_fold_t
-
     let%bench "hash_fold_t" = hash_fold_t hash_state none
 
     module Replace_polymorphic_compare = struct
       open Replace_polymorphic_compare
 
       let compare = compare
-
       let%bench "compare" = compare none some_day
-
       let equal = equal
-
       let%bench "equal" = equal none some_day
-
       let min = min
-
       let%bench "min" = min none some_day
-
       let max = max
-
       let%bench "max" = max none some_day
-
       let ( = ) = ( = )
-
       let%bench "(=)" = none = some_day
-
       let ( < ) = ( < )
-
       let%bench "(<)" = none < some_day
-
       let ( > ) = ( > )
-
       let%bench "(>)" = none > some_day
-
       let ( <> ) = ( <> )
-
       let%bench "(<>)" = none <> some_day
-
       let ( <= ) = ( <= )
-
       let%bench "(<=)" = none <= some_day
-
       let ( >= ) = ( >= )
-
       let%bench "(>=)" = none >= some_day
     end
 
     let compare = compare
-
     let%bench "compare" = compare none some_day
-
     let ascending = ascending
-
     let%bench "ascending" = ascending none some_day
-
     let descending = descending
-
     let%bench "descending" = descending none some_day
-
     let equal = equal
-
     let%bench "equal" = equal none some_day
-
     let min = min
-
     let%bench "min" = min none some_day
-
     let max = max
-
     let%bench "max" = max none some_day
-
     let ( = ) = ( = )
-
     let%bench "(=)" = none = some_day
-
     let ( < ) = ( < )
-
     let%bench "(<)" = none < some_day
-
     let ( > ) = ( > )
-
     let%bench "(>)" = none > some_day
-
     let ( <> ) = ( <> )
-
     let%bench "(<>)" = none <> some_day
-
     let ( <= ) = ( <= )
-
     let%bench "(<=)" = none <= some_day
-
     let ( >= ) = ( >= )
-
     let%bench "(>=)" = none >= some_day
-
     let between = between
-
     let%bench "between" = between ~low:none ~high:some_day some_hour
-
     let clamp_exn = clamp_exn
-
     let%bench "clamp_exn" = clamp_exn ~min:none ~max:some_day some_hour
-
     let clamp = clamp
-
     let%bench "clamp" = clamp ~min:none ~max:some_day some_hour
-
     let validate_ubound = validate_ubound
 
     let%bench "validate_ubound (success)" =
@@ -1023,59 +766,34 @@ module Span = struct
     ;;
 
     let some = some
-
     let%bench "some" = some day
-
     let is_none = is_none
-
     let%bench "is_none" = is_none some_day
-
     let is_some = is_some
-
     let%bench "is_some" = is_some some_day
-
     let value_exn = value_exn
-
     let%bench "value_exn" = value_exn some_day
-
     let unchecked_value = unchecked_value
-
     let%bench "unchecked_value" = unchecked_value some_day
-
     let value = value
-
     let%bench "value (none)" = value none ~default:hour
     let%bench "value (some)" = value some_day ~default:hour
-
     let some_is_representable = some_is_representable
-
     let%bench "some_is_representable" = some_is_representable day
-
     let of_option = of_option
-
     let%bench "of_option" = of_option some_day_option
-
     let to_option = to_option
-
     let%bench "to_option" = to_option some_day
-
     let of_string = of_string
-
     let%bench "of_string (none)" = of_string string_of_none
     let%bench "of_string (some)" = of_string string_of_some_day
-
     let to_string = to_string
-
     let%bench "to_string (none)" = to_string none
     let%bench "to_string (some)" = to_string some_day
-
     let t_of_sexp = t_of_sexp
-
     let%bench "t_of_sexp (none)" = t_of_sexp sexp_of_none
     let%bench "t_of_sexp (some)" = t_of_sexp sexp_of_some_day
-
     let sexp_of_t = sexp_of_t
-
     let%bench "sexp_of_t (none)" = sexp_of_t none
     let%bench "sexp_of_t (some)" = sexp_of_t some_day
 
@@ -1086,11 +804,8 @@ module Span = struct
         open Optional_syntax
 
         let is_none = is_none
-
         let%bench "is_none" = is_none some_day
-
         let unsafe_value = unsafe_value
-
         let%bench "unsafe_value" = unsafe_value some_day
       end
     end
@@ -1106,26 +821,17 @@ module Span = struct
 
         let comparator = comparator
         let compare = compare
-
         let%bench "compare" = compare none some_day
-
         let t_of_sexp = t_of_sexp
-
         let%bench "t_of_sexp (none)" = t_of_sexp v1_sexp_of_none
         let%bench "t_of_sexp (some)" = t_of_sexp v1_sexp_of_some_day
-
         let sexp_of_t = sexp_of_t
-
         let%bench "sexp_of_t (none)" = sexp_of_t none
         let%bench "sexp_of_t (some)" = sexp_of_t some_day
-
         let to_int63 = to_int63
-
         let%bench "to_int63 (none)" = to_int63 none
         let%bench "to_int63 (some)" = to_int63 some_day
-
         let of_int63_exn = of_int63_exn
-
         let%bench "of_int63_exn (none)" = of_int63_exn int63_of_none
         let%bench "of_int63_exn (some)" = of_int63_exn int63_of_some_day
       end
@@ -1138,26 +844,17 @@ module Span = struct
 
         let comparator = comparator
         let compare = compare
-
         let%bench "compare" = compare none some_day
-
         let t_of_sexp = t_of_sexp
-
         let%bench "t_of_sexp (none)" = t_of_sexp sexp_of_none
         let%bench "t_of_sexp (some)" = t_of_sexp sexp_of_some_day
-
         let sexp_of_t = sexp_of_t
-
         let%bench "sexp_of_t (none)" = sexp_of_t none
         let%bench "sexp_of_t (some)" = sexp_of_t some_day
-
         let to_int63 = to_int63
-
         let%bench "to_int63 (none)" = to_int63 none
         let%bench "to_int63 (some)" = to_int63 some_day
-
         let of_int63_exn = of_int63_exn
-
         let%bench "of_int63_exn (none)" = of_int63_exn int63_of_none
         let%bench "of_int63_exn (some)" = of_int63_exn int63_of_some_day
       end
@@ -1230,117 +927,65 @@ module Ofday = struct
   open Ofday_constants
 
   let hash = hash
-
   let%bench "hash" = hash start_of_day
-
   let hash_fold_t = hash_fold_t
-
   let%bench "hash_fold_t" = hash_fold_t hash_state start_of_day
 
   module Replace_polymorphic_compare = struct
     open Replace_polymorphic_compare
 
     let compare = compare
-
     let%bench "compare" = compare start_of_day evening
-
     let equal = equal
-
     let%bench "equal" = equal start_of_day evening
-
     let min = min
-
     let%bench "min" = min start_of_day evening
-
     let max = max
-
     let%bench "max" = max start_of_day evening
-
     let ( = ) = ( = )
-
     let%bench "(=)" = start_of_day = evening
-
     let ( < ) = ( < )
-
     let%bench "(<)" = start_of_day < evening
-
     let ( > ) = ( > )
-
     let%bench "(>)" = start_of_day > evening
-
     let ( <> ) = ( <> )
-
     let%bench "(<>)" = start_of_day <> evening
-
     let ( <= ) = ( <= )
-
     let%bench "(<=)" = start_of_day <= evening
-
     let ( >= ) = ( >= )
-
     let%bench "(>=)" = start_of_day >= evening
   end
 
   let compare = compare
-
   let%bench "compare" = compare start_of_day evening
-
   let ascending = ascending
-
   let%bench "ascending" = ascending start_of_day evening
-
   let descending = descending
-
   let%bench "descending" = descending start_of_day evening
-
   let equal = equal
-
   let%bench "equal" = equal start_of_day evening
-
   let min = min
-
   let%bench "min" = min start_of_day evening
-
   let max = max
-
   let%bench "max" = max start_of_day evening
-
   let ( = ) = ( = )
-
   let%bench "(=)" = start_of_day = evening
-
   let ( < ) = ( < )
-
   let%bench "(<)" = start_of_day < evening
-
   let ( > ) = ( > )
-
   let%bench "(>)" = start_of_day > evening
-
   let ( <> ) = ( <> )
-
   let%bench "(<>)" = start_of_day <> evening
-
   let ( <= ) = ( <= )
-
   let%bench "(<=)" = start_of_day <= evening
-
   let ( >= ) = ( >= )
-
   let%bench "(>=)" = start_of_day >= evening
-
   let between = between
-
   let%bench "between" = between ~low:start_of_day ~high:evening morning
-
   let clamp_exn = clamp_exn
-
   let%bench "clamp_exn" = clamp_exn ~min:start_of_day ~max:evening morning
-
   let clamp = clamp
-
   let%bench "clamp" = clamp ~min:start_of_day ~max:evening morning
-
   let validate_ubound = validate_ubound
 
   let%bench "validate_ubound (success)" =
@@ -1373,84 +1018,46 @@ module Ofday = struct
   ;;
 
   let add_exn = add_exn
-
   let%bench "add_exn" = add_exn morning Span.hour
-
   let sub_exn = sub_exn
-
   let%bench "sub_exn" = sub_exn evening Span.hour
-
   let add = add
-
   let%bench "add" = add example Span.hour
-
   let sub = sub
-
   let%bench "sub" = sub example Span.hour
-
   let next = next
-
   let%bench "next" = next example
-
   let prev = prev
-
   let%bench "prev" = prev example
-
   let diff = diff
-
   let%bench "diff" = diff example start_of_day
-
   let small_diff = small_diff
-
   let%bench "small_diff" = small_diff example start_of_day
-
   let robustly_compare = robustly_compare
-
   let%bench "robustly_compare (<)" = robustly_compare start_of_day example
   let%bench "robustly_compare (>)" = robustly_compare example start_of_day
   let%bench "robustly_compare (=)" = robustly_compare start_of_day start_of_day
-
   let ( =. ) = ( =. )
-
   let%bench "(=.)" = start_of_day =. example
-
   let ( <. ) = ( <. )
-
   let%bench "(<.)" = start_of_day <. example
-
   let ( >. ) = ( >. )
-
   let%bench "(>.)" = start_of_day >. example
-
   let ( <=. ) = ( <=. )
-
   let%bench "(<=.)" = start_of_day <=. example
-
   let ( >=. ) = ( >=. )
-
   let%bench "(>=.)" = start_of_day >=. example
-
   let ( <>. ) = ( <>. )
-
   let%bench "(<>.)" = start_of_day <>. example
-
   let create = create
-
   let%bench "create" = create ~hr:12 ~min:34 ~sec:56 ~ms:123 ~us:456 ()
-
   let to_parts = to_parts
-
   let%bench "to_parts" = to_parts example
-
   let every = every
-
   let%bench "every" = every Span.hour ~start:start_of_day ~stop:example
-
   let now = now
-
   let%bench "now (utc)" = now ~zone:Zone.utc
   let%bench "now (local)" = now ~zone
-
   let of_ofday_float_round_nearest = of_ofday_float_round_nearest
 
   let%bench "of_ofday_float_round_nearest (midnight)" =
@@ -1544,56 +1151,39 @@ module Ofday = struct
 
   let%bench "to_span_since_start_of_day (morning)" = to_span_since_start_of_day morning
   let%bench "to_span_since_start_of_day (evening)" = to_span_since_start_of_day evening
-
   let sexp_of_t = sexp_of_t
-
   let%bench "sexp_of_t (midnight)" = sexp_of_t start_of_day
   let%bench "sexp_of_t (morning)" = sexp_of_t morning
   let%bench "sexp_of_t (evening)" = sexp_of_t evening
-
   let t_of_sexp = t_of_sexp
-
   let%bench "t_of_sexp (midnight)" = t_of_sexp sexp_of_start_of_day
   let%bench "t_of_sexp (morning)" = t_of_sexp sexp_of_morning
   let%bench "t_of_sexp (evening)" = t_of_sexp sexp_of_evening
-
   let to_string = to_string
-
   let%bench "to_string (midnight)" = to_string start_of_day
   let%bench "to_string (morning)" = to_string morning
   let%bench "to_string (evening)" = to_string evening
-
   let of_string = of_string
-
   let%bench "of_string (midnight)" = of_string string_of_start_of_day
   let%bench "of_string (morning)" = of_string string_of_morning
   let%bench "of_string (evening)" = of_string string_of_evening
-
   let to_string_trimmed = to_string_trimmed
-
   let%bench "to_string_trimmed (midnight)" = to_string_trimmed start_of_day
   let%bench "to_string_trimmed (morning)" = to_string_trimmed morning
   let%bench "to_string_trimmed (evening)" = to_string_trimmed evening
-
   let to_sec_string = to_sec_string
-
   let%bench "to_sec_string (midnight)" = to_sec_string start_of_day
   let%bench "to_sec_string (morning)" = to_sec_string morning
   let%bench "to_sec_string (evening)" = to_sec_string evening
-
   let to_millisecond_string = to_millisecond_string
   let to_millisec_string = to_millisecond_string
-
   let%bench "to_millisecond_string (midnight)" = to_millisecond_string start_of_day
   let%bench "to_millisecond_string (morning)" = to_millisecond_string morning
   let%bench "to_millisecond_string (evening)" = to_millisecond_string evening
-
   let to_microsecond_string = to_microsecond_string
-
   let%bench "to_microsecond_string (midnight)" = to_microsecond_string start_of_day
   let%bench "to_microsecond_string (morning)" = to_microsecond_string morning
   let%bench "to_microsecond_string (evening)" = to_microsecond_string evening
-
   let of_string_iso8601_extended = of_string_iso8601_extended
 
   let%bench "of_string_iso8601_extended (midnight)" =
@@ -1638,75 +1228,43 @@ module Ofday = struct
       type nonrec t = t [@@deriving bin_io]
 
       let compare = compare
-
       let%bench "compare (<)" = compare zero_utc example
       let%bench "compare (>)" = compare example zero_utc
       let%bench "compare (=)" = compare zero_utc zero_utc
-
       let equal = equal
-
       let%bench "equal (=)" = equal example example
       let%bench "equal (<>)" = equal zero_utc example
-
       let hash = hash
-
       let%bench "hash" = hash zero_utc
-
       let hash_fold_t = hash_fold_t
-
       let%bench "hash_fold_t" = hash_fold_t hash_state zero_utc
-
       let sexp_of_t = sexp_of_t
-
       let%bench "sexp_of_t" = sexp_of_t example
-
       let t_of_sexp = t_of_sexp
-
       let%bench "t_of_sexp" = t_of_sexp example_sexp
     end
 
     let hash = hash
-
     let%bench "hash" = hash zero_utc
-
     let hash_fold_t = hash_fold_t
-
     let%bench "hash_fold_t" = hash_fold_t hash_state zero_utc
-
     let create = create
-
     let%bench "create" = create Ofday_constants.example utc
-
     let create_local = create_local
-
     let%bench "create_local" = create_local Ofday_constants.example
-
     let ofday = ofday
-
     let%bench "ofday" = ofday example
-
     let zone = zone
-
     let%bench "zone" = zone example
-
     let to_time_ns = to_time_ns
-
     let%bench "to_time_ns" = to_time_ns example date
-
     let sexp_of_t = sexp_of_t
-
     let%bench "sexp_of_t" = sexp_of_t example
-
     let t_of_sexp = t_of_sexp
-
     let%bench "t_of_sexp" = t_of_sexp example_sexp
-
     let to_string = to_string
-
     let%bench "to_string" = to_string example
-
     let of_string = of_string
-
     let%bench "of_string" = of_string example_string
   end
 
@@ -1742,117 +1300,65 @@ module Ofday = struct
     open Ofday_option_constants
 
     let hash = hash
-
     let%bench "hash" = hash some_start_of_day
-
     let hash_fold_t = hash_fold_t
-
     let%bench "hash_fold_t" = hash_fold_t hash_state some_start_of_day
 
     module Replace_polymorphic_compare = struct
       open Replace_polymorphic_compare
 
       let compare = compare
-
       let%bench "compare" = compare none some_start_of_day
-
       let equal = equal
-
       let%bench "equal" = equal none some_start_of_day
-
       let min = min
-
       let%bench "min" = min none some_start_of_day
-
       let max = max
-
       let%bench "max" = max none some_start_of_day
-
       let ( = ) = ( = )
-
       let%bench "(=)" = none = some_start_of_day
-
       let ( < ) = ( < )
-
       let%bench "(<)" = none < some_start_of_day
-
       let ( > ) = ( > )
-
       let%bench "(>)" = none > some_start_of_day
-
       let ( <> ) = ( <> )
-
       let%bench "(<>)" = none <> some_start_of_day
-
       let ( <= ) = ( <= )
-
       let%bench "(<=)" = none <= some_start_of_day
-
       let ( >= ) = ( >= )
-
       let%bench "(>=)" = none >= some_start_of_day
     end
 
     let compare = compare
-
     let%bench "compare" = compare none some_start_of_day
-
     let ascending = ascending
-
     let%bench "ascending" = ascending none some_start_of_day
-
     let descending = descending
-
     let%bench "descending" = descending none some_start_of_day
-
     let equal = equal
-
     let%bench "equal" = equal none some_start_of_day
-
     let min = min
-
     let%bench "min" = min none some_start_of_day
-
     let max = max
-
     let%bench "max" = max none some_start_of_day
-
     let ( = ) = ( = )
-
     let%bench "(=)" = none = some_start_of_day
-
     let ( < ) = ( < )
-
     let%bench "(<)" = none < some_start_of_day
-
     let ( > ) = ( > )
-
     let%bench "(>)" = none > some_start_of_day
-
     let ( <> ) = ( <> )
-
     let%bench "(<>)" = none <> some_start_of_day
-
     let ( <= ) = ( <= )
-
     let%bench "(<=)" = none <= some_start_of_day
-
     let ( >= ) = ( >= )
-
     let%bench "(>=)" = none >= some_start_of_day
-
     let between = between
-
     let%bench "between" = between ~low:none ~high:some_morning some_evening
-
     let clamp_exn = clamp_exn
-
     let%bench "clamp_exn" = clamp_exn ~min:none ~max:some_morning some_evening
-
     let clamp = clamp
-
     let%bench "clamp" = clamp ~min:none ~max:some_morning some_evening
-
     let validate_ubound = validate_ubound
 
     let%bench "validate_ubound (success)" =
@@ -1884,62 +1390,36 @@ module Ofday = struct
     ;;
 
     let some = some
-
     let%bench "some" = some start_of_day
-
     let is_none = is_none
-
     let%bench "is_none" = is_none some_start_of_day
-
     let is_some = is_some
-
     let%bench "is_some" = is_some some_start_of_day
-
     let value_exn = value_exn
-
     let%bench "value_exn" = value_exn some_start_of_day
-
     let unchecked_value = unchecked_value
-
     let%bench "unchecked_value" = unchecked_value some_start_of_day
-
     let value = value
-
     let%bench "value (none)" = value none ~default:start_of_day
     let%bench "value (some)" = value some_start_of_day ~default:start_of_day
-
     let some_is_representable = some_is_representable
-
     let%bench "some_is_representable" = some_is_representable start_of_day
-
     let of_option = of_option
-
     let%bench "of_option" = of_option some_start_of_day_option
-
     let to_option = to_option
-
     let%bench "to_option" = to_option some_start_of_day
-
     let sexp_of_t = sexp_of_t
-
     let%bench "sexp_of_t (none)" = sexp_of_t none
     let%bench "sexp_of_t (some)" = sexp_of_t some_start_of_day
-
     let t_of_sexp = t_of_sexp
-
     let%bench "t_of_sexp (none)" = t_of_sexp sexp_of_none
     let%bench "t_of_sexp (some)" = t_of_sexp sexp_of_some_start_of_day
-
     let to_string = to_string
-
     let%bench "to_string (none)" = to_string none
     let%bench "to_string (some)" = to_string some_start_of_day
-
     let of_string = of_string
-
     let%bench "of_string (none)" = of_string string_of_none
     let%bench "of_string (some)" = of_string string_of_some_start_of_day
-
     let of_span_since_start_of_day = of_span_since_start_of_day
 
     let%bench "of_span_since_start_of_day (midnight)" =
@@ -1969,11 +1449,8 @@ module Ofday = struct
         open Optional_syntax
 
         let is_none = is_none
-
         let%bench "is_none" = is_none some_start_of_day
-
         let unsafe_value = unsafe_value
-
         let%bench "unsafe_value" = unsafe_value some_start_of_day
       end
     end
@@ -1989,26 +1466,17 @@ module Ofday = struct
 
         let comparator = comparator
         let compare = compare
-
         let%bench "compare" = compare none some_start_of_day
-
         let sexp_of_t = sexp_of_t
-
         let%bench "sexp_of_t (none)" = sexp_of_t none
         let%bench "sexp_of_t (some)" = sexp_of_t some_start_of_day
-
         let t_of_sexp = t_of_sexp
-
         let%bench "t_of_sexp (none)" = t_of_sexp sexp_of_none
         let%bench "t_of_sexp (some)" = t_of_sexp sexp_of_some_start_of_day
-
         let to_int63 = to_int63
-
         let%bench "to_int63 (none)" = to_int63 none
         let%bench "to_int63 (some)" = to_int63 some_start_of_day
-
         let of_int63_exn = of_int63_exn
-
         let%bench "of_int63_exn (none)" = of_int63_exn int63_of_none
         let%bench "of_int63_exn (some)" = of_int63_exn int63_of_some_start_of_day
       end
@@ -2150,105 +1618,59 @@ end
 open Time_constants
 
 let hash = hash
-
 let%bench "hash" = hash epoch
-
 let hash_fold_t = hash_fold_t
-
 let%bench "hash_fold_t" = hash_fold_t hash_state epoch
 
 module Replace_polymorphic_compare = struct
   open Replace_polymorphic_compare
 
   let compare = compare
-
   let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
   let equal = equal
-
   let%bench "equal" = equal min_value_for_1us_rounding max_value_for_1us_rounding
-
   let min = min
-
   let%bench "min" = min min_value_for_1us_rounding max_value_for_1us_rounding
-
   let max = max
-
   let%bench "max" = max min_value_for_1us_rounding max_value_for_1us_rounding
-
   let ( = ) = ( = )
-
   let%bench "(=)" = min_value_for_1us_rounding = max_value_for_1us_rounding
-
   let ( < ) = ( < )
-
   let%bench "(<)" = min_value_for_1us_rounding < max_value_for_1us_rounding
-
   let ( > ) = ( > )
-
   let%bench "(>)" = min_value_for_1us_rounding > max_value_for_1us_rounding
-
   let ( <> ) = ( <> )
-
   let%bench "(<>)" = min_value_for_1us_rounding <> max_value_for_1us_rounding
-
   let ( <= ) = ( <= )
-
   let%bench "(<=)" = min_value_for_1us_rounding <= max_value_for_1us_rounding
-
   let ( >= ) = ( >= )
-
   let%bench "(>=)" = min_value_for_1us_rounding >= max_value_for_1us_rounding
 end
 
 let compare = compare
-
 let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
 let ascending = ascending
-
 let%bench "ascending" = ascending min_value_for_1us_rounding max_value_for_1us_rounding
-
 let descending = descending
-
 let%bench "descending" = descending min_value_for_1us_rounding max_value_for_1us_rounding
-
 let equal = equal
-
 let%bench "equal" = equal min_value_for_1us_rounding max_value_for_1us_rounding
-
 let min = min
-
 let%bench "min" = min min_value_for_1us_rounding max_value_for_1us_rounding
-
 let max = max
-
 let%bench "max" = max min_value_for_1us_rounding max_value_for_1us_rounding
-
 let ( = ) = ( = )
-
 let%bench "(=)" = min_value_for_1us_rounding = max_value_for_1us_rounding
-
 let ( < ) = ( < )
-
 let%bench "(<)" = min_value_for_1us_rounding < max_value_for_1us_rounding
-
 let ( > ) = ( > )
-
 let%bench "(>)" = min_value_for_1us_rounding > max_value_for_1us_rounding
-
 let ( <> ) = ( <> )
-
 let%bench "(<>)" = min_value_for_1us_rounding <> max_value_for_1us_rounding
-
 let ( <= ) = ( <= )
-
 let%bench "(<=)" = min_value_for_1us_rounding <= max_value_for_1us_rounding
-
 let ( >= ) = ( >= )
-
 let%bench "(>=)" = min_value_for_1us_rounding >= max_value_for_1us_rounding
-
 let is_earlier = is_earlier
 
 let%bench "is_earlier" =
@@ -2318,13 +1740,9 @@ let%bench "validate_bound (failure)" =
 ;;
 
 let to_time_float_round_nearest = to_time_float_round_nearest
-
 let%bench "to_time_float_round_nearest" = to_time_float_round_nearest epoch
-
 let of_time_float_round_nearest = of_time_float_round_nearest
-
 let%bench "of_time_float_round_nearest" = of_time_float_round_nearest epoch_time
-
 let to_time = to_time_float_round_nearest_microsecond
 let to_time_float_round_nearest_microsecond = to_time_float_round_nearest_microsecond
 
@@ -2340,65 +1758,36 @@ let%bench "of_time_float_round_nearest_microsecond" =
 ;;
 
 let now = now
-
 let%bench "now" = now ()
-
 let add = add
-
 let%bench "add" = add epoch Span.day
-
 let sub = sub
-
 let%bench "sub" = sub epoch Span.day
-
 let add_saturating = add_saturating
-
 let%bench "add_saturating (ok)" = add epoch Span.day
 let%bench "add_saturating (saturates)" = add max_value_representable Span.day
-
 let sub_saturating = sub_saturating
-
 let%bench "sub_saturating (ok)" = sub epoch Span.day
 let%bench "sub_saturating (saturates)" = sub min_value_representable Span.day
-
 let next = next
-
 let%bench "next" = next example
-
 let prev = prev
-
 let%bench "prev" = prev example
-
 let diff = diff
-
 let%bench "diff" = diff dst_t no_dst_t
-
 let abs_diff = abs_diff
-
 let%bench "abs_diff" = abs_diff dst_t no_dst_t
-
 let to_span_since_epoch = to_span_since_epoch
-
 let%bench "to_span_since_epoch" = to_span_since_epoch max_value_for_1us_rounding
-
 let of_span_since_epoch = of_span_since_epoch
-
 let%bench "of_span_since_epoch" = of_span_since_epoch Span.day
-
 let to_int63_ns_since_epoch = to_int63_ns_since_epoch
-
 let%bench "to_int63_ns_since_epoch" = to_int63_ns_since_epoch max_value_for_1us_rounding
-
 let of_int63_ns_since_epoch = of_int63_ns_since_epoch
-
 let%bench "of_int63_ns_since_epoch" = of_int63_ns_since_epoch int63_ten
-
 let to_int_ns_since_epoch = to_int_ns_since_epoch
-
 let%bench "to_int_ns_since_epoch" = to_int_ns_since_epoch max_value_for_1us_rounding
-
 let of_int_ns_since_epoch = of_int_ns_since_epoch
-
 let%bench "of_int_ns_since_epoch" = of_int_ns_since_epoch int_ten
 
 (* Basically any function that uses zones (not just these) uses a zone cache too, so we're
@@ -2419,7 +1808,6 @@ let%bench "of_date_ofday (e?t)" =
 ;;
 
 let%bench "of_date_ofday (n/a)" = of_date_ofday ~zone:nyc nyc_skip_date nyc_skip_ofday
-
 let of_date_ofday_precise = of_date_ofday_precise
 
 let%bench "of_date_ofday_precise (est)" =
@@ -2441,7 +1829,6 @@ let%bench "of_date_ofday_precise (n/a)" =
 (* These benchmarks use the date cache (see [reset_date_cache]). There are benchmarks
    that bypass the cache in bench_zone.ml. *)
 let to_date_ofday = to_date_ofday
-
 let%bench "to_date_ofday (est)" = to_date_ofday ~zone:nyc nyc_winter_time
 let%bench "to_date_ofday (edt)" = to_date_ofday ~zone:nyc nyc_summer_time
 let%bench "to_date_ofday (e?t)" = to_date_ofday ~zone:nyc nyc_transition_time
@@ -2449,7 +1836,6 @@ let%bench "to_date_ofday (e?t)" = to_date_ofday ~zone:nyc nyc_transition_time
 (* The following three functions build on [to_date_ofday] so have the same caching
    caveats. *)
 let to_date_ofday_precise = to_date_ofday_precise
-
 let%bench "to_date_ofday_precise (est)" = to_date_ofday_precise ~zone:nyc nyc_winter_time
 let%bench "to_date_ofday_precise (edt)" = to_date_ofday_precise ~zone:nyc nyc_summer_time
 
@@ -2458,17 +1844,13 @@ let%bench "to_date_ofday_precise (e?t)" =
 ;;
 
 let to_date = to_date
-
 let%bench "to_date (utc)" = to_date epoch ~zone:Zone.utc
 let%bench "to_date (w/ dst)" = to_date dst_t ~zone
 let%bench "to_date (w/o dst)" = to_date no_dst_t ~zone
-
 let to_ofday = to_ofday
-
 let%bench "to_ofday (utc)" = to_ofday epoch ~zone:Zone.utc
 let%bench "to_ofday (w/ dst)" = to_ofday dst_t ~zone
 let%bench "to_ofday (w/o dst)" = to_ofday no_dst_t ~zone
-
 let of_date_ofday_zoned = of_date_ofday_zoned
 
 let%bench "of_date_ofday_zoned" =
@@ -2476,19 +1858,14 @@ let%bench "of_date_ofday_zoned" =
 ;;
 
 let to_date_ofday_zoned = to_date_ofday_zoned
-
 let%bench "to_date_ofday_zoned (est)" = to_date_ofday_zoned nyc_winter_time ~zone:nyc
-
 let to_ofday_zoned = to_ofday_zoned
-
 let%bench "to_ofday_zoned (est)" = to_ofday_zoned nyc_winter_time ~zone:nyc
 
 (* This function is only meant for use in benchmarks: slowing it down doesn't matter in
    itself but seems important to know about for the interpretation of other benchmarks. *)
 let reset_date_cache = reset_date_cache
-
 let%bench "reset_date_cache" = reset_date_cache ()
-
 let convert = convert
 
 let%bench "convert" =
@@ -2496,9 +1873,7 @@ let%bench "convert" =
 ;;
 
 let utc_offset = utc_offset
-
 let%bench "utc_offset" = utc_offset example ~zone:Zone.utc
-
 let next_multiple = next_multiple
 
 let%bench "next_multiple" =
@@ -2518,57 +1893,36 @@ let%bench "occurrence" =
 ;;
 
 let set_sexp_zone = set_sexp_zone
-
 let%bench "set_sexp_zone" = set_sexp_zone zone_for_sexp
-
 let get_sexp_zone = get_sexp_zone
-
 let%bench "get_sexp_zone" = get_sexp_zone ()
-
 let random = random
-
 let%bench "random" = random ()
-
 let sexp_of_t = sexp_of_t
-
 let%bench "sexp_of_t (epoch)" = sexp_of_t epoch
 let%bench "sexp_of_t (w/ dst)" = sexp_of_t dst_t
 let%bench "sexp_of_t (w/o dst)" = sexp_of_t no_dst_t
-
 let t_of_sexp = t_of_sexp
-
 let%bench "t_of_sexp (epoch)" = t_of_sexp sexp_of_epoch
 let%bench "t_of_sexp (w/ dst)" = t_of_sexp sexp_of_dst_t
 let%bench "t_of_sexp (w/o dst)" = t_of_sexp sexp_of_no_dst_t
-
 let sexp_of_t_abs = sexp_of_t_abs
-
 let%bench "sexp_of_t_abs" = sexp_of_t_abs ~zone:Zone.utc example
-
 let t_of_sexp_abs = t_of_sexp_abs
-
 let%bench "t_of_sexp_abs" = t_of_sexp_abs example_sexp
-
 let to_string = to_string
-
 let%bench "to_string (epoch)" = to_string epoch
 let%bench "to_string (w/ dst)" = to_string dst_t
 let%bench "to_string (w/o dst)" = to_string no_dst_t
-
 let to_string_utc = to_string_utc
-
 let%bench "to_string_utc (epoch)" = to_string_utc epoch
 let%bench "to_string_utc (w/ dst)" = to_string_utc dst_t
 let%bench "to_string_utc (w/o dst)" = to_string_utc no_dst_t
-
 let of_string = of_string
-
 let%bench "of_string (epoch)" = of_string string_of_epoch
 let%bench "of_string (w/ dst)" = of_string string_of_dst_t
 let%bench "of_string (w/o dst)" = of_string string_of_no_dst_t
-
 let of_string_with_utc_offset = of_string_with_utc_offset
-
 let%bench "of_string_with_utc_offset (epoch)" = of_string_with_utc_offset string_of_epoch
 let%bench "of_string_with_utc_offset (w/ dst)" = of_string_with_utc_offset string_of_dst_t
 
@@ -2577,17 +1931,13 @@ let%bench "of_string_with_utc_offset (w/o dst)" =
 ;;
 
 let to_sec_string = to_sec_string
-
 let%bench "to_sec_string (utc)" = to_sec_string ~zone:Zone.utc epoch
 let%bench "to_sec_string (w/ dst)" = to_sec_string ~zone dst_t
 let%bench "to_sec_string (w/o dst)" = to_sec_string ~zone no_dst_t
-
 let to_sec_string_with_zone = to_sec_string_with_zone
-
 let%bench "to_sec_string_with_zone (utc)" = to_sec_string_with_zone ~zone:Zone.utc epoch
 let%bench "to_sec_string_with_zone (w/ dst)" = to_sec_string_with_zone ~zone dst_t
 let%bench "to_sec_string_with_zone (w/o dst)" = to_sec_string_with_zone ~zone no_dst_t
-
 let of_localized_string = of_localized_string
 
 let%bench "of_localized_string" =
@@ -2595,15 +1945,11 @@ let%bench "of_localized_string" =
 ;;
 
 let of_string_gen = of_string_gen
-
 let%bench "of_string_gen" = of_string_gen ~if_no_timezone:`Local example_string
-
 let to_filename_string = to_filename_string
-
 let%bench "to_filename_string (utc)" = to_filename_string ~zone:Zone.utc epoch
 let%bench "to_filename_string (w/ dst)" = to_filename_string ~zone dst_t
 let%bench "to_filename_string (w/o dst)" = to_filename_string ~zone no_dst_t
-
 let of_filename_string = of_filename_string
 
 let%bench "of_filename_string (utc)" =
@@ -2619,41 +1965,26 @@ let%bench "of_filename_string (w/o dst)" =
 ;;
 
 let to_string_trimmed = to_string_trimmed
-
 let%bench "to_string_trimmed" = to_string_trimmed ~zone:Zone.utc example
-
 let to_string_abs = to_string_abs
-
 let%bench "to_string_abs (utc)" = to_string_abs ~zone:Zone.utc epoch
 let%bench "to_string_abs (w/ dst)" = to_string_abs ~zone dst_t
 let%bench "to_string_abs (w/o dst)" = to_string_abs ~zone no_dst_t
-
 let of_string_abs = of_string_abs
-
 let%bench "of_string_abs (utc)" = of_string_abs abs_string_of_epoch
 let%bench "of_string_abs (w/ dst)" = of_string_abs abs_string_of_dst_t
 let%bench "of_string_abs (w/o dst)" = of_string_abs abs_string_of_no_dst_t
-
 let to_string_abs_trimmed = to_string_abs_trimmed
-
 let%bench "to_string_abs_trimmed" = to_string_abs_trimmed ~zone:Zone.utc example
-
 let to_string_abs_parts = to_string_abs_parts
-
 let%bench "to_string_abs_parts" = to_string_abs_parts ~zone:Zone.utc example
-
 let to_string_iso8601_basic = to_string_iso8601_basic
-
 let%bench "to_string_iso8601_basic" = to_string_iso8601_basic ~zone:Zone.utc example
-
 let to_string_fix_proto = to_string_fix_proto
-
 let%bench "to_string_fix_proto (utc)" = to_string_fix_proto `Utc epoch
 let%bench "to_string_fix_proto (w/ dst)" = to_string_fix_proto `Local dst_t
 let%bench "to_string_fix_proto (w/o dst)" = to_string_fix_proto `Local no_dst_t
-
 let of_string_fix_proto = of_string_fix_proto
-
 let%bench "of_string_fix_proto (utc)" = of_string_fix_proto `Utc fix_utc_string_of_epoch
 
 let%bench "of_string_fix_proto (w/ dst)" =
@@ -2665,11 +1996,8 @@ let%bench "of_string_fix_proto (w/o dst)" =
 ;;
 
 let format = format
-
 let%bench "format" = format example "%F %T%z" ~zone:Zone.utc
-
 let parse = parse
-
 let%bench "parse" = parse example_formatted ~fmt:"%F %T%z" ~zone:Zone.utc
 
 module Utc = struct
@@ -2698,29 +2026,17 @@ module Alternate_sexp = struct
 
   let comparator = comparator
   let sexp_of_t = sexp_of_t
-
   let%bench "sexp_of_t" = sexp_of_t epoch
-
   let t_of_sexp = t_of_sexp
-
   let%bench "t_of_sexp" = t_of_sexp sexp_of_epoch
-
   let hash = hash
-
   let%bench "hash" = hash epoch
-
   let hash_fold_t = hash_fold_t
-
   let%bench "hash_fold_t" = hash_fold_t hash_state epoch
-
   let compare = compare
-
   let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
   let ascending = ascending
-
   let%bench "ascending" = ascending min_value_for_1us_rounding max_value_for_1us_rounding
-
   let descending = descending
 
   let%bench "descending" =
@@ -2728,41 +2044,23 @@ module Alternate_sexp = struct
   ;;
 
   let equal = equal
-
   let%bench "equal" = equal min_value_for_1us_rounding max_value_for_1us_rounding
-
   let min = min
-
   let%bench "min" = min min_value_for_1us_rounding max_value_for_1us_rounding
-
   let max = max
-
   let%bench "max" = max min_value_for_1us_rounding max_value_for_1us_rounding
-
   let ( = ) = ( = )
-
   let%bench "(=)" = min_value_for_1us_rounding = max_value_for_1us_rounding
-
   let ( < ) = ( < )
-
   let%bench "(<)" = min_value_for_1us_rounding < max_value_for_1us_rounding
-
   let ( > ) = ( > )
-
   let%bench "(>)" = min_value_for_1us_rounding > max_value_for_1us_rounding
-
   let ( <> ) = ( <> )
-
   let%bench "(<>)" = min_value_for_1us_rounding <> max_value_for_1us_rounding
-
   let ( <= ) = ( <= )
-
   let%bench "(<=)" = min_value_for_1us_rounding <= max_value_for_1us_rounding
-
   let ( >= ) = ( >= )
-
   let%bench "(>=)" = min_value_for_1us_rounding >= max_value_for_1us_rounding
-
   let between = between
 
   let%bench "between" =
@@ -2823,43 +2121,24 @@ module Alternate_sexp = struct
     open Replace_polymorphic_compare
 
     let compare = compare
-
     let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
     let equal = equal
-
     let%bench "equal" = equal min_value_for_1us_rounding max_value_for_1us_rounding
-
     let min = min
-
     let%bench "min" = min min_value_for_1us_rounding max_value_for_1us_rounding
-
     let max = max
-
     let%bench "max" = max min_value_for_1us_rounding max_value_for_1us_rounding
-
     let ( = ) = ( = )
-
     let%bench "(=)" = min_value_for_1us_rounding = max_value_for_1us_rounding
-
     let ( < ) = ( < )
-
     let%bench "(<)" = min_value_for_1us_rounding < max_value_for_1us_rounding
-
     let ( > ) = ( > )
-
     let%bench "(>)" = min_value_for_1us_rounding > max_value_for_1us_rounding
-
     let ( <> ) = ( <> )
-
     let%bench "(<>)" = min_value_for_1us_rounding <> max_value_for_1us_rounding
-
     let ( <= ) = ( <= )
-
     let%bench "(<=)" = min_value_for_1us_rounding <= max_value_for_1us_rounding
-
     let ( >= ) = ( >= )
-
     let%bench "(>=)" = min_value_for_1us_rounding >= max_value_for_1us_rounding
   end
 end
@@ -2898,117 +2177,65 @@ module Option = struct
   open Time_option_constants
 
   let hash = hash
-
   let%bench "hash" = hash some_epoch
-
   let hash_fold_t = hash_fold_t
-
   let%bench "hash_fold_t" = hash_fold_t hash_state some_epoch
 
   module Replace_polymorphic_compare = struct
     open Replace_polymorphic_compare
 
     let compare = compare
-
     let%bench "compare" = compare none some_epoch
-
     let equal = equal
-
     let%bench "equal" = equal none some_epoch
-
     let min = min
-
     let%bench "min" = min none some_epoch
-
     let max = max
-
     let%bench "max" = max none some_epoch
-
     let ( = ) = ( = )
-
     let%bench "(=)" = none = some_epoch
-
     let ( < ) = ( < )
-
     let%bench "(<)" = none < some_epoch
-
     let ( > ) = ( > )
-
     let%bench "(>)" = none > some_epoch
-
     let ( <> ) = ( <> )
-
     let%bench "(<>)" = none <> some_epoch
-
     let ( <= ) = ( <= )
-
     let%bench "(<=)" = none <= some_epoch
-
     let ( >= ) = ( >= )
-
     let%bench "(>=)" = none >= some_epoch
   end
 
   let compare = compare
-
   let%bench "compare" = compare none some_epoch
-
   let ascending = ascending
-
   let%bench "ascending" = ascending none some_epoch
-
   let descending = descending
-
   let%bench "descending" = descending none some_epoch
-
   let equal = equal
-
   let%bench "equal" = equal none some_epoch
-
   let min = min
-
   let%bench "min" = min none some_epoch
-
   let max = max
-
   let%bench "max" = max none some_epoch
-
   let ( = ) = ( = )
-
   let%bench "(=)" = none = some_epoch
-
   let ( < ) = ( < )
-
   let%bench "(<)" = none < some_epoch
-
   let ( > ) = ( > )
-
   let%bench "(>)" = none > some_epoch
-
   let ( <> ) = ( <> )
-
   let%bench "(<>)" = none <> some_epoch
-
   let ( <= ) = ( <= )
-
   let%bench "(<=)" = none <= some_epoch
-
   let ( >= ) = ( >= )
-
   let%bench "(>=)" = none >= some_epoch
-
   let between = between
-
   let%bench "between" = between ~low:none ~high:some_epoch some_dst_t
-
   let clamp_exn = clamp_exn
-
   let%bench "clamp_exn" = clamp_exn ~min:none ~max:some_epoch some_dst_t
-
   let clamp = clamp
-
   let%bench "clamp" = clamp ~min:none ~max:some_epoch some_dst_t
-
   let validate_ubound = validate_ubound
 
   let%bench "validate_ubound (success)" =
@@ -3040,62 +2267,37 @@ module Option = struct
   ;;
 
   let some = some
-
   let%bench "some" = some epoch
-
   let is_none = is_none
-
   let%bench "is_none" = is_none some_epoch
-
   let is_some = is_some
-
   let%bench "is_some" = is_some some_epoch
-
   let value_exn = value_exn
-
   let%bench "value_exn" = value_exn some_epoch
-
   let unchecked_value = unchecked_value
-
   let%bench "unchecked_value" = unchecked_value some_epoch
-
   let value = value
-
   let%bench "value (none)" = value none ~default:min_value_for_1us_rounding
   let%bench "value (some)" = value some_epoch ~default:min_value_for_1us_rounding
-
   let some_is_representable = some_is_representable
-
   let%bench "some_is_representable" = some_is_representable epoch
-
   let of_option = of_option
-
   let%bench "of_option" = of_option some_epoch_option
-
   let to_option = to_option
-
   let%bench "to_option" = to_option some_epoch
-
   let sexp_of_t = sexp_of_t
-
   let%bench "sexp_of_t (none)" = sexp_of_t none
   let%bench "sexp_of_t (w/ dst)" = sexp_of_t some_dst_t
   let%bench "sexp_of_t (w/o dst)" = sexp_of_t some_no_dst_t
-
   let t_of_sexp = t_of_sexp
-
   let%bench "t_of_sexp (none)" = t_of_sexp sexp_of_none
   let%bench "t_of_sexp (w/ dst)" = t_of_sexp sexp_of_some_dst_t
   let%bench "t_of_sexp (w/o dst)" = t_of_sexp sexp_of_some_no_dst_t
-
   let to_string = to_string
-
   let%bench "to_string (none)" = to_string none
   let%bench "to_string (w/ dst)" = to_string some_dst_t
   let%bench "to_string (w/o dst)" = to_string some_no_dst_t
-
   let of_string = of_string
-
   let%bench "of_string (none)" = of_string string_of_none
   let%bench "of_string (w/ dst)" = of_string string_of_some_dst_t
   let%bench "of_string (w/o dst)" = of_string string_of_some_no_dst_t
@@ -3107,11 +2309,8 @@ module Option = struct
       open Optional_syntax
 
       let is_none = is_none
-
       let%bench "is_none" = is_none some_epoch
-
       let unsafe_value = unsafe_value
-
       let%bench "unsafe_value" = unsafe_value some_epoch
     end
   end
@@ -3127,28 +2326,19 @@ module Option = struct
 
       let comparator = comparator
       let compare = compare
-
       let%bench "compare" = compare none some_epoch
-
       let sexp_of_t = sexp_of_t
-
       let%bench "sexp_of_t (none)" = sexp_of_t none
       let%bench "sexp_of_t (w/ dst)" = sexp_of_t some_dst_t
       let%bench "sexp_of_t (w/o dst)" = sexp_of_t some_no_dst_t
-
       let t_of_sexp = t_of_sexp
-
       let%bench "t_of_sexp (none)" = t_of_sexp sexp_of_none
       let%bench "t_of_sexp (w/ dst)" = t_of_sexp sexp_of_some_dst_t
       let%bench "t_of_sexp (w/o dst)" = t_of_sexp sexp_of_some_no_dst_t
-
       let to_int63 = to_int63
-
       let%bench "to_int63 (none)" = to_int63 none
       let%bench "to_int63 (some)" = to_int63 some_epoch
-
       let of_int63_exn = of_int63_exn
-
       let%bench "of_int63_exn (none)" = of_int63_exn int63_of_none
       let%bench "of_int63_exn (some)" = of_int63_exn int63_of_some_epoch
     end
@@ -3166,29 +2356,18 @@ module Stable = struct
 
     let comparator = comparator
     let compare = compare
-
     let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
     let equal = equal
-
     let%bench "equal" = equal min_value_for_1us_rounding max_value_for_1us_rounding
-
     let sexp_of_t = sexp_of_t
-
     let%bench "sexp_of_t (w/ dst)" = sexp_of_t dst_t
     let%bench "sexp_of_t (w/o dst)" = sexp_of_t no_dst_t
-
     let t_of_sexp = t_of_sexp
-
     let%bench "t_of_sexp (w/ dst)" = t_of_sexp sexp_of_dst_t
     let%bench "t_of_sexp (w/o dst)" = t_of_sexp sexp_of_no_dst_t
-
     let to_int63 = to_int63
-
     let%bench "to_int63" = to_int63 epoch
-
     let of_int63_exn = of_int63_exn
-
     let%bench "of_int63_exn" = of_int63_exn int63_of_epoch
   end
 
@@ -3209,28 +2388,19 @@ module Stable = struct
 
       let comparator = comparator
       let compare = compare
-
       let%bench "compare" = compare none some_epoch
-
       let sexp_of_t = sexp_of_t
-
       let%bench "sexp_of_t (none)" = sexp_of_t none
       let%bench "sexp_of_t (w/ dst)" = sexp_of_t some_dst_t
       let%bench "sexp_of_t (w/o dst)" = sexp_of_t some_no_dst_t
-
       let t_of_sexp = t_of_sexp
-
       let%bench "t_of_sexp (none)" = t_of_sexp sexp_of_none
       let%bench "t_of_sexp (w/ dst)" = t_of_sexp sexp_of_some_dst_t
       let%bench "t_of_sexp (w/o dst)" = t_of_sexp sexp_of_some_no_dst_t
-
       let to_int63 = to_int63
-
       let%bench "to_int63 (none)" = to_int63 none
       let%bench "to_int63 (some)" = to_int63 some_epoch
-
       let of_int63_exn = of_int63_exn
-
       let%bench "of_int63_exn (none)" = of_int63_exn int63_of_none
       let%bench "of_int63_exn (some)" = of_int63_exn int63_of_some_epoch
     end
@@ -3247,15 +2417,10 @@ module Stable = struct
 
       let comparator = comparator
       let compare = compare
-
       let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
       let equal = equal
-
       let%bench "equal" = equal zero zero
-
       let sexp_of_t = sexp_of_t
-
       let%bench "sexp_of_t (s)" = sexp_of_t second
       let%bench "sexp_of_t (ns+)" = sexp_of_t pi_nanoseconds
       let%bench "sexp_of_t (us+)" = sexp_of_t pi_microseconds
@@ -3265,9 +2430,7 @@ module Stable = struct
       let%bench "sexp_of_t (h+)" = sexp_of_t pi_hours
       let%bench "sexp_of_t (d+)" = sexp_of_t pi_days
       let%bench "sexp_of_t (kd+)" = sexp_of_t pi_kilodays
-
       let t_of_sexp = t_of_sexp
-
       let%bench "t_of_sexp (s)" = t_of_sexp v1_sexp_of_second
       let%bench "t_of_sexp (ns+)" = t_of_sexp v1_sexp_of_pi_nanoseconds
       let%bench "t_of_sexp (us+)" = t_of_sexp v1_sexp_of_pi_microseconds
@@ -3278,13 +2441,9 @@ module Stable = struct
       let%bench "t_of_sexp (d+)" = t_of_sexp v1_sexp_of_pi_days
       let%bench "t_of_sexp (kd+)" = t_of_sexp v1_sexp_of_pi_kilodays
       let%bench "t_of_sexp (d.)" = t_of_sexp sexp_of_decimal_pi_days
-
       let to_int63 = to_int63
-
       let%bench "to_int63" = to_int63 day
-
       let of_int63_exn = of_int63_exn
-
       let%bench "of_int63_exn" = of_int63_exn int63_ten
     end
 
@@ -3300,41 +2459,26 @@ module Stable = struct
 
       let comparator = comparator
       let compare = compare
-
       let%bench "compare" = compare min_value_for_1us_rounding max_value_for_1us_rounding
-
       let equal = equal
-
       let%bench "equal" = compare zero zero
-
       let sexp_of_t = sexp_of_t
-
       let%bench "sexp_of_t (s)" = sexp_of_t second
       let%bench "sexp_of_t (kd+)" = sexp_of_t pi_kilodays
-
       let t_of_sexp = t_of_sexp
-
       let%bench "t_of_sexp (s)" = t_of_sexp sexp_of_second
       let%bench "t_of_sexp (kd+)" = t_of_sexp sexp_of_pi_kilodays
       let%bench "t_of_sexp (d.)" = t_of_sexp sexp_of_decimal_pi_days
-
       let to_string = to_string
-
       let%bench "to_string (s)" = to_string second
       let%bench "to_string (kd+)" = to_string pi_kilodays
-
       let of_string = of_string
-
       let%bench "of_string (s)" = of_string string_of_second
       let%bench "of_string (kd+)" = of_string string_of_pi_kilodays
       let%bench "of_string (d.)" = of_string string_of_decimal_pi_days
-
       let to_int63 = to_int63
-
       let%bench "to_int63" = to_int63 day
-
       let of_int63_exn = of_int63_exn
-
       let%bench "of_int63_exn" = of_int63_exn int63_ten
     end
 
@@ -3349,26 +2493,17 @@ module Stable = struct
 
         let comparator = comparator
         let compare = compare
-
         let%bench "compare" = compare none some_day
-
         let t_of_sexp = t_of_sexp
-
         let%bench "t_of_sexp (none)" = t_of_sexp v1_sexp_of_none
         let%bench "t_of_sexp (some)" = t_of_sexp v1_sexp_of_some_day
-
         let sexp_of_t = sexp_of_t
-
         let%bench "sexp_of_t (none)" = sexp_of_t none
         let%bench "sexp_of_t (some)" = sexp_of_t some_day
-
         let to_int63 = to_int63
-
         let%bench "to_int63 (none)" = to_int63 none
         let%bench "to_int63 (some)" = to_int63 some_day
-
         let of_int63_exn = of_int63_exn
-
         let%bench "of_int63_exn (none)" = of_int63_exn int63_of_none
         let%bench "of_int63_exn (some)" = of_int63_exn int63_of_some_day
       end
@@ -3383,26 +2518,17 @@ module Stable = struct
 
         let comparator = comparator
         let compare = compare
-
         let%bench "compare" = compare none some_day
-
         let t_of_sexp = t_of_sexp
-
         let%bench "t_of_sexp (none)" = t_of_sexp sexp_of_none
         let%bench "t_of_sexp (some)" = t_of_sexp sexp_of_some_day
-
         let sexp_of_t = sexp_of_t
-
         let%bench "sexp_of_t (none)" = sexp_of_t none
         let%bench "sexp_of_t (some)" = sexp_of_t some_day
-
         let to_int63 = to_int63
-
         let%bench "to_int63 (none)" = to_int63 none
         let%bench "to_int63 (some)" = to_int63 some_day
-
         let of_int63_exn = of_int63_exn
-
         let%bench "of_int63_exn (none)" = of_int63_exn int63_of_none
         let%bench "of_int63_exn (some)" = of_int63_exn int63_of_some_day
       end
@@ -3420,27 +2546,18 @@ module Stable = struct
 
       let comparator = comparator
       let compare = compare
-
       let%bench "compare" = compare start_of_day evening
-
       let sexp_of_t = sexp_of_t
-
       let%bench "sexp_of_t (midnight)" = sexp_of_t start_of_day
       let%bench "sexp_of_t (morning)" = sexp_of_t morning
       let%bench "sexp_of_t (evening)" = sexp_of_t evening
-
       let t_of_sexp = t_of_sexp
-
       let%bench "t_of_sexp (midnight)" = t_of_sexp sexp_of_start_of_day
       let%bench "t_of_sexp (morning)" = t_of_sexp sexp_of_morning
       let%bench "t_of_sexp (evening)" = t_of_sexp sexp_of_evening
-
       let to_int63 = to_int63
-
       let%bench "to_int63" = to_int63 start_of_day
-
       let of_int63_exn = of_int63_exn
-
       let%bench "of_int63_exn" = of_int63_exn int63_of_start_of_day
     end
 
@@ -3453,25 +2570,16 @@ module Stable = struct
         type nonrec t = t [@@deriving bin_io, stable_witness]
 
         let compare = compare
-
         let%bench "compare (<)" = compare zero_utc example
         let%bench "compare (>)" = compare example zero_utc
         let%bench "compare (=)" = compare zero_utc zero_utc
-
         let hash = hash
-
         let%bench "hash" = hash zero_utc
-
         let hash_fold_t = hash_fold_t
-
         let%bench "hash_fold_t" = hash_fold_t hash_state zero_utc
-
         let sexp_of_t = sexp_of_t
-
         let%bench "sexp_of_t" = sexp_of_t example
-
         let t_of_sexp = t_of_sexp
-
         let%bench "t_of_sexp" = t_of_sexp example_sexp
       end
     end
@@ -3487,26 +2595,17 @@ module Stable = struct
 
         let comparator = comparator
         let compare = compare
-
         let%bench "compare" = compare none some_start_of_day
-
         let sexp_of_t = sexp_of_t
-
         let%bench "sexp_of_t (none)" = sexp_of_t none
         let%bench "sexp_of_t (some)" = sexp_of_t some_start_of_day
-
         let t_of_sexp = t_of_sexp
-
         let%bench "t_of_sexp (none)" = t_of_sexp sexp_of_none
         let%bench "t_of_sexp (some)" = t_of_sexp sexp_of_some_start_of_day
-
         let to_int63 = to_int63
-
         let%bench "to_int63 (none)" = to_int63 none
         let%bench "to_int63 (some)" = to_int63 some_start_of_day
-
         let of_int63_exn = of_int63_exn
-
         let%bench "of_int63_exn (none)" = of_int63_exn int63_of_none
         let%bench "of_int63_exn (some)" = of_int63_exn int63_of_some_start_of_day
       end

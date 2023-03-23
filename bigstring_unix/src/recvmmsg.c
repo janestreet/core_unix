@@ -1,4 +1,4 @@
-#define _GNU_SOURCE             /* recvmmsg */
+#define _GNU_SOURCE /* recvmmsg */
 
 #include <stdio.h>
 #include <errno.h>
@@ -12,9 +12,9 @@
 
 #ifdef JSC_RECVMMSG
 
-int recvmmsg_assume_fd_is_nonblocking(
-  value v_fd, struct iovec *iovecs, unsigned count, value v_srcs, struct mmsghdr *hdrs)
-{
+int recvmmsg_assume_fd_is_nonblocking(value v_fd, struct iovec *iovecs,
+                                      unsigned count, value v_srcs,
+                                      struct mmsghdr *hdrs) {
   CAMLparam2(v_fd, v_srcs);
   CAMLlocal1(v_sockaddrs);
   size_t total_len = 0;
@@ -23,8 +23,9 @@ int recvmmsg_assume_fd_is_nonblocking(
   int save_source_addresses;
   int fd;
 
-  if ((int) count < 0) {
-    caml_failwith("recvmmsg_assume_fd_is_nonblocking: apparently negative count");
+  if ((int)count < 0) {
+    caml_failwith(
+        "recvmmsg_assume_fd_is_nonblocking: apparently negative count");
   }
 
   {
@@ -39,11 +40,12 @@ int recvmmsg_assume_fd_is_nonblocking(
     }
     for (i = 0; i < count; i++) {
       hdrs[i].msg_hdr.msg_name = (save_source_addresses ? &addrs[i].s_gen : 0);
-      hdrs[i].msg_hdr.msg_namelen = (save_source_addresses ? sizeof(addrs[i]) : 0);
+      hdrs[i].msg_hdr.msg_namelen =
+          (save_source_addresses ? sizeof(addrs[i]) : 0);
 
 #if DEBUG
-      fprintf(stderr, "i=%u, count=%u, save_source_addresses=%d\n",
-              i, count, save_source_addresses);
+      fprintf(stderr, "i=%u, count=%u, save_source_addresses=%d\n", i, count,
+              save_source_addresses);
 #endif
       total_len += iovecs[i].iov_len;
 
@@ -66,12 +68,11 @@ int recvmmsg_assume_fd_is_nonblocking(
       caml_enter_blocking_section();
       n_read = recvmmsg(fd, hdrs, count, 0, 0);
       caml_leave_blocking_section();
-    }
-    else {
+    } else {
       n_read = recvmmsg(fd, hdrs, count, 0, 0);
     }
 
-    if (n_read > (int) count) {
+    if (n_read > (int)count) {
       caml_failwith("recvmmsg_assume_fd_is_nonblocking: "
                     "recvmmsg unexpectedly returned n_read > count");
     }
@@ -90,8 +91,9 @@ int recvmmsg_assume_fd_is_nonblocking(
                                 "length v_sockaddrs < count");
         }
 
-        for (i = 0; (int) i < n_read; i++) {
-          value addr = alloc_sockaddr(&addrs[i], hdrs[i].msg_hdr.msg_namelen, -1);
+        for (i = 0; (int)i < n_read; i++) {
+          value addr =
+              alloc_sockaddr(&addrs[i], hdrs[i].msg_hdr.msg_namelen, -1);
           Store_field(v_sockaddrs, i, addr);
         }
       }
@@ -101,4 +103,4 @@ int recvmmsg_assume_fd_is_nonblocking(
   CAMLreturnT(int, n_read);
 }
 
-#endif  /* JSC_RECVMMSG */
+#endif /* JSC_RECVMMSG */
