@@ -82,10 +82,14 @@ let open_temp_file ?(perm=0o600) ?in_dir prefix suffix =
   retry ?in_dir prefix suffix
     ~f:(fun name -> (name, Out_channel.create ~perm ~fail_if_exists:true name))
 
-let open_temp_file_fd ?(perm=0o600) ?in_dir prefix suffix =
+let open_temp_file_fd ?(close_on_exec = false) ?(perm=0o600) ?in_dir prefix suffix =
   retry ?in_dir prefix suffix
     ~f:(fun name ->
-      (name, UnixLabels.openfile ~perm ~mode:[O_EXCL; O_CREAT; O_RDWR] name))
+      (name, UnixLabels.openfile
+               ~perm
+               ~mode:((if close_on_exec then [ Unix.O_CLOEXEC ] else [])
+                      @ [O_EXCL; O_CREAT; O_RDWR])
+               name))
 
 let temp_file ?perm ?in_dir prefix suffix =
   let (name, oc) = open_temp_file ?perm ?in_dir prefix suffix in

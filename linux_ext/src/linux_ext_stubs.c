@@ -886,6 +886,6 @@ CAMLprim value core_linux_setxattr(value v_path, value v_name, value v_value, va
 
 #else
 
-typedef int avoid_empty_translation_unit_compilation_error;
+void avoid_empty_translation_unit_compilation_error_in_core_unix_linux_ext(void) {}
 
 #endif /* JSC_LINUX_EXT */

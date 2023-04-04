@@ -146,6 +146,11 @@ module Stable = struct
               let of_binable (repr : Bin_repr.t) = create repr.ofday repr.zone
             end)
 
+        let%expect_test _ =
+          print_endline [%bin_digest: t];
+          [%expect {| 490573c3397b4fe37e8ade0086fb4759 |}]
+        ;;
+
         type sexp_repr = Time.Stable.Ofday.V1.t * Timezone.Stable.V1.t [@@deriving sexp]
 
         let sexp_of_t t = [%sexp_of: sexp_repr] (ofday t, zone t)
