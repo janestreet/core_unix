@@ -1,3 +1,81 @@
+## Release v0.16.0
+
+Changes to `Bigstring_unix`:
+
+- Add new functions `pread` and `really_pread`
+
+Changes to `Command_test_helpers`:
+
+- Add `parse_command_line_or_error` function
+
+Changes to `Core_unix`:
+
+- `fork_exec` now accepts an optional `preexec_fn` parameter
+    * Called after forking and before executing `prog`
+    * Must not allocate or call async-signal-unsafe functions
+
+- `getpgid` return type changed to `Pid.t option`
+    * Handles process group IDs that are zero by returning `None`
+
+- Rename `getlogin` to `username`
+- Add `NPROCESSORS_CONF` and `NPROCESSORS_ONLN` variants to `sysconf`
+- Add `get_all_ifnames` function
+
+Changes to `Filename_unix`:
+
+- Add optional `close_on_exec` parameter (default: `false`) to `open_temp_file_fd`
+
+Changes to `Interval_lib`:
+
+- Add `S.Set.to_list` function
+    *  Returns a list of non-overlapping intervals defining the set, in ascending order
+
+Add `Interval_unix`, a library that defines interval types and functions for Unix specific types,
+like `Time_unix` and `Time_ns_unix`.
+
+Changes to `Iobuf_unix`:
+
+- Add `In_channel_optimized` module
+    * Provides similar APIs to `In_channel` with better performance using an intermediate `Iobuf`
+    * New functions: `fold_lines`, `iter_lines`, `input_lines`, `fold_lines_raw`
+
+Changes to `Linux_ext`:
+
+- Add `tcp_string_option` type
+    * Add `TCP_CONGESTION` variant for getting/setting the congestion-control algorithm for a socket
+    * Add `gettcpopt_string` and `settcpopt_string` helper functions
+
+- Add optional `pid` parameter to `setpriority` and `getpriority`
+    * Omitting the [pid] argument means that (only) the calling thread will be affected
+
+Changes to `Lock_file_blocking`:
+
+- Update `blocking_create` function:
+  * Add `max_retry_delay` parameter with a default value of `min(300ms, timeout / 3)`
+  * Add `random` parameter with a default value of a system-dependent low-entropy seed
+  * Modify behavior to retry periodically with a random delay between retries
+
+- Update `Flock.lock_exn` function:
+  * Add optional `exclusive` parameter (default: true)
+  * Add optional `close_on_exec` parameter (default: true)
+
+Changes to `Sys_unix`:
+
+- Add `with_async_exns` function
+    * Runs the provided function and returns its result
+    * Causes any asynchronous `Break` or `Stack_overflow` exceptions from finalizers,
+    signal handlers, or the GC to be raised from the call site of `with_async_exns`
+
+Rename `Time_unix` to `Time_float_unix`
+
+Changes to `Time_ns_unix`:
+
+- Add `format` function, following `man strftime` formatting rules
+- Add `parse` function, following `man strptime` formatting rules
+- Add `Timezone.Stable` module as `Zone`
+
+## Old pre-v0.15 changelogs (very likely stale and incomplete)
+
 As Core is built on top of Base and Core\_kernel
 you might want to have a look at Base's
 [changelog](https://github.com/janestreet/base/blob/master/CHANGES.md)
