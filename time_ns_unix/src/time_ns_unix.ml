@@ -246,7 +246,11 @@ module Ofday = struct
       if span_since_start_of_day_is_valid span then Span.Option.some span else none
     ;;
 
-    let value_exn t = of_span_since_start_of_day_unchecked (Span.Option.value_exn t)
+    let value_exn t =
+      if is_some t
+      then of_span_since_start_of_day_unchecked (Span.Option.unchecked_value t)
+      else raise_s [%message [%here] "Time_ns_unix.Ofday.Option.value_exn none"]
+    ;;
 
     let unchecked_value t =
       of_span_since_start_of_day_unchecked (Span.Option.unchecked_value t)
@@ -415,7 +419,12 @@ module Option = struct
     of_span_since_epoch (Span.Option.value ~default:(to_span_since_epoch default) t)
   ;;
 
-  let value_exn t = of_span_since_epoch (Span.Option.value_exn t)
+  let value_exn t =
+    if is_some t
+    then of_span_since_epoch (Span.Option.unchecked_value t)
+    else raise_s [%message [%here] "Time_ns_unix.Option.value_exn none"]
+  ;;
+
   let unchecked_value t = of_span_since_epoch (Span.Option.unchecked_value t)
 
   let of_option = function

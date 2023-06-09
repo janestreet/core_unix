@@ -71,7 +71,7 @@ module Stable : sig
 
   module Ofday : sig
     module V1 : sig
-      type t = Time.Stable.Ofday.V1.t [@@deriving hash]
+      type t = Time.Stable.Ofday.V1.t [@@deriving hash, sexp_grammar]
 
       include Stable_without_comparator_with_witness with type t := t
     end
@@ -82,7 +82,7 @@ module Stable : sig
         (** This uses [With_nonchronological_compare.compare]. *)
         type t = Ofday.Zoned.t [@@deriving hash]
 
-        include Stable_without_comparator with type t := t
+        include Stable_without_comparator_with_witness with type t := t
       end
     end
   end

@@ -121,15 +121,14 @@ module type Gen_set = sig
   (** An interval set is a set of nonempty disjoint intervals. *)
   type 'a interval
 
-
-  (** [create] creates an interval set containing intervals whose lower and upper bounds
-      are given by the pairs passed to the function. It is an error if the pairs overlap.
+  (** [create_exn] creates an interval set containing intervals whose lower and upper bounds
+      are given by the pairs passed to the function. Raises if the pairs overlap.
   *)
-  val create : ('a bound * 'a bound) list -> 'a t
+  val create_exn : ('a bound * 'a bound) list -> 'a t
 
-  (** [create_from_intervals] creates an interval set. Empty intervals are dropped. It is
-      an error if the nonempty intervals are not disjoint. *)
-  val create_from_intervals : 'a interval list -> 'a t
+  (** [create_from_intervals_exn] creates an interval set. Empty intervals are
+      dropped. Raises if the nonempty intervals are not disjoint. *)
+  val create_from_intervals_exn : 'a interval list -> 'a t
 
   val contains : 'a t -> 'a bound -> bool
 

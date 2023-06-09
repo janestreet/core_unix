@@ -23,9 +23,9 @@ let%expect_test "are_disjoint_as_open_intervals" =
 
 let%expect_test "contains_set" =
   let module S = Interval.Set in
-  let s1 = S.create [ 1, 2; 3, 4; 5, 6 ] in
-  let s2 = S.create [ 3, 5; 10, 11 ] in
-  let s3 = S.create [ 3, 4 ] in
+  let s1 = S.create_exn [ 1, 2; 3, 4; 5, 6 ] in
+  let s2 = S.create_exn [ 3, 5; 10, 11 ] in
+  let s3 = S.create_exn [ 3, 4 ] in
   "contains 1" @? S.contains s2 3;
   "contains 2" @? S.contains s2 4;
   "contains 3" @? not (S.contains s2 9);
@@ -51,7 +51,7 @@ let%expect_test "create_list_from_set" =
   let test l =
     let l' =
       List.map ~f:(fun (x, y) -> Iv.create x y) l
-      |> Iv.Set.create_from_intervals
+      |> Iv.Set.create_from_intervals_exn
       |> Iv.Set.to_list
     in
     [%test_pred: Iv.t list] (List.is_sorted_strictly ~compare:Iv.compare) l';

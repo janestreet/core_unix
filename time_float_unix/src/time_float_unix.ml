@@ -133,18 +133,28 @@ module Stable = struct
             { ofday : Time.Stable.Ofday.V1.t
             ; zone : Timezone.Stable.V1.t
             }
-          [@@deriving bin_io]
+          [@@deriving bin_io, stable_witness]
         end
 
+        let to_binable t : Bin_repr.t = { ofday = ofday t; zone = zone t }
+        let of_binable (repr : Bin_repr.t) = create repr.ofday repr.zone
+
         include
-          Binable.Of_binable_without_uuid [@alert "-legacy"]
+          Binable.Stable.Of_binable.V1 [@alert "-legacy"]
             (Bin_repr)
             (struct
               type nonrec t = t
 
-              let to_binable t : Bin_repr.t = { ofday = ofday t; zone = zone t }
-              let of_binable (repr : Bin_repr.t) = create repr.ofday repr.zone
+              let to_binable = to_binable
+              let of_binable = of_binable
             end)
+
+        let stable_witness =
+          Stable_witness.of_serializable
+            [%stable_witness: Bin_repr.t]
+            of_binable
+            to_binable
+        ;;
 
         let%expect_test _ =
           print_endline [%bin_digest: t];

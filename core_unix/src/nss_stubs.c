@@ -18,9 +18,7 @@
 #include <caml/callback.h>
 #include <caml/unixsupport.h>
 
-
-static value pw_entry_alloc(struct passwd *entry)
-{
+static value pw_entry_alloc(struct passwd *entry) {
   CAMLparam0();
   CAMLlocal1(res);
   CAMLlocal3(name, passwd, gecos);
@@ -38,8 +36,7 @@ static value pw_entry_alloc(struct passwd *entry)
   CAMLreturn(res);
 }
 
-static value gr_entry_alloc (struct group *entry)
-{
+static value gr_entry_alloc(struct group *entry) {
   CAMLparam0();
   CAMLlocal1(res);
   CAMLlocal3(name, passwd, mem);
@@ -53,14 +50,12 @@ static value gr_entry_alloc (struct group *entry)
   CAMLreturn(res);
 }
 
-
 /*$ generate gr gid */
 
-CAMLprim value core_unix_getgrgid_r(value v_gid, value v_buf)
-{
+CAMLprim value core_unix_getgrgid_r(value v_gid, value v_buf) {
   CAMLparam2(v_gid, v_buf);
   CAMLlocal1(res);
-  char * buf = (char *) Caml_ba_data_val(v_buf);
+  char *buf = (char *)Caml_ba_data_val(v_buf);
   size_t buflen = Caml_ba_array_val(v_buf)->dim[0];
   gid_t gid = Int_val(v_gid);
   struct group entry;
@@ -71,12 +66,11 @@ CAMLprim value core_unix_getgrgid_r(value v_gid, value v_buf)
   retval = getgrgid_r(gid, &entry, buf, buflen, &result);
   caml_leave_blocking_section();
   /* See [man getgrgid_r] for which return values count as errors */
-  if(retval == EINTR || retval == EIO || retval == EMFILE || retval == ENFILE ||
-     retval == ENOMEM || retval == ERANGE) {
+  if (retval == EINTR || retval == EIO || retval == EMFILE ||
+      retval == ENFILE || retval == ENOMEM || retval == ERANGE) {
     unix_error(retval, "getgrgid_r", caml_alloc_sprintf("%d", Int_val(v_gid)));
-  }
-  else {
-    if(!result) {
+  } else {
+    if (!result) {
       caml_raise_not_found();
     } else {
       assert(result == &entry);
@@ -86,14 +80,12 @@ CAMLprim value core_unix_getgrgid_r(value v_gid, value v_buf)
   }
 }
 
-
 /*$ generate pw uid */
 
-CAMLprim value core_unix_getpwuid_r(value v_uid, value v_buf)
-{
+CAMLprim value core_unix_getpwuid_r(value v_uid, value v_buf) {
   CAMLparam2(v_uid, v_buf);
   CAMLlocal1(res);
-  char * buf = (char *) Caml_ba_data_val(v_buf);
+  char *buf = (char *)Caml_ba_data_val(v_buf);
   size_t buflen = Caml_ba_array_val(v_buf)->dim[0];
   uid_t uid = Int_val(v_uid);
   struct passwd entry;
@@ -104,12 +96,11 @@ CAMLprim value core_unix_getpwuid_r(value v_uid, value v_buf)
   retval = getpwuid_r(uid, &entry, buf, buflen, &result);
   caml_leave_blocking_section();
   /* See [man getpwuid_r] for which return values count as errors */
-  if(retval == EINTR || retval == EIO || retval == EMFILE || retval == ENFILE ||
-     retval == ENOMEM || retval == ERANGE) {
+  if (retval == EINTR || retval == EIO || retval == EMFILE ||
+      retval == ENFILE || retval == ENOMEM || retval == ERANGE) {
     unix_error(retval, "getpwuid_r", caml_alloc_sprintf("%d", Int_val(v_uid)));
-  }
-  else {
-    if(!result) {
+  } else {
+    if (!result) {
       caml_raise_not_found();
     } else {
       assert(result == &entry);
@@ -119,16 +110,14 @@ CAMLprim value core_unix_getpwuid_r(value v_uid, value v_buf)
   }
 }
 
-
 /*$ generate pw nam */
 
-CAMLprim value core_unix_getpwnam_r(value v_nam, value v_buf)
-{
+CAMLprim value core_unix_getpwnam_r(value v_nam, value v_buf) {
   CAMLparam2(v_nam, v_buf);
   CAMLlocal1(res);
-  char * buf = (char *) Caml_ba_data_val(v_buf);
+  char *buf = (char *)Caml_ba_data_val(v_buf);
   size_t buflen = Caml_ba_array_val(v_buf)->dim[0];
-  const char * nam = Caml_ba_data_val(v_nam);
+  const char *nam = Caml_ba_data_val(v_nam);
   struct passwd entry;
   struct passwd *result;
   int retval;
@@ -137,12 +126,11 @@ CAMLprim value core_unix_getpwnam_r(value v_nam, value v_buf)
   retval = getpwnam_r(nam, &entry, buf, buflen, &result);
   caml_leave_blocking_section();
   /* See [man getpwnam_r] for which return values count as errors */
-  if(retval == EINTR || retval == EIO || retval == EMFILE || retval == ENFILE ||
-     retval == ENOMEM || retval == ERANGE) {
+  if (retval == EINTR || retval == EIO || retval == EMFILE ||
+      retval == ENFILE || retval == ENOMEM || retval == ERANGE) {
     unix_error(retval, "getpwnam_r", v_nam);
-  }
-  else {
-    if(!result) {
+  } else {
+    if (!result) {
       caml_raise_not_found();
     } else {
       assert(result == &entry);
@@ -152,16 +140,14 @@ CAMLprim value core_unix_getpwnam_r(value v_nam, value v_buf)
   }
 }
 
-
 /*$ generate gr nam */
 
-CAMLprim value core_unix_getgrnam_r(value v_nam, value v_buf)
-{
+CAMLprim value core_unix_getgrnam_r(value v_nam, value v_buf) {
   CAMLparam2(v_nam, v_buf);
   CAMLlocal1(res);
-  char * buf = (char *) Caml_ba_data_val(v_buf);
+  char *buf = (char *)Caml_ba_data_val(v_buf);
   size_t buflen = Caml_ba_array_val(v_buf)->dim[0];
-  const char * nam = Caml_ba_data_val(v_nam);
+  const char *nam = Caml_ba_data_val(v_nam);
   struct group entry;
   struct group *result;
   int retval;
@@ -170,12 +156,11 @@ CAMLprim value core_unix_getgrnam_r(value v_nam, value v_buf)
   retval = getgrnam_r(nam, &entry, buf, buflen, &result);
   caml_leave_blocking_section();
   /* See [man getgrnam_r] for which return values count as errors */
-  if(retval == EINTR || retval == EIO || retval == EMFILE || retval == ENFILE ||
-     retval == ENOMEM || retval == ERANGE) {
+  if (retval == EINTR || retval == EIO || retval == EMFILE ||
+      retval == ENFILE || retval == ENOMEM || retval == ERANGE) {
     unix_error(retval, "getgrnam_r", v_nam);
-  }
-  else {
-    if(!result) {
+  } else {
+    if (!result) {
       caml_raise_not_found();
     } else {
       assert(result == &entry);
@@ -184,5 +169,3 @@ CAMLprim value core_unix_getgrnam_r(value v_nam, value v_buf)
     }
   }
 }
-
-

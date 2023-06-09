@@ -1303,7 +1303,7 @@ module Stable = struct
       open Time.Stable.Ofday.V1
       open Ofday_constants
 
-      type nonrec t = t [@@deriving bin_io, stable_witness]
+      type nonrec t = t [@@deriving bin_io, stable_witness, sexp_grammar]
 
       let compare = compare
       let%bench "compare (<)" = compare start_of_day example
@@ -1325,7 +1325,7 @@ module Stable = struct
         open Time.Stable.Ofday.Zoned.V1
         open Ofday_zoned_constants
 
-        type nonrec t = t [@@deriving bin_io]
+        type nonrec t = t [@@deriving bin_io, stable_witness]
 
         let compare = compare
         let%bench "compare (<)" = compare zero_utc example

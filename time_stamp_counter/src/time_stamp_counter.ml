@@ -98,8 +98,14 @@ let zero = Int63.zero
 
 (* noalloc on x86_64 only *)
 let[@inline] now () =
-  Ocaml_intrinsics.Perfmon.rdtsc () |> Stdlib.Int64.to_int |> Int63.of_int
+  let tsc64 = Ocaml_intrinsics.Perfmon.rdtsc () in
+  (* Matching on Sys.backend_type is guaranteed to be optimized out. *)
+  match Sys.backend_type with
+  | Native -> tsc64 |> Stdlib.Int64.to_int |> Int63.of_int
+  | Bytecode | Other _ -> tsc64 |> Int63.of_int64_trunc
 ;;
+
+external nanosleep : float -> float = "tsc_nanosleep"
 
 module Calibrator = struct
   (* performance hack: prevent writes to this record from boxing floats by making all
@@ -278,7 +284,9 @@ module Calibrator = struct
     t.floats.monotonic_nanos_per_cycle <- t.floats.monotonic_sec_per_cycle *. 1E9
   ;;
 
-  let now_float () = 1E-9 *. Int.to_float (Time_ns.to_int_ns_since_epoch (Time_ns.now ()))
+  let now_float () =
+    1E-9 *. Int63.to_float (Time_ns.to_int63_ns_since_epoch (Time_ns.now ()))
+  ;;
 
   let initialize t samples =
     List.iter samples ~f:(fun (tsc, time) ->
@@ -293,7 +301,7 @@ module Calibrator = struct
       if Int.( = ) n 1
       then [ sample ]
       else (
-        ignore (Unix.nanosleep sleep);
+        ignore (nanosleep sleep);
         sample :: loop (n - 1) (sleep +. interval))
     in
     loop num_samples interval
@@ -323,11 +331,39 @@ module Calibrator = struct
     t
   ;;
 
+  let create_nanos ~tsc ~time =
+    let t =
+      { monotonic_until_tsc = Int63.max_value
+      ; tsc
+      ; time_nanos = tsc
+      ; monotonic_time_nanos = tsc
+      ; floats =
+          { monotonic_time = time
+          ; sec_per_cycle = 1e-9
+          ; monotonic_sec_per_cycle = 1e-9
+          ; time
+          ; ewma_time_tsc = 0.
+          ; ewma_tsc_square = 0.
+          ; ewma_time = 0.
+          ; ewma_tsc = 0.
+          ; nanos_per_cycle = 1.
+          ; monotonic_nanos_per_cycle = 1.
+          }
+      }
+    in
+    t
+  ;;
+
   let create () =
     let time = now_float () in
     let tsc = now () in
-    let samples = collect_samples ~num_samples:3 ~interval:0.0005 in
-    create_using ~tsc ~time ~samples
+    match Sys.backend_type with
+    | Native ->
+      let samples = collect_samples ~num_samples:3 ~interval:0.0005 in
+      create_using ~tsc ~time ~samples
+    | Bytecode | Other _ ->
+      (* Assumes the implementation of rdtsc returns monotonic nanoseconds. *)
+      create_nanos ~tsc ~time
   ;;
 
   (* Creating a calibrator takes about 3ms. *)

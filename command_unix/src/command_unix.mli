@@ -30,7 +30,8 @@ open! Core
     [complete_subcommands] can be used to override the completion mechanism.
 *)
 val run
-  :  ?verbose_on_parse_error:bool
+  :  ?add_validate_parsing_flag:bool
+  -> ?verbose_on_parse_error:bool
   -> ?version:string
   -> ?build_info:string
   -> ?argv:string list

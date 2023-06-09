@@ -58,6 +58,7 @@ module Span = struct
   module Table = Table
   module Hash_set = Hash_set
   module Hash_queue = Hash_queue
+  module O = O
 
   (* Nothing interesting to benchmark in [Parts]. *)
   module Parts = Parts
@@ -1503,6 +1504,7 @@ module Table = Table
 module Hash_set = Hash_set
 module Hash_queue = Hash_queue
 module Zone = Time.Zone
+module O = O
 
 let epoch = opaque epoch
 let min_value_representable = opaque min_value_representable

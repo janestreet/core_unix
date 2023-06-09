@@ -273,7 +273,7 @@ module Raw_make (T : Bound) = struct
   end
 
   module Set = struct
-    let create_from_intervals intervals =
+    let create_from_intervals_exn intervals =
       let intervals = List.filter intervals ~f:(fun i -> not (Interval.is_empty i)) in
       let intervals =
         let lb i = Interval.lbound_exn i in
@@ -284,11 +284,11 @@ module Raw_make (T : Bound) = struct
       else intervals
     ;;
 
-    let create pair_list =
+    let create_exn pair_list =
       let intervals =
         List.map pair_list ~f:(fun (lbound, ubound) -> Interval.create lbound ubound)
       in
-      create_from_intervals intervals
+      create_from_intervals_exn intervals
     ;;
 
     let contains_set ~container ~contained =

@@ -2172,7 +2172,10 @@ let%test_module "Time_ns.Option" =
 
     let%expect_test "value_exn none" =
       require_does_raise [%here] ~hide_positions:true (fun () -> value_exn none);
-      [%expect {| (lib/core/src/span_ns.ml:LINE:COL "Span.Option.value_exn none") |}]
+      [%expect
+        {|
+        (lib/time_ns_unix/src/time_ns_unix.ml:LINE:COL
+         "Time_ns_unix.Option.value_exn none") |}]
     ;;
   end)
 ;;
@@ -2205,7 +2208,10 @@ let%test_module "Time_ns.Ofday.Option" =
 
     let%expect_test "value_exn none" =
       require_does_raise [%here] ~hide_positions:true (fun () -> value_exn none);
-      [%expect {| (lib/core/src/span_ns.ml:LINE:COL "Span.Option.value_exn none") |}]
+      [%expect
+        {|
+        (lib/time_ns_unix/src/time_ns_unix.ml:LINE:COL
+         "Time_ns_unix.Ofday.Option.value_exn none") |}]
     ;;
 
     let%expect_test "of_span_since_start_of_day" =
