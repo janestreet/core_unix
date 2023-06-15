@@ -2271,6 +2271,11 @@ module Resource_usage : sig
   val add : t -> t -> t
 end
 
+val wait_with_resource_usage
+  :  ?restart:bool
+  -> wait_on
+  -> (Pid.t * Exit_or_signal.t) * Resource_usage.t
+
 (** {2 System configuration}  See 'man sysconf' for documentation. *)
 type sysconf =
   | ARG_MAX

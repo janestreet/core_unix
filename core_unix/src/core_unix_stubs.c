@@ -40,6 +40,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <ifaddrs.h>
+#include <sys/wait.h>
 
 /* makedev */
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) ||       \
@@ -809,13 +810,9 @@ struct in_addr core_unix_get_in_addr_for_interface(value v_interface) {
 
 /* Resource usage */
 
-CAMLprim value core_unix_getrusage(value v_who) {
+static value core_unix_alloc_rusage(struct rusage ru) {
   CAMLparam0();
   CAMLlocal1(v_usage);
-  int who = (Int_val(v_who) == 0) ? RUSAGE_SELF : RUSAGE_CHILDREN;
-  struct rusage ru;
-  if (getrusage(who, &ru))
-    uerror("getrusage", Nothing);
   v_usage = caml_alloc(16, 0);
   Store_field(v_usage, 0,
               caml_copy_double((double)ru.ru_utime.tv_sec +
@@ -838,6 +835,14 @@ CAMLprim value core_unix_getrusage(value v_who) {
   Store_field(v_usage, 14, caml_copy_int64(ru.ru_nvcsw));
   Store_field(v_usage, 15, caml_copy_int64(ru.ru_nivcsw));
   CAMLreturn(v_usage);
+}
+
+CAMLprim value core_unix_getrusage(value v_who) {
+  int who = (Int_val(v_who) == 0) ? RUSAGE_SELF : RUSAGE_CHILDREN;
+  struct rusage ru;
+  if (getrusage(who, &ru))
+    uerror("getrusage", Nothing);
+  return core_unix_alloc_rusage(ru);
 }
 
 /* System configuration */
@@ -1769,4 +1774,56 @@ CAMLprim value core_unix_getpgid(value pid) {
   if (pgid == -1)
     uerror("getpgid", Nothing);
   CAMLreturn(Val_int(pgid));
+}
+
+// Taken from the compiler distribution's bindings for wait
+#define TAG_WEXITED 0
+#define TAG_WSIGNALED 1
+#define TAG_WSTOPPED 2
+static value alloc_process_status(int pid, int status) {
+  value st, res;
+
+  // status is undefined when pid is zero so we set a default value.
+  if (pid == 0)
+    status = 0;
+
+  if (WIFEXITED(status)) {
+    st = caml_alloc_small(1, TAG_WEXITED);
+    Field(st, 0) = Val_int(WEXITSTATUS(status));
+  } else if (WIFSTOPPED(status)) {
+    st = caml_alloc_small(1, TAG_WSTOPPED);
+    Field(st, 0) = Val_int(caml_rev_convert_signal_number(WSTOPSIG(status)));
+  } else {
+    st = caml_alloc_small(1, TAG_WSIGNALED);
+    Field(st, 0) = Val_int(caml_rev_convert_signal_number(WTERMSIG(status)));
+  }
+  Begin_root(st);
+  res = caml_alloc_small(2, 0);
+  Field(res, 0) = Val_int(pid);
+  Field(res, 1) = st;
+  End_roots();
+  return res;
+}
+
+static int wait_flag_table[] = {WNOHANG, WUNTRACED};
+CAMLprim value core_unix_wait4(value flags, value pid_req) {
+  CAMLparam0();
+  CAMLlocal3(v_status, v_rusage, res);
+  int pid, status, cv_flags;
+  struct rusage rusage;
+  // initialize for the WNOHANG case where pid = 0
+  memset(&rusage, 0, sizeof(rusage));
+
+  cv_flags = caml_convert_flag_list(flags, wait_flag_table);
+  caml_enter_blocking_section();
+  pid = wait4(Int_val(pid_req), &status, cv_flags, &rusage);
+  caml_leave_blocking_section();
+  if (pid == -1)
+    uerror("wait4", Nothing);
+  v_status = alloc_process_status(pid, status);
+  v_rusage = core_unix_alloc_rusage(rusage);
+  res = caml_alloc_small(2, 0);
+  Field(res, 0) = v_status;
+  Field(res, 1) = v_rusage;
+  CAMLreturn(res);
 }

@@ -945,19 +945,20 @@ type wait_on =
   ]
 [@@deriving sexp]
 
+let pid_of_wait_on = function
+  | `Any -> -1
+  | `Group pid -> -Pid.to_int pid
+  | `My_group -> 0
+  | `Pid pid -> Pid.to_int pid
+;;
+
 type mode = wait_flag list [@@deriving sexp_of]
 
 type _t = mode
 type waitpid_result = (Pid.t * Exit_or_signal_or_stop.t) option [@@deriving sexp_of]
 
 let wait_gen ~mode (type a) (f : waitpid_result -> a option) ~restart wait_on : a =
-  let pid =
-    match wait_on with
-    | `Any -> -1
-    | `Group pid -> -Pid.to_int pid
-    | `My_group -> 0
-    | `Pid pid -> Pid.to_int pid
-  in
+  let pid = pid_of_wait_on wait_on in
   let pid, status =
     improve
       ~restart
@@ -1021,6 +1022,40 @@ let waitpid_exn pid =
       "child process didn't exit with status 0"
       (`Child_pid pid, exit_or_signal)
       [%sexp_of: [ `Child_pid of Pid.t ] * Exit_or_signal.t]
+;;
+
+external wait4
+  :  Unix.wait_flag list
+  -> int
+  -> (int * process_status) * Resource_usage.t
+  = "core_unix_wait4"
+
+let wait4 ?(restart = true) ~mode wait_on =
+  let pid = pid_of_wait_on wait_on in
+  let (x, ps), rusage =
+    improve
+      ~restart
+      (fun () -> wait4 mode pid)
+      (fun () ->
+         [ "mode", sexp_of_list sexp_of_wait_flag mode; "pid", Int.sexp_of_t pid ])
+  in
+  if x = 0 then None else Some ((Pid.of_int x, Exit_or_signal_or_stop.of_unix ps), rusage)
+;;
+
+let wait_with_resource_usage ?restart wait_on =
+  let (pid, ps), rusage =
+    wait4 ?restart ~mode:[] wait_on
+    |> Option.value_exn ~message:"unexpected None with wait4 without WNOHANG"
+  in
+  match ps with
+  | (Ok _ | Error #Exit_or_signal.error) as x -> (pid, x), rusage
+  | Error (`Stop _) ->
+    raise_s
+      [%sexp
+        [ ( "process status is `Stop, which is unexpected when waiting without WUNTRACED"
+          , ~~(pid : Pid.t)
+          , ~~(ps : Exit_or_signal_or_stop.t) )
+        ]]
 ;;
 
 let system s =

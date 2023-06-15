@@ -469,14 +469,22 @@ let%test_module "getxattr and setxattr" =
       Unix.unlink tmpfile
     ;;
 
-    let get_and_print ~path ~name =
-      let value = (Extended_file_attributes.getxattr |> ok_exn) ~path ~name in
+    let get_and_print ~follow_symlinks ~path ~name =
+      let value =
+        (Extended_file_attributes.getxattr |> ok_exn) ~follow_symlinks ~path ~name
+      in
       print_s [%sexp (value : Extended_file_attributes.Get_attr_result.t)]
     ;;
 
-    let set_and_print ?how ~path ~name ~value () =
+    let set_and_print ?how ~follow_symlinks ~path ~name ~value () =
       let result =
-        (Extended_file_attributes.setxattr |> ok_exn) ?how ~path ~name ~value ()
+        (Extended_file_attributes.setxattr |> ok_exn)
+          ?how
+          ~follow_symlinks
+          ~path
+          ~name
+          ~value
+          ()
       in
       print_s [%sexp (result : Extended_file_attributes.Set_attr_result.t)]
     ;;
@@ -484,21 +492,62 @@ let%test_module "getxattr and setxattr" =
     let%expect_test "simple test" =
       with_tmpfile (fun path ->
         let name = "user.foo" in
-        get_and_print ~path ~name;
+        get_and_print ~follow_symlinks:true ~path ~name;
         [%expect {| ENOATTR |}];
-        set_and_print ~path ~name ~value:"bar" ();
+        set_and_print ~follow_symlinks:true ~path ~name ~value:"bar" ();
         [%expect {| Ok |}];
-        get_and_print ~path ~name;
+        get_and_print ~follow_symlinks:true ~path ~name;
         [%expect {| (Ok bar) |}])
+    ;;
+
+    let%expect_test "symlink test" =
+      with_tmpfile (fun path ->
+        let symlink_to_path = path ^ ".symlink" in
+        Unix.symlink ~target:path ~link_name:symlink_to_path;
+        let name = "user.foo" in
+        get_and_print ~follow_symlinks:false ~path:symlink_to_path ~name;
+        [%expect {| ENOATTR |}];
+        get_and_print ~follow_symlinks:true ~path:symlink_to_path ~name;
+        [%expect {| ENOATTR |}];
+        expect_error (fun () ->
+          set_and_print ~follow_symlinks:false ~path:symlink_to_path ~name ~value:"baz" ());
+        [%expect
+          {|
+          (Unix.Unix_error
+           "Operation not permitted"
+           lsetxattr
+           temporary-file-for-testing-xattr.symlink) |}];
+        set_and_print ~follow_symlinks:true ~path:symlink_to_path ~name ~value:"bar" ();
+        [%expect {| Ok |}];
+        get_and_print ~follow_symlinks:false ~path:symlink_to_path ~name;
+        [%expect {| ENOATTR |}];
+        get_and_print ~follow_symlinks:true ~path:symlink_to_path ~name;
+        [%expect {| (Ok bar) |}];
+        Unix.unlink symlink_to_path)
+    ;;
+
+    let%expect_test "roundtrip a binary blob that contains null characters to confirm \
+                     that they are preserved"
+      =
+      with_tmpfile (fun path ->
+        let name = "user.foo" in
+        get_and_print ~follow_symlinks:false ~path ~name;
+        [%expect {| ENOATTR |}];
+        set_and_print ~follow_symlinks:false ~path ~name ~value:"foo\000\nbar\000" ();
+        [%expect {| Ok |}];
+        get_and_print ~follow_symlinks:false ~path ~name;
+        [%expect {| (Ok "foo\000\nbar\000") |}])
     ;;
 
     let%expect_test "test setxattr [`Create] semantics" =
       with_tmpfile (fun path ->
         let name = "user.foo" in
-        let set_and_create () = set_and_print ~how:`Create ~path ~name ~value:"blah" () in
+        let set_and_create () =
+          set_and_print ~how:`Create ~follow_symlinks:true ~path ~name ~value:"blah" ()
+        in
         set_and_create ();
         [%expect {| Ok |}];
-        get_and_print ~path ~name;
+        get_and_print ~follow_symlinks:true ~path ~name;
         [%expect {| (Ok blah) |}];
         set_and_create ();
         [%expect {| EEXIST |}])
@@ -508,37 +557,38 @@ let%test_module "getxattr and setxattr" =
       with_tmpfile (fun path ->
         let name = "user.foo" in
         let set_with_replace () =
-          set_and_print ~how:`Replace ~path ~name ~value:"xyz" ()
+          set_and_print ~how:`Replace ~follow_symlinks:true ~path ~name ~value:"xyz" ()
         in
         set_with_replace ();
         [%expect {| ENOATTR |}];
-        set_and_print ~how:`Create ~path ~name ~value:"bar" ();
+        set_and_print ~how:`Create ~follow_symlinks:true ~path ~name ~value:"bar" ();
         [%expect {| Ok |}];
-        get_and_print ~path ~name;
+        get_and_print ~follow_symlinks:true ~path ~name;
         [%expect {| (Ok bar) |}];
         set_with_replace ();
         [%expect {| Ok |}];
-        get_and_print ~path ~name;
+        get_and_print ~follow_symlinks:true ~path ~name;
         [%expect {| (Ok xyz) |}])
     ;;
 
     let%expect_test "test getxattr and setxattr on a non-existent file" =
       let path = "some-file-that-doesnt-exist" in
       let name = "user.foo" in
-      expect_error (fun () -> set_and_print ~path ~name ~value:"xyz" ());
+      expect_error (fun () ->
+        set_and_print ~follow_symlinks:true ~path ~name ~value:"xyz" ());
       [%expect
         {|
-      (Unix.Unix_error
-       "No such file or directory"
-       setxattr
-       some-file-that-doesnt-exist) |}];
-      expect_error (fun () -> get_and_print ~path ~name);
+       (Unix.Unix_error
+        "No such file or directory"
+        setxattr
+        some-file-that-doesnt-exist) |}];
+      expect_error (fun () -> get_and_print ~follow_symlinks:true ~path ~name);
       [%expect
         {|
-      (Unix.Unix_error
-       "No such file or directory"
-       getxattr
-       some-file-that-doesnt-exist) |}]
+       (Unix.Unix_error
+        "No such file or directory"
+        getxattr
+        some-file-that-doesnt-exist) |}]
     ;;
   end)
 ;;
@@ -611,22 +661,22 @@ let%expect_test "cpu_list_of_string_exn" =
     | e -> print_endline [%string "Error: %{e#Exn}"]);
   [%expect
     {|
-    CPUs:
-    CPUs: 0
-    CPUs: 0,2,10
-    CPUs: 0,2,3,4,5
-    Error: ("cpu_list_of_string_exn: range start is after end" (first 5) (last 2))
-    CPUs: 0,2,3,4,5
-    CPUs: 0,2,4,6,8,9,10,11,12,13,14,15
-    Error: ("cpu_list_of_string_exn: expected separated integer pair" (sep -) (str 3-))
-    CPUs: 0,1,2,3
-    Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt 0)
-      (stride 20))
-    Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt -2)
-      (stride 0))
-    Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt 0)
-      (stride 0))
-    |}]
+       CPUs:
+       CPUs: 0
+       CPUs: 0,2,10
+       CPUs: 0,2,3,4,5
+       Error: ("cpu_list_of_string_exn: range start is after end" (first 5) (last 2))
+       CPUs: 0,2,3,4,5
+       CPUs: 0,2,4,6,8,9,10,11,12,13,14,15
+       Error: ("cpu_list_of_string_exn: expected separated integer pair" (sep -) (str 3-))
+       CPUs: 0,1,2,3
+       Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt 0)
+         (stride 20))
+       Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt -2)
+         (stride 0))
+       Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt 0)
+         (stride 0))
+       |}]
 ;;
 
 let%expect_test "TCP_CONGESTION" =
@@ -650,10 +700,10 @@ let%expect_test "TCP_CONGESTION" =
       settcpopt_string sock TCP_CONGESTION garbage));
   [%expect
     {|
-    (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
-    (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
-    (raised (Unix.Unix_error "No such file or directory" setsockopt ""))
-    (raised (Unix.Unix_error "No such file or directory" setsockopt "")) |}];
+       (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
+       (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
+       (raised (Unix.Unix_error "No such file or directory" setsockopt ""))
+       (raised (Unix.Unix_error "No such file or directory" setsockopt "")) |}];
   (* We need to close the socket to clean up the test... *)
   Unix.close sock;
   (* But it also gives us an opportunity to demonstrate correct behaviour (gracefully
@@ -663,6 +713,6 @@ let%expect_test "TCP_CONGESTION" =
     settcpopt_string sock TCP_CONGESTION "reno");
   [%expect
     {|
-    (raised (Unix.Unix_error "Bad file descriptor" getsockopt ""))
-    (raised (Unix.Unix_error "Bad file descriptor" setsockopt "")) |}]
+       (raised (Unix.Unix_error "Bad file descriptor" getsockopt ""))
+       (raised (Unix.Unix_error "Bad file descriptor" setsockopt "")) |}]
 ;;

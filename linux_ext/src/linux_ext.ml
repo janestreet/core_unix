@@ -1335,26 +1335,32 @@ module Extended_file_attributes = struct
     [@@deriving sexp_of]
   end
 
-  external getxattr : string -> string -> Get_attr_result.t = "core_linux_getxattr"
+  external getxattr
+    :  bool
+    -> string
+    -> string
+    -> Get_attr_result.t
+    = "core_linux_getxattr"
 
   external setxattr
-    :  string
+    :  bool
+    -> string
     -> string
     -> string
     -> Int63.t
     -> Set_attr_result.t
     = "core_linux_setxattr"
 
-  let getxattr ~path ~name = getxattr path name
+  let getxattr ~follow_symlinks ~path ~name = getxattr follow_symlinks path name
 
-  let setxattr ?(how = `Set) ~path ~name ~value () =
+  let setxattr ?(how = `Set) ~follow_symlinks ~path ~name ~value () =
     let flags =
       match how with
       | `Set -> Flags.set
       | `Create -> Flags.only_create ()
       | `Replace -> Flags.only_replace ()
     in
-    setxattr path name value flags
+    setxattr follow_symlinks path name value flags
   ;;
 
   let getxattr = Ok getxattr

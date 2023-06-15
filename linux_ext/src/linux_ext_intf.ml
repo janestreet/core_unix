@@ -638,7 +638,9 @@ module type S = sig
       [@@deriving sexp_of]
     end
 
-    val getxattr : (path:string -> name:string -> Get_attr_result.t) Or_error.t
+    val getxattr
+      : (follow_symlinks:bool -> path:string -> name:string -> Get_attr_result.t)
+          Or_error.t
 
     (** [setxattr] sets the value of the extended attribute identified by name and
         associated with the given path in the filesystem.
@@ -664,6 +666,7 @@ module type S = sig
 
     val setxattr
       : (?how:[ `Set | `Create | `Replace ]
+         -> follow_symlinks:bool
          -> path:string
          -> name:string
          -> value:string

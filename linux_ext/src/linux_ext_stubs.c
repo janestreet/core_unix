@@ -787,24 +787,31 @@ core_linux_eventfd_write(value v_fd, value v_val)
 XATTR_FLAG(XATTR_CREATE)
 XATTR_FLAG(XATTR_REPLACE)
 
-CAMLprim value core_linux_getxattr(value v_path, value v_name)
+CAMLprim value core_linux_getxattr(value v_follow_symlinks, value v_path, value v_name)
 {
-  CAMLparam2(v_path, v_name);
+  CAMLparam3(v_follow_symlinks, v_path, v_name);
   CAMLlocal1(res);
 
-  const char *loc = "getxattr";
+  const char *loc;
   char buf[XATTR_SIZE_MAX + 1];
   ssize_t retval;
   char *c_path;
   char *c_name;
+  ssize_t (*getxattr_f)(const char *, const char *, void *, size_t);
+
+  if (Bool_val(v_follow_symlinks)) {
+    loc = "getxattr";
+    getxattr_f = getxattr;
+  } else {
+    loc = "lgetxattr";
+    getxattr_f = lgetxattr;
+  }
 
   caml_unix_check_path(v_path, loc);
-
   c_path = strdup(String_val(v_path));
   c_name = strdup(String_val(v_name));
-
   caml_enter_blocking_section();
-  retval = getxattr(c_path, c_name, buf, XATTR_SIZE_MAX);
+  retval = getxattr_f(c_path, c_name, buf, XATTR_SIZE_MAX);
   free(c_path);
   free(c_name);
   caml_leave_blocking_section();
@@ -825,37 +832,50 @@ CAMLprim value core_linux_getxattr(value v_path, value v_name)
     }
   }
   else {
-    buf[retval] = '\0';
     res = caml_alloc(1, 0);
-    Store_field(res, 0, caml_copy_string(buf));
+    Store_field(res, 0, caml_alloc_initialized_string(retval, buf));
   }
 
   CAMLreturn(res);
 }
 
-CAMLprim value core_linux_setxattr(value v_path, value v_name, value v_value, value v_flags)
+CAMLprim value core_linux_setxattr(value v_follow_symlinks, value v_path, value v_name, value v_value, value v_flags)
 {
-  CAMLparam4(v_path, v_name, v_value, v_flags);
+  CAMLparam5(v_follow_symlinks, v_path, v_name, v_value, v_flags);
   CAMLlocal1(res);
 
-  const char *loc = "setxattr";
+  const char *loc;
   int retval;
   char *c_path;
   char *c_name;
   char *c_value;
   size_t c_value_size;
   int c_flags;
+  int (*setxattr_f)(const char *, const char *, const void *, size_t, int);
+
+  if (Bool_val(v_follow_symlinks)) {
+    loc = "setxattr";
+    setxattr_f = setxattr;
+  } else {
+    loc = "lsetxattr";
+    setxattr_f = lsetxattr;
+  }
 
   caml_unix_check_path(v_path, loc);
 
   c_path = strdup(String_val(v_path));
   c_name = strdup(String_val(v_name));
-  c_value = strdup(String_val(v_value));
   c_value_size = caml_string_length(v_value);
+
+  c_value = malloc(c_value_size);
+  if (c_value == NULL)
+    uerror("malloc", Nothing);
+
+  memcpy(c_value, String_val(v_value), c_value_size);
   c_flags = Int63_val(v_flags);
 
   caml_enter_blocking_section();
-  retval = setxattr(c_path, c_name, c_value, c_value_size, c_flags);
+  retval = setxattr_f(c_path, c_name, c_value, c_value_size, c_flags);
   free(c_path);
   free(c_name);
   free(c_value);
