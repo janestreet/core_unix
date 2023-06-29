@@ -743,7 +743,7 @@ CAMLprim value bigstring_sendmsg_nonblocking_no_sigpipe_stub(value v_fd,
   int count = Int_val(v_count);
   size_t total_len = 0;
   struct iovec *iovecs = copy_iovecs(&total_len, v_iovecs, count);
-  struct msghdr msghdr = {NULL, 0, NULL, 0, NULL, 0, 0};
+  struct msghdr msghdr = {NULL};
   ssize_t ret;
   if (total_len > THREAD_IO_CUTOFF || contains_mmapped(v_iovecs, count)) {
     Begin_roots1(v_iovecs);

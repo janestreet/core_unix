@@ -63,6 +63,9 @@ module Span = struct
   (* Nothing interesting to benchmark in [Parts]. *)
   module Parts = Parts
 
+  (* Nothing interesting to benchmark in [Rounding_direction]. *)
+  module Rounding_direction = Rounding_direction
+
   (* In [Core], there's no particularly good reason to use [Alternate_sexp]. *)
   module Alternate_sexp = Alternate_sexp [@warning "-3"]
 
@@ -552,6 +555,16 @@ module Span = struct
   let%bench "since_unix_epoch" = since_unix_epoch ()
   let prev = prev
   let%bench "prev" = prev zero
+  let round_up = round_up
+  let%bench "round_up" = round_up minute ~to_multiple_of:day
+  let round_down = round_down
+  let%bench "round_down" = round_down minute ~to_multiple_of:day
+  let round_nearest = round_nearest
+  let%bench "round_nearest" = round_nearest minute ~to_multiple_of:day
+  let round_towards_zero = round_towards_zero
+  let%bench "round_towards_zero" = round_towards_zero minute ~to_multiple_of:day
+  let round = round
+  let%bench "round" = round minute ~dir:Nearest ~to_multiple_of:day
   let next = next
   let%bench "next" = next zero
   let scale_int63 = scale_int63
@@ -2353,7 +2366,7 @@ module Stable = struct
     module Map = Map
     module Set = Set
 
-    type nonrec t = t [@@deriving bin_io, stable_witness]
+    type nonrec t = t [@@deriving bin_io, stable_witness, hash]
     type nonrec comparator_witness = comparator_witness
 
     let comparator = comparator

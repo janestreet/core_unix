@@ -242,7 +242,7 @@ module type Time_ns_unix = sig
 
   module Stable : sig
     module V1 : sig
-      type nonrec t = t [@@deriving equal]
+      type nonrec t = t [@@deriving equal, hash]
 
       include
         Stable_int63able_with_witness
