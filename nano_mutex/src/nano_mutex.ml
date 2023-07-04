@@ -151,6 +151,25 @@ let try_lock t =
 
 let try_lock_exn t = ok_exn (try_lock t)
 
+(* Marked with attributes so the allocation of [new_blocker_opt] at the call site cannot
+   be sunk down into the atomic section (there exists no barrier in OCaml right now to
+   prevent this) *)
+
+let[@inline never] [@specialise never] [@local never] with_blocker0
+                                                        t
+                                                        ~new_blocker_opt
+                                                        ~new_blocker
+  =
+  (* BEGIN ATOMIC *)
+  match t.blocker with
+  | Some blocker -> blocker
+  | None ->
+    t.blocker <- new_blocker_opt;
+    new_blocker
+;;
+
+(* END ATOMIC *)
+
 (* [with_blocker t f] runs [f blocker] in a critical section.  It allocates a blocker for
    [t] if [t] doesn't already have one. *)
 let with_blocker t f =
@@ -167,13 +186,7 @@ let with_blocker t f =
         (* We need the following test-and-set to be atomic so that there is a definitive
            winner in a race between multiple calls to [with_blocker], so that everybody
            agrees what the underlying [blocker] is. *)
-        (* BEGIN ATOMIC *)
-        match t.blocker with
-        | Some blocker -> blocker
-        | None ->
-          t.blocker <- new_blocker_opt;
-          new_blocker
-          (* END ATOMIC *)
+        with_blocker0 t ~new_blocker_opt ~new_blocker
       in
       if not (phys_equal blocker new_blocker) then Blocker.save_unused new_blocker;
       blocker

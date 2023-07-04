@@ -859,3 +859,100 @@ let%expect_test "Regression test: [Command.Param.parse] should not call exit" =
     (Error (
       "Command.Failed_to_parse_command_line(\"too many anonymous arguments\")")) |}]
 ;;
+
+let%expect_test "COMMAND_OUTPUT_HELP_SEXP" =
+  let subcommand =
+    Command.basic
+      ~summary:"subcommand summary"
+      (let%map_open.Command input = flag "flag1" (required string) ~doc:"STR my flag" in
+       fun () -> ignore input)
+  in
+  let command = Command.group ~summary:"command summary" [ "subcommand", subcommand ] in
+  let run ~argv =
+    Core_unix.putenv ~key:"COMMAND_OUTPUT_HELP_SEXP" ~data:"(3)";
+    run ~argv command;
+    Sexp_pretty.sexp_to_string Sexp.(List (of_string_many [%expect.output]))
+    |> print_endline
+  in
+  run ~argv:[ "__exe_name__" ];
+  [%expect
+    {|
+    ((V3 (
+       Group (
+         (summary "command summary")
+         (subcommands (
+           (help (
+             Base (
+               (summary "explain a given subcommand (perhaps recursively)")
+               (anons (Grammar (Maybe (One SUBCOMMAND))))
+               (flags (
+                 ((name [-expand-dots])
+                  (doc  "expand subcommands in recursive help")
+                  (aliases ()))
+                 ((name [-flags])
+                  (doc  "show flags as well in recursive help")
+                  (aliases ()))
+                 ((name [-recursive])
+                  (doc  "show subcommands of subcommands, etc.")
+                  (aliases ()))
+                 ((name [-help])
+                  (doc  "print this help text and exit")
+                  (aliases (-?))))))))
+           (version (
+             Base (
+               (summary "print version information")
+               (anons (Grammar Zero))
+               (flags (
+                 ((name [-build-info])
+                  (doc  "print build info for this build")
+                  (aliases ()))
+                 ((name [-version])
+                  (doc  "print the version of this build")
+                  (aliases ()))
+                 ((name [-help])
+                  (doc  "print this help text and exit")
+                  (aliases (-?))))))))
+           (subcommand (
+             Base (
+               (summary "subcommand summary")
+               (anons (Grammar Zero))
+               (flags (
+                 ((name "-flag1 STR")
+                  (doc  "my flag")
+                  (aliases ()))
+                 ((name [-help])
+                  (doc  "print this help text and exit")
+                  (aliases (-?)))))))))))))
+     (command.ml.Exit_called (status 0))) |}];
+  run ~argv:[ "__exe_name__"; "subcommand" ];
+  [%expect
+    {|
+    ((V3 (
+       Base (
+         (summary "subcommand summary")
+         (anons (Grammar Zero))
+         (flags (
+           ((name "-flag1 STR")
+            (doc  "my flag")
+            (aliases ()))
+           ((name [-help])
+            (doc  "print this help text and exit")
+            (aliases (-?))))))))
+     (command.ml.Exit_called (status 0))) |}];
+  run ~argv:[ "__exe_name__"; "subcommand"; "-flag1" ];
+  (* Flags should be ignored *)
+  [%expect
+    {|
+    ((V3 (
+       Base (
+         (summary "subcommand summary")
+         (anons (Grammar Zero))
+         (flags (
+           ((name "-flag1 STR")
+            (doc  "my flag")
+            (aliases ()))
+           ((name [-help])
+            (doc  "print this help text and exit")
+            (aliases (-?))))))))
+     (command.ml.Exit_called (status 0))) |}]
+;;
