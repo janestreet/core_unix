@@ -192,6 +192,25 @@ let%test_module _ =
                 saw_fd := true);
               assert !saw_fd))
     ;;
+
+    let%test_unit "epoll removes a file descriptor from tracking even if it gets EBADFD" =
+      with_epoll ~f:(fun epoll ->
+        let r, w = Unix.pipe () in
+        Epoll.set epoll w Epoll.Flags.out;
+        Unix.close r;
+        Unix.close w;
+        (* It is bad to close a FD before removing it from epoll, and it raises *)
+        (match Epoll.remove epoll w with
+         | () -> assert false
+         | exception Unix.Unix_error (EBADF, _, _) -> ());
+        (* Even though the above failed, the FD should be removed from the tracking set.
+           When the FD numbers are reused below, they should work fine. *)
+        let r, w = Unix.pipe () in
+        Epoll.set epoll w Epoll.Flags.out;
+        Epoll.remove epoll w;
+        Unix.close r;
+        Unix.close w)
+    ;;
   end)
 ;;
 

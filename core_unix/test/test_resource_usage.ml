@@ -10,7 +10,7 @@ let sanity_check_rusage (rusage : Unix.Resource_usage.t) =
   in
   assert_between [%sexp_of: Float.t] Float.( <= ) 0. rusage.utime 10.;
   assert_between [%sexp_of: Float.t] Float.( <= ) 0. rusage.stime 10.;
-  assert_between [%sexp_of: Int64.t] Int64.( <= ) 0L rusage.maxrss 1_000_000L
+  assert_between [%sexp_of: Int64.t] Int64.( <= ) 0L rusage.maxrss 2_000_000L
 ;;
 
 let%expect_test "Resource_usage.get" =

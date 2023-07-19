@@ -1142,7 +1142,7 @@ let with_close fd ~f = protect ~f:(fun () -> f fd) ~finally:(fun () -> close fd)
 let with_file ?perm file ~mode ~f = with_close (openfile file ~mode ?perm) ~f
 
 let read_write f ?restart ?pos ?len fd ~buf =
-  let pos, len =
+  let (pos : int), (len : int) =
     Ordered_collection_common.get_pos_len_exn
       ()
       ?pos
@@ -1156,7 +1156,7 @@ let read_write f ?restart ?pos ?len fd ~buf =
 ;;
 
 let read_write_string f ?restart ?pos ?len fd ~buf =
-  let pos, len =
+  let (pos : int), (len : int) =
     Ordered_collection_common.get_pos_len_exn
       ()
       ?pos
