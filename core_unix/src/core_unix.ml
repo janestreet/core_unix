@@ -236,7 +236,7 @@ module Resource_usage = struct
     ; nvcsw : int64
     ; nivcsw : int64
     }
-  [@@deriving sexp, fields]
+  [@@deriving sexp, fields ~getters]
 
   external getrusage : int -> t = "core_unix_getrusage"
 
@@ -515,7 +515,7 @@ module Utsname = struct
         ; version : string
         ; machine : string
         }
-      [@@deriving fields, bin_io, sexp, compare, stable_witness]
+      [@@deriving fields ~getters, bin_io, sexp, compare, stable_witness]
     end
   end
 
@@ -1432,6 +1432,8 @@ let clear_nonblock = unary_fd Unix.clear_nonblock
 let set_close_on_exec = unary_fd Unix.set_close_on_exec
 let clear_close_on_exec = unary_fd Unix.clear_close_on_exec
 
+external get_close_on_exec : Unix.file_descr -> bool = "core_unix_get_close_on_exec"
+
 module Open_flags = struct
   external append : unit -> Int63.t = "unix_O_APPEND"
   external async : unit -> Int63.t = "unix_O_ASYNC"
@@ -2144,7 +2146,7 @@ module Passwd = struct
     ; dir : string
     ; shell : string
     }
-  [@@deriving compare, fields, sexp]
+  [@@deriving compare, fields ~getters, sexp]
 
   let of_unix u =
     let module U = Unix in
@@ -2467,7 +2469,7 @@ module Cidr = struct
           { address : int32 (* IPv4 only *)
           ; bits : int
           }
-        [@@deriving fields, bin_io, compare, hash, stable_witness]
+        [@@deriving fields ~getters, bin_io, compare, hash, stable_witness]
 
         let normalized_address ~base ~bits =
           if bits = 0
@@ -3204,7 +3206,7 @@ module Ifaddr = struct
     ; netmask : Inet_addr.t option [@sexp.option]
     ; broadcast_or_destination : Broadcast_or_destination.t option [@sexp.option]
     }
-  [@@deriving sexp_of, fields]
+  [@@deriving sexp_of, fields ~getters]
 
   (* THE ORDER AND NUMBER OF THESE IS IMPORTANT, SEE unix_stubs.c!!! *)
   type ifaddrs =

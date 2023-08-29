@@ -73,7 +73,7 @@ struct
         { ofday : Time.Ofday.t
         ; zone : Zone.t
         }
-      [@@deriving bin_io, fields, compare, equal, hash]
+      [@@deriving bin_io, fields ~getters, compare, equal, hash]
 
       type sexp_repr = Time.Ofday.t * Zone.t [@@deriving sexp]
 

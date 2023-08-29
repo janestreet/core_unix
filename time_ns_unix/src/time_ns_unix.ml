@@ -144,7 +144,7 @@ module Ofday = struct
       { ofday : Time_ns.Ofday.t
       ; zone : Zone.t
       }
-    [@@deriving bin_io, fields, compare, equal, hash]
+    [@@deriving bin_io, fields ~getters, compare, equal, hash]
 
     type sexp_repr = Time_ns.Ofday.t * Zone.t [@@deriving sexp]
 

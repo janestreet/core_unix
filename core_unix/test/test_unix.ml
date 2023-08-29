@@ -146,6 +146,17 @@ let%test_module _ =
   end)
 ;;
 
+let%expect_test "close-on-exec" =
+  let r, w = pipe ~close_on_exec:true () in
+  clear_close_on_exec r;
+  require_equal [%here] (module Bool) false (get_close_on_exec r);
+  [%expect {||}];
+  require_equal [%here] (module Bool) true (get_close_on_exec w);
+  [%expect {| |}];
+  close r;
+  close w
+;;
+
 let%test_unit _ =
   let test = "unix_test_file" in
   let rm_test () =
@@ -192,7 +203,7 @@ module Unix_tm_for_testing = struct
     ; tm_yday : int
     ; tm_isdst : bool
     }
-  [@@deriving fields, sexp_of]
+  [@@deriving fields ~iterators:for_all, sexp_of]
 
   let equal t1 t2 =
     let eq_int f = Field.get f t1 = Field.get f t2 in

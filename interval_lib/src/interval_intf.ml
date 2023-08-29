@@ -308,7 +308,7 @@ module type Interval = sig
   *)
   module Stable : sig
     module V1 : sig
-      type nonrec 'a t = 'a t [@@deriving bin_io, compare, sexp, stable_witness]
+      type nonrec 'a t = 'a t [@@deriving bin_io, compare, hash, sexp, stable_witness]
 
       module Float : Stable_with_witness with type t = Float.t
       module Int : Stable_with_witness with type t = Int.t

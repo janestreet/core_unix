@@ -127,7 +127,7 @@ module Composite = struct
     ; bar : string option
     ; baz : float list
     }
-  [@@deriving fields, sexp]
+  [@@deriving sexp]
 
   let t_param =
     let%map_open.Command foo = flag "foo" (required int) ~doc:"N foo factor"

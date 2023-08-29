@@ -488,10 +488,17 @@ type file_perm = int [@@deriving sexp]
 val openfile : ?perm:file_perm -> mode:open_flag list -> string -> File_descr.t
 
 module Open_flags : sig
-  (** [Open_flags.t] represents the flags associated with a file descriptor in the
-      open-file-descriptor table.  It deals with the same thing as OCaml's [open_flag]
-      type; however, it uses Core's [Flags] approach and the underlying integer bitmask
-      representation, and so interoperates more smoothly with C. *)
+  (** [Open_flags.t] represents the file access mode and file status flags flags
+      associated with a file description, as set by [openfile] and [fcntl_setfl],
+      and retrieved by [fcntl_getfl].
+
+      Since this type is not actually used by [openfile], many of the flags here are
+      meaningless. [creat], [excl], [trunc], [noctty] only make sense at
+      opening time, and can't be retrieved or configured with [fcntl].
+
+      We deliberately omit [cloexec] because [cloexec] actually isn't reported
+      by [fcntl_getfl].
+  *)
   type t [@@deriving sexp_of]
 
   include Flags.S with type t := t
@@ -883,6 +890,10 @@ val clear_nonblock : File_descr.t -> unit
     closed when the current process starts another program with
     one of the [exec] functions. *)
 val set_close_on_exec : File_descr.t -> unit
+
+(** Check whether the ``close-on-exec'' flag is set on the given
+    descriptor. *)
+val get_close_on_exec : File_descr.t -> bool
 
 (** Clear the ``close-on-exec'' flag on the given descriptor.
     See {!UnixLabels.set_close_on_exec}.*)
@@ -1308,7 +1319,7 @@ module Passwd : sig
     ; dir : string
     ; shell : string
     }
-  [@@deriving compare, fields, sexp]
+  [@@deriving compare, fields ~getters, sexp]
 
   val getbyname : string -> t option
   val getbyname_exn : string -> t
@@ -2262,7 +2273,7 @@ module Resource_usage : sig
     ; nvcsw : int64
     ; nivcsw : int64
     }
-  [@@deriving sexp, fields]
+  [@@deriving sexp, fields ~getters]
 
   val get : [ `Self | `Children ] -> t
 
@@ -2533,7 +2544,7 @@ module Ifaddr : sig
     ; netmask : Inet_addr.t option
     ; broadcast_or_destination : Broadcast_or_destination.t option
     }
-  [@@deriving fields, sexp_of]
+  [@@deriving fields ~getters, sexp_of]
 end
 
 val getifaddrs : unit -> Ifaddr.t list

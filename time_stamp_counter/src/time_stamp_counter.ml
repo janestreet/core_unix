@@ -136,7 +136,7 @@ module Calibrator = struct
     ; mutable monotonic_time_nanos : Int63.t
     ; floats : float_fields
     }
-  [@@deriving bin_io, fields, sexp]
+  [@@deriving bin_io, sexp]
 
   let tsc_to_seconds_since_epoch =
     let[@inline] convert t tsc base mul =

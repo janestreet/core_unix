@@ -212,7 +212,7 @@ module Null_toplevel = struct
   let settcpopt_string = u "Linux_ext.settcpopt_string"
   let peer_credentials = u "Linux_ext.peer_credentials"
 
-  module Epoll = Epoll.Null_impl
+  module Epoll = Epoll.Impl
 end
 
 module Null : Linux_ext_intf.S = struct
@@ -888,7 +888,7 @@ let get_bind_to_interface fd =
   | name -> Bound_to_interface.Only name
 ;;
 
-module Epoll = Epoll.Real_impl
+module Epoll = Epoll.Impl
 
 let cores = Ok cores
 let isolated_cpus = Ok isolated_cpus

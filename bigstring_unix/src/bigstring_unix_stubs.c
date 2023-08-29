@@ -65,6 +65,10 @@ CAMLprim value bigstring_init_stub(value __unused v_unit) {
      Sadly, it nowadays employs a heuristic that may change this value
      dynamically.  The call to mallopt suppresses this behavior, which
      made it hard to prevent C-heap fragmentation (e.g. in the writer).
+
+     [Async_unix.{Reader,Writer}] intentionally allocate buffers equal to or
+     larger than this limit by default to ensure they get mmap allocated
+     buffers.
   */
   mallopt(M_MMAP_THRESHOLD, 131072);
 #endif

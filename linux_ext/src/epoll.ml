@@ -1,7 +1,5 @@
-open Base
-open Core
-open Core_unix
-module Unix = Core_unix
+open! Base
+open! Core
 include Epoll_intf
 
 module Epoll_flags (Flag_values : sig
@@ -40,7 +38,7 @@ struct
     end)
 end
 
-module Null_impl = struct
+module Null_impl : S = struct
   module Flags = Epoll_flags (struct
       let in_ = Int63.of_int (1 lsl 0)
       let out = Int63.of_int (1 lsl 1)
@@ -76,7 +74,15 @@ module Null_impl = struct
   (* let pwait _ ~timeout:_ _      = assert false *)
 end
 
-module Real_impl = struct
+module _ = Null_impl
+
+[%%import "config.h"]
+[%%ifdef JSC_LINUX_EXT]
+
+module Impl = struct
+  open Core_unix
+  module Unix = Core_unix
+
   external flag_epollin : unit -> Int63.t = "core_linux_epoll_EPOLLIN_flag"
   external flag_epollout : unit -> Int63.t = "core_linux_epoll_EPOLLOUT_flag"
 
@@ -167,7 +173,7 @@ module Real_impl = struct
         mutable num_ready_events : int
       ; ready_events : 'a
       }
-    [@@deriving fields, sexp_of]
+    [@@deriving fields ~iterators:iter, sexp_of]
   end
 
   open T
@@ -396,3 +402,9 @@ module Real_impl = struct
 
   let create = Ok create
 end
+
+[%%else]
+
+module Impl = Null_impl
+
+[%%endif]

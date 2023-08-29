@@ -156,6 +156,21 @@ void core_unix_close_on_exec(int fd) {
   };
 }
 
+CAMLprim value core_unix_get_close_on_exec(value fd) {
+  int flags;
+  flags = fcntl(Int_val(fd), F_GETFD);
+  if (flags == -1) {
+    unix_error(errno, "get_close_on_exec: unable to get flags for descr",
+               Nothing);
+  }
+
+  if (flags & FD_CLOEXEC) {
+    return Val_true;
+  } else {
+    return Val_false;
+  }
+}
+
 
 /* Replacement for broken stat functions */
 

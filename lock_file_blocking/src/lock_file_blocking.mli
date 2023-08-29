@@ -8,7 +8,6 @@
 *)
 
 open! Core
-open! Import
 
 (** [create ?close_on_exec ?message path] tries to create a file at [path] containing the
     text [message], which defaults to the pid of the locking process.  It returns true on
@@ -26,18 +25,18 @@ open! Import
     The lock file is created with mode 664, so will not be world-writable even with
     umask 0. *)
 val create
-  :  ?message : string
-  -> ?close_on_exec : bool (** defaults to true *)
-  -> ?unlink_on_exit : bool (** defaults to false *)
+  :  ?message:string
+  -> ?close_on_exec:bool (** defaults to true *)
+  -> ?unlink_on_exit:bool (** defaults to false *)
   -> string
   -> bool
 
 (** [create_exn ?message path] is like [create] except that it throws an exception on
     failure instead of returning a boolean value. *)
 val create_exn
-  :  ?message : string
-  -> ?close_on_exec : bool (** defaults to true *)
-  -> ?unlink_on_exit : bool (** defaults to false *)
+  :  ?message:string
+  -> ?close_on_exec:bool (** defaults to true *)
+  -> ?unlink_on_exit:bool (** defaults to false *)
   -> string
   -> unit
 
@@ -46,12 +45,12 @@ val create_exn
     delay between retries is chosen uniformly at random between 0 and [max_retry_delay].
 *)
 val blocking_create
-  :  ?max_retry_delay: Time_float.Span.t (** defaults to [min(300ms, timeout / 3)] *)
-  -> ?random : Random.State.t Lazy.t (** defaults to a system-dependent low-entropy seed *)
-  -> ?timeout : Time_float.Span.t (** defaults to wait indefinitely *)
-  -> ?message : string
-  -> ?close_on_exec : bool (** defaults to true *)
-  -> ?unlink_on_exit : bool (** defaults to false *)
+  :  ?max_retry_delay:Time_float.Span.t (** defaults to [min(300ms, timeout / 3)] *)
+  -> ?random:Random.State.t Lazy.t (** defaults to a system-dependent low-entropy seed *)
+  -> ?timeout:Time_float.Span.t (** defaults to wait indefinitely *)
+  -> ?message:string
+  -> ?close_on_exec:bool (** defaults to true *)
+  -> ?unlink_on_exit:bool (** defaults to false *)
   -> string
   -> unit
 
@@ -113,22 +112,26 @@ module Nfs : sig
       program crashes without removing the lock file an attempt will be made to clean up
       on restart by checking the hostname and pid stored in the lockfile.
   *)
-  val create : ?message : string -> string -> unit Or_error.t
+  val create : ?message:string -> string -> unit Or_error.t
 
   (** [create_exn ?message path] is like [create], but throws an exception when it fails
       to obtain the lock. *)
-  val create_exn : ?message : string -> string -> unit
+  val create_exn : ?message:string -> string -> unit
 
   (** [blocking_create ?message path] is like [create], but sleeps for a short while
       between lock attempts and does not return until it succeeds or [timeout] expires.
       Timeout defaults to wait indefinitely. *)
-  val blocking_create : ?timeout : Time_float.Span.t -> ?message : string -> string -> unit
+  val blocking_create : ?timeout:Time_float.Span.t -> ?message:string -> string -> unit
 
   (** [critical_section ?message ~timeout path ~f] wraps function [f] (including
       exceptions escaping it) by first locking (using {!blocking_create}) and then
       unlocking the given lock file. *)
   val critical_section
-    : ?message : string -> string -> timeout : Time_float.Span.t -> f : (unit -> 'a) -> 'a
+    :  ?message:string
+    -> string
+    -> timeout:Time_float.Span.t
+    -> f:(unit -> 'a)
+    -> 'a
 
   (** [get_hostname_and_pid path] reads the lock file at [path] and returns the hostname
       and path in the file.  Returns [None] if the file cannot be read. *)
@@ -151,7 +154,8 @@ module Nfs : sig
       process, do not call this function -- this library already takes care of releasing
       at exit all the locks taken. *)
   val unlock_exn : string -> unit
-  val unlock     : string -> unit Or_error.t
+
+  val unlock : string -> unit Or_error.t
 end
 
 (** This is the dumbest lock imaginable: we [mkdir] to lock and [rmdir] to unlock.
@@ -162,7 +166,7 @@ module Mkdir : sig
 
   (** Raises an exception if the [mkdir] system call fails for any reason other than
       [EEXIST]. *)
-  val lock_exn : lock_path:string -> [`We_took_it of t | `Somebody_else_took_it]
+  val lock_exn : lock_path:string -> [ `We_took_it of t | `Somebody_else_took_it ]
 
   (** Raises an exception if the [rmdir] system call fails. *)
   val unlock_exn : t -> unit
@@ -188,9 +192,10 @@ module Symlink : sig
       Raises an exception if taking the lock fails for any reason other than somebody
       else holding the lock.
   *)
-  val lock_exn :
-    lock_path:string -> metadata:string
-    -> [`We_took_it of t | `Somebody_else_took_it of (string Or_error.t) ]
+  val lock_exn
+    :  lock_path:string
+    -> metadata:string
+    -> [ `We_took_it of t | `Somebody_else_took_it of string Or_error.t ]
 
   val unlock_exn : t -> unit
 end
@@ -213,7 +218,7 @@ end
 
     2. Writing pid or message in the file.
     The file is shared between multiple processes so this feature seems hard to
-    think about, and it already lead to weird code. Let's just remove it.
+    think about, and it already led to weird code. Let's just remove it.
     You can still find who holds the file open by inspecting output of [lsof]. *)
 module Flock : sig
   type t

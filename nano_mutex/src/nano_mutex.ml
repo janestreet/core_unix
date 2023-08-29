@@ -91,7 +91,7 @@ type t =
   ; mutable num_using_blocker : int
   ; mutable blocker : Blocker.t option
   }
-[@@deriving fields, sexp_of]
+[@@deriving sexp_of]
 
 let invariant t =
   try
