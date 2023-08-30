@@ -21,5 +21,5 @@ let () =
     let buf = Bytes.create 1 in
     Unix.waitpid_exn child;
     assert (Unix.read reader ~buf = 1);
-    assert (Bytes.to_string buf = "x");
-
+    assert (Bytes.to_string buf = "x")
+;;

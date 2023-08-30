@@ -7,9 +7,9 @@ let run_scenario instructions =
   run
     "env"
     ((* disable backtraces *)
-      "OCAMLRUNPARAM=b=0"
-      :: "../test-bin/command_shape_test_parent.exe"
-      :: [%of_sexp: string list] (Sexp.of_string instructions))
+     "OCAMLRUNPARAM=b=0"
+     :: "../test-bin/command_shape_test_parent.exe"
+     :: [%of_sexp: string list] (Sexp.of_string instructions))
 ;;
 
 (* All valid permutations of writing and closing both stdout and stderr. *)

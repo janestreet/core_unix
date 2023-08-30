@@ -46,8 +46,8 @@ open! Int.Replace_polymorphic_compare
 include Time_functor_intf
 
 module Make
-    (Time0 : Time_float.S_kernel_without_zone)
-    (Time : Time_float.S_kernel with module Time := Time0) =
+  (Time0 : Time_float.S_kernel_without_zone)
+  (Time : Time_float.S_kernel with module Time := Time0) =
 struct
   module Span = struct
     include Time.Span
@@ -110,20 +110,20 @@ struct
       end
 
       include Pretty_printer.Register (struct
-          type nonrec t = t
+        type nonrec t = t
 
-          let to_string = to_string
-          let module_name = "Time_float_unix.Ofday.Zoned"
-        end)
+        let to_string = to_string
+        let module_name = "Time_float_unix.Ofday.Zoned"
+      end)
     end
   end
 
   include (
     Time :
       module type of Time
-    with module Zone := Time.Zone
-     and module Ofday := Time.Ofday
-     and module Span := Time.Span)
+        with module Zone := Time.Zone
+         and module Ofday := Time.Ofday
+         and module Span := Time.Span)
 
   let of_tm tm ~zone =
     (* Explicitly ignoring isdst, wday, yday (they are redundant with the other fields
@@ -267,11 +267,11 @@ struct
   let arg_type = Core.Command.Arg_type.create of_string_abs
 
   include Pretty_printer.Register (struct
-      type nonrec t = t
+    type nonrec t = t
 
-      let to_string = to_string
-      let module_name = "Time_float_unix"
-    end)
+    let to_string = to_string
+    let module_name = "Time_float_unix"
+  end)
 
   let sexp_zone = ref Zone.local
   let get_sexp_zone () = Lazy.force !sexp_zone
@@ -320,8 +320,8 @@ struct
 
   module type C =
     Comparable.Map_and_set_binable
-    with type t := t
-     and type comparator_witness := comparator_witness
+      with type t := t
+       and type comparator_witness := comparator_witness
 
   let make_comparable ?(sexp_of_t = sexp_of_t) ?(t_of_sexp = t_of_sexp) () : (module C) =
     (module struct
@@ -348,12 +348,12 @@ struct
      longer accept raw. *)
   include
     (val make_comparable () ~t_of_sexp:(fun sexp ->
-       match
-         Option.try_with (fun () ->
-           of_span_since_epoch (Span.of_sec (Float.t_of_sexp sexp)))
-       with
-       | Some t -> t
-       | None -> t_of_sexp sexp))
+           match
+             Option.try_with (fun () ->
+               of_span_since_epoch (Span.of_sec (Float.t_of_sexp sexp)))
+           with
+           | Some t -> t
+           | None -> t_of_sexp sexp))
 
   let%test _ =
     Set.equal
@@ -363,8 +363,8 @@ struct
   ;;
 
   include Hashable.Make_binable (struct
-      type nonrec t = t [@@deriving bin_io, compare, hash, sexp]
-    end)
+    type nonrec t = t [@@deriving bin_io, compare, hash, sexp]
+  end)
 
   module Exposed_for_tests = struct
     let ensure_colon_in_offset = ensure_colon_in_offset

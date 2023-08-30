@@ -84,7 +84,7 @@ let of_tm tm ~zone =
        ; tm_wday = _
        ; tm_yday = _
        }
-       : Unix.tm)
+        : Unix.tm)
     =
     tm
   in
@@ -177,11 +177,11 @@ module Ofday = struct
     end
 
     include Pretty_printer.Register (struct
-        type nonrec t = t
+      type nonrec t = t
 
-        let to_string = to_string
-        let module_name = "Time_ns_unix.Ofday.Zoned"
-      end)
+      let to_string = to_string
+      let module_name = "Time_ns_unix.Ofday.Zoned"
+    end)
 
     module Stable = struct
       module V1 = struct
@@ -315,14 +315,14 @@ module Ofday = struct
     let t_of_sexp = Stable.V1.t_of_sexp
 
     include Identifiable.Make (struct
-        type nonrec t = t [@@deriving sexp, compare, bin_io, hash]
+      type nonrec t = t [@@deriving sexp, compare, bin_io, hash]
 
-        let module_name = "Time_ns_unix.Ofday.Option"
+      let module_name = "Time_ns_unix.Ofday.Option"
 
-        include Sexpable.To_stringable (struct
-            type nonrec t = t [@@deriving sexp]
-          end)
+      include Sexpable.To_stringable (struct
+        type nonrec t = t [@@deriving sexp]
       end)
+    end)
 
     include (Span.Option : Core.Comparisons.S with type t := t)
   end
@@ -462,14 +462,14 @@ module Option = struct
   let t_of_sexp = Stable.V1.t_of_sexp
 
   include Identifiable.Make (struct
-      type nonrec t = t [@@deriving sexp, compare, bin_io, hash]
+    type nonrec t = t [@@deriving sexp, compare, bin_io, hash]
 
-      let module_name = "Time_ns_unix.Option"
+    let module_name = "Time_ns_unix.Option"
 
-      include Sexpable.To_stringable (struct
-          type nonrec t = t [@@deriving sexp]
-        end)
+    include Sexpable.To_stringable (struct
+      type nonrec t = t [@@deriving sexp]
     end)
+  end)
 
   (* bring back the efficient implementation of comparison operators *)
   include (Span.Option : Core.Comparisons.S with type t := t)
@@ -486,11 +486,11 @@ let of_string_fix_proto zone s =
 ;;
 
 include Identifiable.Make_using_comparator (struct
-    include Stable0.V1
+  include Stable0.V1
 
-    let module_name = "Time_ns_unix"
-    let of_string, to_string = of_string, to_string
-  end)
+  let module_name = "Time_ns_unix"
+  let of_string, to_string = of_string, to_string
+end)
 
 (* bring back the efficient implementation of comparison operators *)
 include (Core.Time_ns : Core.Comparisons.S with type t := t)

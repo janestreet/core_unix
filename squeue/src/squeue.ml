@@ -1,7 +1,6 @@
 open! Core
 open! Import
 module Mutex = Error_checking_mutex
-
 module Queue = Linked_queue
 
 (** Synchronized queue type *)

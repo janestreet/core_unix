@@ -8,11 +8,6 @@ type t [@@deriving sexp_of]
 
 (** {6 Thread creation and termination} *)
 
-val create
-  :  on_uncaught_exn:[ `Kill_whole_process | `Print_to_stderr ]
-  -> ('a -> unit)
-  -> 'a
-  -> t
 (** [Thread.create funct arg] creates a new thread of control, in which the function
     application [funct arg] is executed concurrently with the other threads of the
     program. The application of [Thread.create] returns the handle of the newly created
@@ -26,17 +21,22 @@ val create
     the parent thread.  If [`Kill_whole_process] is selected, the exception is printed to
     stderr and then the process exits with code 1 (after having run [at_exit] callbacks,
     etc.). *)
+val create
+  :  on_uncaught_exn:[ `Kill_whole_process | `Print_to_stderr ]
+  -> ('a -> unit)
+  -> 'a
+  -> t
 
-val self : unit -> t
 (** Return the thread currently executing. *)
+val self : unit -> t
 
-val id : t -> int
 (** Return the identifier of the given thread. A thread identifier
     is an integer that identifies uniquely the thread.
     It can be used to build data structures indexed by threads. *)
+val id : t -> int
 
-val exit : unit -> unit
 (** Terminate prematurely the currently executing thread. *)
+val exit : unit -> unit
 
 (** This has been deliberately removed from the interface because it is an inherently
     unsafe operation and is never required.
@@ -50,30 +50,29 @@ val exit : unit -> unit
 
 (** {6 Suspending threads} *)
 
-val delay : float -> unit
 (** [delay d] suspends the execution of the calling thread for
     [d] seconds. The other program threads continue to run during
     this time. *)
+val delay : float -> unit
 
-val join : t -> unit
 (** [join th] suspends the execution of the calling thread
     until the thread [th] has terminated. *)
+val join : t -> unit
 
-
-val wait_timed_read : Unix.file_descr -> float -> bool
 (** See {!Thread.wait_timed_write}.*)
+val wait_timed_read : Unix.file_descr -> float -> bool
 
-val wait_timed_write : Unix.file_descr -> float -> bool
 (** Same as {!Thread.wait_read} and {!Thread.wait_write}, but wait for at most
     the amount of time given as second argument (in seconds).
     Return [true] if the file descriptor is ready for input/output
     and [false] if the timeout expired. *)
+val wait_timed_write : Unix.file_descr -> float -> bool
 
-val yield : unit -> unit
 (** Re-schedule the calling thread without suspending it.
     This function can be used to give scheduling hints,
     telling the scheduler that now is a good time to
     switch to other threads. *)
+val yield : unit -> unit
 
 (** {6 Management of signals} *)
 
@@ -85,7 +84,6 @@ val yield : unit -> unit
     Per-thread signal masks are supported only by the system thread library
     under Unix, but not under Win32, nor by the VM thread library. *)
 
-val sigmask : Signal_unix.sigprocmask_command -> Signal.t list -> Signal.t list
 (** [sigmask cmd sigs] changes the set of blocked signals for the
     calling thread.
     If [cmd] is [`Set], blocked signals are set to those in
@@ -95,15 +93,15 @@ val sigmask : Signal_unix.sigprocmask_command -> Signal.t list -> Signal.t list
     If [cmd] is [`Unblock], the signals in [sigs] are removed
     from the set of blocked signals.
     [sigmask] returns the set of previously blocked signals for the thread. *)
+val sigmask : Signal_unix.sigprocmask_command -> Signal.t list -> Signal.t list
 
-val wait_signal : Signal.t list -> int
 (** [wait_signal sigs] suspends the execution of the calling thread
     until the process receives one of the signals specified in the
     list [sigs].  It then returns the number of the signal received.
     Signal handlers attached to the signals in [sigs] will not
     be invoked.  The signals [sigs] are expected to be blocked before
     calling [wait_signal]. *)
-
+val wait_signal : Signal.t list -> int
 
 (** Jane Street extensions *)
 
@@ -154,7 +152,7 @@ val setaffinity_self_exn : (Int.Set.t -> unit) Or_error.t
     This function is implemented using [pthread_getaffinity_np(3)], when
     available. See the man page for situations when this function may return an
     error, and therefore raise. *)
-val getaffinity_self_exn : (unit      -> Int.Set.t) Or_error.t
+val getaffinity_self_exn : (unit -> Int.Set.t) Or_error.t
 
 module For_testing : sig
   (** If [!create_should_raise = true], then [create] raises rather than creating a

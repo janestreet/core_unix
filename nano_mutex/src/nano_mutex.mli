@@ -89,4 +89,3 @@ val unlock : t -> unit Or_error.t
 
 val unlock_exn : t -> unit
 val critical_section : t -> f:(unit -> 'a) -> 'a
-

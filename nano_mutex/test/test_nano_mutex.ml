@@ -27,14 +27,14 @@ let%test_unit _ =
           Thread.create
             ~on_uncaught_exn:`Print_to_stderr
             (fun () ->
-               for _ = 1 to num_iterations do
-                 lock_exn l;
-                 if !am_holding_lock then failwith "lock multiply acquired";
-                 am_holding_lock := true;
-                 ignore (Unix.nanosleep pause_for : float);
-                 am_holding_lock := false;
-                 unlock_exn l
-               done)
+              for _ = 1 to num_iterations do
+                lock_exn l;
+                if !am_holding_lock then failwith "lock multiply acquired";
+                am_holding_lock := true;
+                ignore (Unix.nanosleep pause_for : float);
+                am_holding_lock := false;
+                unlock_exn l
+              done)
             ()
         in
         let threads = List.init num_threads ~f:(fun _ -> one_thread ()) in

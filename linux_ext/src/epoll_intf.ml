@@ -87,7 +87,6 @@ module type S = sig
   val iter : t -> f:(File_descr.t -> Flags.t -> unit) -> unit
   val fold : t -> init:'a -> f:(File_descr.t -> Flags.t -> 'a -> 'a) -> 'a
 
-
   (** [wait t ~timeout] blocks until at least one file descriptor in [t] is ready for
       one of the events it is being watched for, or [timeout] passes.  [wait] side
       effects [t] by storing the ready set in it.  One can subsequently access the ready

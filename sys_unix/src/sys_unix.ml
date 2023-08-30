@@ -18,7 +18,6 @@ let getenv_exn_f ~f_str ~f var =
 
 let unsafe_getenv_exn = getenv_exn_f ~f_str:"Sys.unsafe_getenv_exn" ~f:unsafe_getenv
 
-
 let stat_check_exn f ?(follow_symlinks = true) path =
   let rec loop () =
     try f (if follow_symlinks then LargeFile.stat path else LargeFile.lstat path) with
@@ -96,7 +95,7 @@ external executing_bytecode
   -> unit
   -> bool
   = "executing_bytecode" "not_executing_bytecode"
-[@@noalloc]
+  [@@noalloc]
 
 let execution_mode () =
   if executing_bytecode () () () () () () then `Bytecode else `Native

@@ -20,7 +20,7 @@ val parse_command_line
   -> ?readme:(unit -> string)
   -> 'a Command.Param.t
   -> (?on_error:(unit -> unit) -> ?on_success:('a -> unit) -> string list -> unit)
-       Staged.t
+     Staged.t
 
 val parse_command_line_or_error
   :  ?path:string list
@@ -96,7 +96,7 @@ val complete
 (** As [complete] but applies to an intact [Command]. *)
 val complete_command
   :  ?complete_subcommands:
-    (path:string list -> part:string -> string list list -> string list option)
+       (path:string list -> part:string -> string list list -> string list option)
   -> ?which_arg:int
   -> Command.t
   -> args:string list

@@ -248,7 +248,7 @@ module Span = struct
        ~min:(Excl min_value_for_1us_rounding)
        ~max:(Excl max_value_for_1us_rounding)
        zero
-     : Validate.t)
+      : Validate.t)
   ;;
 
   let%bench "validate_bound (failure)" =
@@ -256,7 +256,7 @@ module Span = struct
        ~min:(Excl min_value_for_1us_rounding)
        ~max:(Excl max_value_for_1us_rounding)
        min_value_for_1us_rounding
-     : Validate.t)
+      : Validate.t)
   ;;
 
   let validate_positive = validate_positive
@@ -1040,7 +1040,7 @@ module Ofday = struct
 
   let%bench "validate_bound (failure)" =
     (validate_bound ~min:(Excl start_of_day) ~max:(Excl evening) start_of_day
-     : Validate.t)
+      : Validate.t)
   ;;
 
   let add_exn = add_exn
@@ -1755,7 +1755,7 @@ let%bench "validate_bound (success)" =
      ~min:(Excl min_value_for_1us_rounding)
      ~max:(Excl max_value_for_1us_rounding)
      epoch
-   : Validate.t)
+    : Validate.t)
 ;;
 
 let%bench "validate_bound (failure)" =
@@ -1763,7 +1763,7 @@ let%bench "validate_bound (failure)" =
      ~min:(Excl min_value_for_1us_rounding)
      ~max:(Excl max_value_for_1us_rounding)
      min_value_for_1us_rounding
-   : Validate.t)
+    : Validate.t)
 ;;
 
 let to_time_float_round_nearest = to_time_float_round_nearest
@@ -2133,7 +2133,7 @@ module Alternate_sexp = struct
        ~min:(Excl min_value_for_1us_rounding)
        ~max:(Excl max_value_for_1us_rounding)
        epoch
-     : Validate.t)
+      : Validate.t)
   ;;
 
   let%bench "validate_bound (failure)" =
@@ -2141,7 +2141,7 @@ module Alternate_sexp = struct
        ~min:(Excl min_value_for_1us_rounding)
        ~max:(Excl max_value_for_1us_rounding)
        min_value_for_1us_rounding
-     : Validate.t)
+      : Validate.t)
   ;;
 
   module Replace_polymorphic_compare = struct

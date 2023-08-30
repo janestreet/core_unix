@@ -9,9 +9,9 @@ include (
     end
     with module Map := Time.Map
     with module Set := Time.Set
-                       (* We disable deprecations because we need to elide deprecated
+   (* We disable deprecations because we need to elide deprecated
                           submodules. *)
-                       [@ocaml.warning "-3"]))
+   [@ocaml.warning "-3"]))
 
 module T = Time_functor.Make (Time) (Time)
 
@@ -19,16 +19,16 @@ module T = Time_functor.Make (Time) (Time)
    time serialization, so when reading hash-based containers in we accept either
    serialization. *)
 include Hashable.Make_binable (struct
-    type t = Time.t [@@deriving bin_io, compare, hash]
+  type t = Time.t [@@deriving bin_io, compare, hash]
 
-    let sexp_of_t = T.sexp_of_t
+  let sexp_of_t = T.sexp_of_t
 
-    let t_of_sexp sexp =
-      match Float.t_of_sexp sexp with
-      | float -> Time.of_span_since_epoch (Time.Span.of_sec float)
-      | exception _ -> T.t_of_sexp sexp
-    ;;
-  end)
+  let t_of_sexp sexp =
+    match Float.t_of_sexp sexp with
+    | float -> Time.of_span_since_epoch (Time.Span.of_sec float)
+    | exception _ -> T.t_of_sexp sexp
+  ;;
+end)
 
 module Span = struct
   include Time.Span
@@ -50,10 +50,10 @@ module Zone = struct
   include (
     T.Zone :
       module type of struct
-      include T.Zone
-    end
-    with module Index := T.Zone.Index
-    with type t := T.Zone.t)
+        include T.Zone
+      end
+      with module Index := T.Zone.Index
+      with type t := T.Zone.t)
 end
 
 module Stable = struct
@@ -179,19 +179,19 @@ end
 include (
   T :
     module type of struct
-    include T
-  end
-  with module Table := T.Table
-  with module Hash_set := T.Hash_set
-  with module Hash_queue := T.Hash_queue
-  with module Span := T.Span
-  with module Ofday := T.Ofday
-  with module Replace_polymorphic_compare := T.Replace_polymorphic_compare
-  with module Date_and_ofday := T.Date_and_ofday
-  with module Zone := T.Zone
-  with type underlying := T.underlying
-  with type t := T.t
-  with type comparator_witness := T.comparator_witness)
+      include T
+    end
+    with module Table := T.Table
+    with module Hash_set := T.Hash_set
+    with module Hash_queue := T.Hash_queue
+    with module Span := T.Span
+    with module Ofday := T.Ofday
+    with module Replace_polymorphic_compare := T.Replace_polymorphic_compare
+    with module Date_and_ofday := T.Date_and_ofday
+    with module Zone := T.Zone
+    with type underlying := T.underlying
+    with type t := T.t
+    with type comparator_witness := T.comparator_witness)
 
 let to_string = T.to_string
 let of_string = T.of_string

@@ -394,7 +394,7 @@ let%test_unit _ =
   ; "foo", "../bar", "foo/../bar"
   ]
   |> List.iter ~f:(fun (dir, path, expected) ->
-    [%test_eq: string] (abs_path ~dir path) expected)
+       [%test_eq: string] (abs_path ~dir path) expected)
 ;;
 
 let%expect_test "choose_one strings" =
@@ -640,7 +640,7 @@ let%expect_test "[and_arg_name]" =
 let truncate_long_lines output =
   String.split output ~on:'\n'
   |> List.map ~f:(fun line ->
-    if String.length line > 80 then String.prefix line 80 ^ " ..." else line)
+       if String.length line > 80 then String.prefix line 80 ^ " ..." else line)
   |> String.concat ~sep:"\n"
 ;;
 

@@ -135,8 +135,8 @@ let fdpair_test ~n fdpair sender receiver bs =
       Thread.create
         ~on_uncaught_exn:`Print_to_stderr
         (fun () ->
-           try sender bs write with
-           | e -> eprintf "ERROR: %s" (Exn.to_string e))
+          try sender bs write with
+          | e -> eprintf "ERROR: %s" (Exn.to_string e))
         ()
     in
     receiver ~n bs read;
@@ -147,16 +147,15 @@ let fdpair_test ~n fdpair sender receiver bs =
   | e -> assert_failure [%here] (sprintf "%s: receive exception: %s" n (Exn.to_string e))
 ;;
 
-
 let write_read_test ~n fdpair bs =
   fdpair_test
     ~n
     fdpair
     (fun bs fd -> Bigstring_unix.really_write fd bs)
     (fun ~n bs fd ->
-       let bs' = Bigstring.create (Bigstring.length bs) in
-       Bigstring_unix.really_read fd bs';
-       sprintf "send/recv %s: %s,%s" n (repr bs) (repr bs') @? (bs = bs'))
+      let bs' = Bigstring.create (Bigstring.length bs) in
+      Bigstring_unix.really_read fd bs';
+      sprintf "send/recv %s: %s,%s" n (repr bs) (repr bs') @? (bs = bs'))
     bs
 ;;
 
@@ -167,18 +166,18 @@ let output_input_test ?(runs = 2) ~n fdpair bs =
     ~n
     fdpair
     (fun bs fd ->
-       if !oc = stdout then oc := Unix.out_channel_of_descr fd;
-       for _ = 1 to runs do
-         Bigstring_unix.really_output !oc bs
-       done;
-       Out_channel.flush !oc)
+      if !oc = stdout then oc := Unix.out_channel_of_descr fd;
+      for _ = 1 to runs do
+        Bigstring_unix.really_output !oc bs
+      done;
+      Out_channel.flush !oc)
     (fun ~n bs fd ->
-       if !ic = In_channel.stdin then ic := Unix.in_channel_of_descr fd;
-       let bs' = Bigstring.create (Bigstring.length bs) in
-       for _ = 1 to runs do
-         Bigstring_unix.really_input !ic bs'
-       done;
-       sprintf "output/input %s: %s,%s" n (repr bs) (repr bs') @? (bs = bs'))
+      if !ic = In_channel.stdin then ic := Unix.in_channel_of_descr fd;
+      let bs' = Bigstring.create (Bigstring.length bs) in
+      for _ = 1 to runs do
+        Bigstring_unix.really_input !ic bs'
+      done;
+      sprintf "output/input %s: %s,%s" n (repr bs) (repr bs') @? (bs = bs'))
     bs
 ;;
 
@@ -230,7 +229,7 @@ let%expect_test "blit" =
   repeat
     5000
     (fun (s1, s2, src_pos, dst_pos, len) ->
-       blit_test ~n:"random" ~src_pos ~dst_pos ~len (s1, s2))
+      blit_test ~n:"random" ~src_pos ~dst_pos ~len (s1, s2))
     (fun () -> sg (), sg (), nng (), nng (), nng ())
 ;;
 

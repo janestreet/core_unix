@@ -13,14 +13,18 @@ val realpath : string -> string
     is no risk that the temporary file will be modified (e.g. replaced
     by a symbolic link) before the program opens it. *)
 val open_temp_file
-  : ?perm: int -> ?in_dir: string -> string -> string -> string * Out_channel.t
+  :  ?perm:int
+  -> ?in_dir:string
+  -> string
+  -> string
+  -> string * Out_channel.t
 
 (** Similar to {!Core_filename.open_temp_file}, but returns a Unix file descriptor
     open in read&write mode instead of an [Out_channel.t]. *)
 val open_temp_file_fd
-  : ?close_on_exec:bool (** default false *)
-  -> ?perm: int
-  -> ?in_dir: string
+  :  ?close_on_exec:bool (** default false *)
+  -> ?perm:int
+  -> ?in_dir:string
   -> string
   -> string
   -> string * Unix.file_descr
@@ -43,8 +47,8 @@ val open_temp_file_fd
 
     [temp_dir] is the same as [temp_file] but creates a temporary directory. *)
 
-val temp_file: ?perm:int -> ?in_dir: string -> string -> string -> string
-val temp_dir : ?perm:int -> ?in_dir: string -> string -> string -> string
+val temp_file : ?perm:int -> ?in_dir:string -> string -> string -> string
+val temp_dir : ?perm:int -> ?in_dir:string -> string -> string -> string
 
 (** [create_arg_type]'s resulting [Arg_type.t] does bash autocompletion, via [compgen]. *)
 val create_arg_type

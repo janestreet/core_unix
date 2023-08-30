@@ -20,7 +20,6 @@ module type S = sig
   val ok_exn : t -> ok_value
   val error_exn : t -> Unix_error.t
 
-
   (** This is more efficient than calling [error_exn] and then the [create_error] of the
       destination type. *)
   val reinterpret_error_exn : t -> _ syscall_result

@@ -13,7 +13,6 @@ module type S_time = sig
 
   include Interval.S with type bound = Time.t (** @open *)
 
-
   (** [create_ending_after ?zone (od1, od2) ~now] returns the smallest interval [(t1 t2)]
       with minimum [t2] such that [t2 >= now], [to_ofday t1 = od1], and [to_ofday t2 =
       od2]. If a zone is specified, it is used to translate [od1] and [od2] into times,

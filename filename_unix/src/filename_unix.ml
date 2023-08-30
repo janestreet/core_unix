@@ -17,16 +17,16 @@ let create_arg_type ?key of_string =
         | `No | `Unknown -> comp)
     in
     match completions with
-    | [dir] when String.is_suffix dir ~suffix:"/" ->
+    | [ dir ] when String.is_suffix dir ~suffix:"/" ->
       (* If the only match is a directory, we fake out bash here by creating a bogus
          entry, which the user will never see - it forces bash to push the completion
          out to the slash. Then when the user hits tab again, they will be at the end
          of the line, at the directory with a slash and completion will continue into
          the subdirectory.
       *)
-      [dir; dir ^ "x"]
-    | _ -> completions
-  )
+      [ dir; dir ^ "x" ]
+    | _ -> completions)
+;;
 
 let arg_type = create_arg_type Fn.id
 
@@ -40,12 +40,11 @@ let prng = Random.State.make_self_init ~allow_in_tests:true ()
    (note even [Random.State.t] is implemented as a [lazy], this lazy will always be
    forced because [make_self_init] constructs it with [Lazy.from_val])
 *)
-let random_bits () =
-  Random.State.bits prng
+let random_bits () = Random.State.bits prng
 
 (* try up to 1000 times to not get a Sys_error when opening a temp
    file / name: *)
-let retry ?(in_dir=temp_dir_name) ~f prefix suffix =
+let retry ?(in_dir = temp_dir_name) ~f prefix suffix =
   let escape s =
     String.map s ~f:(function
       | '/' | '\'' | '\000' | '\n' | '-' -> '_'
@@ -56,15 +55,15 @@ let retry ?(in_dir=temp_dir_name) ~f prefix suffix =
   let rec try_name counter =
     let name =
       let rnd = random_bits () land 0xFF_FFFF in
-      (Printf.sprintf "%s.tmp.%06x%s" prefix rnd suffix)
+      Printf.sprintf "%s.tmp.%06x%s" prefix rnd suffix
     in
     let name = concat in_dir name in
-    try
-      f name
-    with Sys_error _ | Unix.Unix_error _ as e ->
+    try f name with
+    | (Sys_error _ | Unix.Unix_error _) as e ->
       if Int.(counter >= 1000) then raise e else try_name (counter + 1)
   in
   try_name 0
+;;
 
 (* these functions are the same as the ones in the std lib but you
    can override the temporary directory you are working in.  They also try the
@@ -74,24 +73,30 @@ let retry ?(in_dir=temp_dir_name) ~f prefix suffix =
    instead of using [lazy].
 *)
 
-let temp_dir ?(perm=0o700) ?in_dir prefix suffix =
-  retry ?in_dir prefix suffix
-    ~f:(fun name -> Unix.mkdir name perm; name)
+let temp_dir ?(perm = 0o700) ?in_dir prefix suffix =
+  retry ?in_dir prefix suffix ~f:(fun name ->
+    Unix.mkdir name perm;
+    name)
+;;
 
-let open_temp_file ?(perm=0o600) ?in_dir prefix suffix =
-  retry ?in_dir prefix suffix
-    ~f:(fun name -> (name, Out_channel.create ~perm ~fail_if_exists:true name))
+let open_temp_file ?(perm = 0o600) ?in_dir prefix suffix =
+  retry ?in_dir prefix suffix ~f:(fun name ->
+    name, Out_channel.create ~perm ~fail_if_exists:true name)
+;;
 
-let open_temp_file_fd ?(close_on_exec = false) ?(perm=0o600) ?in_dir prefix suffix =
-  retry ?in_dir prefix suffix
-    ~f:(fun name ->
-      (name, UnixLabels.openfile
-               ~perm
-               ~mode:((if close_on_exec then [ Unix.O_CLOEXEC ] else [])
-                      @ [O_EXCL; O_CREAT; O_RDWR])
-               name))
+let open_temp_file_fd ?(close_on_exec = false) ?(perm = 0o600) ?in_dir prefix suffix =
+  retry ?in_dir prefix suffix ~f:(fun name ->
+    ( name
+    , UnixLabels.openfile
+        ~perm
+        ~mode:
+          ((if close_on_exec then [ Unix.O_CLOEXEC ] else [])
+           @ [ O_EXCL; O_CREAT; O_RDWR ])
+        name ))
+;;
 
 let temp_file ?perm ?in_dir prefix suffix =
-  let (name, oc) = open_temp_file ?perm ?in_dir prefix suffix in
+  let name, oc = open_temp_file ?perm ?in_dir prefix suffix in
   Out_channel.close oc;
   name
+;;

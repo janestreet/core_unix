@@ -52,7 +52,6 @@
     See also: {:http://en.wikipedia.org/wiki/Time_Stamp_Counter}
 *)
 
-
 open! Core
 open! Import
 
@@ -122,7 +121,6 @@ module Span : sig
   val ( + ) : t -> t -> t
   val ( - ) : t -> t -> t
   val zero : t
-
   val to_ns : t -> calibrator:Calibrator.t -> Int63.t
   val of_ns : Int63.t -> calibrator:Calibrator.t -> t
   val to_time_ns_span : t -> calibrator:Calibrator.t -> Time_ns.Span.t
@@ -153,12 +151,10 @@ val zero : t
     While the [Async] scheduler is running, this value is recalibrated regularly. *)
 val calibrator : Calibrator.t Lazy.t
 
-
 (**
 
    It is guaranteed that repeated calls will return nondecreasing [Time.t] values. *)
 val to_time : t -> calibrator:Calibrator.t -> Time_float.t
-
 
 val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t
 
@@ -168,7 +164,6 @@ val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t
 
   https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
-
   val ewma : alpha:float -> old:float -> add:float -> float
   val of_int63 : Int63.t -> t
   val max_percent_change_from_real_slope : float

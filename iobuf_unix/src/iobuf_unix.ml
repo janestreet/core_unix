@@ -85,7 +85,7 @@ module Recvmmsg_context = struct
       raise_s
         [%sexp
           "Recvmmsg_context.create: all buffers must be reset"
-        , (ts : (_, _) t_with_shallow_sexp array)]
+          , (ts : (_, _) t_with_shallow_sexp array)]
   ;;
 
   (* we retain a reference to the underlying bigstrings, in the event that callers
@@ -109,7 +109,7 @@ external unsafe_recvmmsg_assume_fd_is_nonblocking
   -> Recvmmsg_context.ctx
   -> Unix.Syscall_result.Int.t
   = "iobuf_recvmmsg_assume_fd_is_nonblocking_stub"
-[@@noalloc]
+  [@@noalloc]
 
 let recvmmsg_assume_fd_is_nonblocking fd { Recvmmsg_context.iobufs; ctx; _ } =
   unsafe_recvmmsg_assume_fd_is_nonblocking fd iobufs ctx
@@ -162,7 +162,7 @@ let send_nonblocking_no_sigpipe () =
   | Ok send ->
     Ok
       (fun t fd ->
-         unsafe_sent t (send fd (Expert.buf t) ~pos:(Expert.lo t) ~len:(length t)))
+        unsafe_sent t (send fd (Expert.buf t) ~pos:(Expert.lo t) ~len:(length t)))
 ;;
 
 let sendto_nonblocking_no_sigpipe () =
@@ -171,7 +171,7 @@ let sendto_nonblocking_no_sigpipe () =
   | Ok sendto ->
     Ok
       (fun t fd addr ->
-         unsafe_sent t (sendto fd (Expert.buf t) ~pos:(Expert.lo t) ~len:(length t) addr))
+        unsafe_sent t (sendto fd (Expert.buf t) ~pos:(Expert.lo t) ~len:(length t) addr))
 ;;
 
 module Peek = struct
@@ -229,7 +229,7 @@ module Expert = struct
     -> (float[@unboxed])
     -> int
     = "iobuf_unsafe_pokef_double_bytecode" "iobuf_unsafe_pokef_double"
-  [@@noalloc]
+    [@@noalloc]
 
   let fillf_float t ~c_format value =
     let limit = length t in
@@ -260,8 +260,8 @@ module In_channel_optimized = struct
   let present_line ~fix_win_eol ~acc ~f buf ~len =
     let len_of_line =
       if fix_win_eol
-      && len > 0
-      && Char.equal '\r' (Iobuf.Unsafe.Peek.char ~pos:(len - 1) buf)
+         && len > 0
+         && Char.equal '\r' (Iobuf.Unsafe.Peek.char ~pos:(len - 1) buf)
       then len - 1
       else len
     in

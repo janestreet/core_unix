@@ -3,7 +3,6 @@ open! Core
 module type Gen = sig
   type 'a t
 
-
   (** [bound] is the type of points in the interval (and therefore of the bounds).
       [bound] is instantiated in two different ways below: in [module type S] as a
       monotype and in [module type S1] as ['a]. *)
@@ -16,7 +15,6 @@ module type Gen = sig
   val empty : 'a t
   val intersect : 'a t -> 'a t -> 'a t
   val is_empty : 'a t -> bool
-
   val is_empty_or_singleton : 'a t -> bool
 
   (*_ If you are looking for a simple interval type where the bounds are not optional,
@@ -63,7 +61,6 @@ module type Gen = sig
       v}
   *)
   val bound : 'a t -> 'a bound -> 'a bound option
-
 
   (** [is_superset i1 of_:i2] is whether i1 contains i2. The empty interval is
       contained in every interval. *)
@@ -192,7 +189,6 @@ module type S1 = sig
   with type 'a interval := 'a t
 end
 
-
 (** Module for simple closed intervals over arbitrary types. Used by calling the
     {{!module:Core.Interval.Make}[Make]} functor with a type that satisfies
     {{!module:Base.Comparable}[Comparable]} (for correctly ordering elements).
@@ -296,10 +292,10 @@ module type Interval = sig
       ]}
   *)
   module Make (Bound : sig
-      type t [@@deriving bin_io, sexp, hash]
+    type t [@@deriving bin_io, sexp, hash]
 
-      include Comparable.S with type t := t
-    end) : S with type bound = Bound.t and type t = Bound.t t
+    include Comparable.S with type t := t
+  end) : S with type bound = Bound.t and type t = Bound.t t
 
   (**
      [Stable] is used to build stable protocols. It ensures backwards compatibility by
@@ -348,9 +344,9 @@ module type Interval = sig
     https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     module Make (Bound : sig
-        type t [@@deriving bin_io, sexp, hash]
+      type t [@@deriving bin_io, sexp, hash]
 
-        include Comparable.S with type t := t
-      end) : S with type bound = Bound.t and type t = Bound.t t
+      include Comparable.S with type t := t
+    end) : S with type bound = Bound.t and type t = Bound.t t
   end
 end

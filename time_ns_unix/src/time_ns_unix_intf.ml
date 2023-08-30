@@ -8,9 +8,9 @@ end
 
 module type Span = sig
   include module type of struct
-    include Time_ns.Span
-  end [@ocaml.remove_aliases]
-  with module Private := Time_ns.Span.Private
+      include Time_ns.Span
+    end [@ocaml.remove_aliases]
+    with module Private := Time_ns.Span.Private
 end
 
 module type Ofday = sig
@@ -22,14 +22,14 @@ module type Ofday = sig
   val now : zone:Time.Zone.t -> t
 
   val to_ofday : t -> Time.Ofday.t
-  [@@deprecated
-    "[since 2019-01] use [to_ofday_float_round_nearest] or \
-     [to_ofday_float_round_nearest_microsecond]"]
+    [@@deprecated
+      "[since 2019-01] use [to_ofday_float_round_nearest] or \
+       [to_ofday_float_round_nearest_microsecond]"]
 
   val of_ofday : Time.Ofday.t -> t
-  [@@deprecated
-    "[since 2019-01] use [of_ofday_float_round_nearest] or \
-     [of_ofday_float_round_nearest_microsecond]"]
+    [@@deprecated
+      "[since 2019-01] use [of_ofday_float_round_nearest] or \
+       [of_ofday_float_round_nearest_microsecond]"]
 
   val to_ofday_float_round_nearest : t -> Time.Ofday.t
   val to_ofday_float_round_nearest_microsecond : t -> Time.Ofday.t
@@ -78,7 +78,6 @@ module type Ofday = sig
   end
 end
 
-
 (** An absolute point in time, more efficient and precise than the [float]-based {!Time},
     but representing a narrower range of times.
 
@@ -106,11 +105,11 @@ end
     See {!Core.Time_ns} for additional low level documentation. *)
 module type Time_ns_unix = sig
   include module type of struct
-    include Time_ns
-  end [@ocaml.remove_aliases]
-  with module Span := Time_ns.Span
-  with module Ofday := Time_ns.Ofday
-  with module Stable := Time_ns.Stable
+      include Time_ns
+    end [@ocaml.remove_aliases]
+    with module Span := Time_ns.Span
+    with module Ofday := Time_ns.Ofday
+    with module Stable := Time_ns.Stable
 
   module Span : Span
 
@@ -130,7 +129,6 @@ module type Time_ns_unix = sig
   (** See {!Time.Ofday}. *)
   module Ofday : Ofday
 
-
   (** String conversions use the local timezone by default. Sexp conversions use
       [get_sexp_zone ()] by default, which can be overridden by calling [set_sexp_zone].
       These default time zones are used when writing a time, and when reading a time with
@@ -141,9 +139,9 @@ module type Time_ns_unix = sig
   include Identifiable with type t := t
 
   include sig
-    type t [@@deriving sexp_grammar]
-  end
-  with type t := t
+      type t [@@deriving sexp_grammar]
+    end
+    with type t := t
 
   module Zone : module type of Time.Zone with type t = Time.Zone.t
 
@@ -164,7 +162,6 @@ module type Time_ns_unix = sig
 
   val to_date_ofday_zoned : t -> zone:Time.Zone.t -> Date.t * Ofday.Zoned.t
   val to_ofday_zoned : t -> zone:Time.Zone.t -> Ofday.Zoned.t
-
   val to_string_fix_proto : [ `Utc | `Local ] -> t -> string
   val of_string_fix_proto : [ `Utc | `Local ] -> string -> t
 
@@ -246,13 +243,13 @@ module type Time_ns_unix = sig
 
       include
         Stable_int63able_with_witness
-        with type t := t
-         and type comparator_witness = comparator_witness
+          with type t := t
+           and type comparator_witness = comparator_witness
 
       include
         Comparable.Stable.V1.With_stable_witness.S
-        with type comparable := t
-        with type comparator_witness := comparator_witness
+          with type comparable := t
+          with type comparator_witness := comparator_witness
     end
 
     (** Provides a sexp representation that is independent of the time zone of the machine
@@ -278,13 +275,13 @@ module type Time_ns_unix = sig
 
         include
           Stable_int63able_with_witness
-          with type t := t
-          with type comparator_witness := comparator_witness
+            with type t := t
+            with type comparator_witness := comparator_witness
 
         include
           Comparable.Stable.V1.With_stable_witness.S
-          with type comparable := t
-          with type comparator_witness := comparator_witness
+            with type comparable := t
+            with type comparator_witness := comparator_witness
 
         include Stringable.S with type t := t
       end
@@ -298,8 +295,8 @@ module type Time_ns_unix = sig
     module Ofday : sig
       module V1 :
         Stable_int63able_with_witness
-        with type t = Ofday.t
-        with type comparator_witness = Time_ns.Stable.Ofday.V1.comparator_witness
+          with type t = Ofday.t
+          with type comparator_witness = Time_ns.Stable.Ofday.V1.comparator_witness
 
       module Zoned : sig
         module V1 : sig

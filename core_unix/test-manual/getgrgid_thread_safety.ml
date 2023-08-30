@@ -22,16 +22,16 @@ let spawn i =
   ignore
     (Thread.create
        (fun () ->
-          let rec f () =
-            let g = Core_unix.Group.getbygid_exn i in
-            let len = Array.length g.mem in
-            (* to test stdlib instead of core:
+         let rec f () =
+           let g = Core_unix.Group.getbygid_exn i in
+           let len = Array.length g.mem in
+           (* to test stdlib instead of core:
                [let len = Array.length ((Unix.getgrgid i).gr_mem) in] *)
-            Printf.printf "%d\n%!" len;
-            Thread.yield ();
-            f ()
-          in
-          f ())
+           Printf.printf "%d\n%!" len;
+           Thread.yield ();
+           f ()
+         in
+         f ())
        ())
 ;;
 
@@ -41,11 +41,11 @@ let alloc n = ignore (List.init (exp2 n) ~f:(fun x -> x))
 let add_finaliser n =
   Gc.finalise
     (function
-      | None -> assert false
-      | Some n ->
-        Printf.printf "finalising %d\n%!" n;
-        alloc n;
-        ())
+     | None -> assert false
+     | Some n ->
+       Printf.printf "finalising %d\n%!" n;
+       alloc n;
+       ())
     (Some n)
 ;;
 
@@ -80,8 +80,8 @@ let () =
   let all_groups =
     List.map
       (fun i ->
-         try Some (i, Array.length (Unix.getgrgid i).gr_mem) with
-         | _ -> None)
+        try Some (i, Array.length (Unix.getgrgid i).gr_mem) with
+        | _ -> None)
       all_group_ids
   in
   let mx (i, iv) (j, jv) = if iv > jv then i, iv else j, jv in
@@ -90,8 +90,8 @@ let () =
     List.concat
       (List.map
          (function
-           | None -> []
-           | Some x -> [ x ])
+          | None -> []
+          | Some x -> [ x ])
          all_groups)
   in
   let group_min, group_min_size = List.fold_left mn (0, 1000000) all_groups in

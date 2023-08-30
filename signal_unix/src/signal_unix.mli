@@ -9,9 +9,15 @@ open Signal
     is not guaranteed that these numbers are portable across any given pair of systems --
     although some are defined as standard by POSIX. *)
 val of_system_int : int -> t
+
 val to_system_int : t -> int
 
-type pid_spec = [ `Pid of Pid.t | `My_group | `Group of Pid.t ] [@@deriving sexp_of]
+type pid_spec =
+  [ `Pid of Pid.t
+  | `My_group
+  | `Group of Pid.t
+  ]
+[@@deriving sexp_of]
 
 (** [send signal pid_spec] sends [signal] to the processes specified by [pid_spec].
 
@@ -23,15 +29,20 @@ type pid_spec = [ `Pid of Pid.t | `My_group | `Group of Pid.t ] [@@deriving sexp
 
     All of [send], [send_i], and [send_exn] raise if you don't have permission to send the
     signal to the specified processes or if [signal] is unknown. *)
-val send     : t -> pid_spec -> [ `Ok | `No_such_process ]
-val send_i   : t -> pid_spec -> unit
+val send : t -> pid_spec -> [ `Ok | `No_such_process ]
+
+val send_i : t -> pid_spec -> unit
 val send_exn : t -> pid_spec -> unit
 
 (** [can_send_to pid] returns true if [pid] is running and the current process has
     permission to send it signals. *)
 val can_send_to : Pid.t -> bool
 
-type sigprocmask_command = [ `Set | `Block | `Unblock ]
+type sigprocmask_command =
+  [ `Set
+  | `Block
+  | `Unblock
+  ]
 
 (** [sigprocmask cmd sigs] changes the set of blocked signals.
 

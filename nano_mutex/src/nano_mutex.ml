@@ -156,9 +156,9 @@ let try_lock_exn t = ok_exn (try_lock t)
    prevent this) *)
 
 let[@inline never] [@specialise never] [@local never] with_blocker0
-                                                        t
-                                                        ~new_blocker_opt
-                                                        ~new_blocker
+  t
+  ~new_blocker_opt
+  ~new_blocker
   =
   (* BEGIN ATOMIC *)
   match t.blocker with

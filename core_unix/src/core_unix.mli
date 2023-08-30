@@ -82,10 +82,10 @@ type error = Unix.error =
 [@@deprecated "[since 2016-10] use [Unix.Error.t] instead"]
 
 val sexp_of_error : Unix.error -> Sexp.t
-[@@deprecated "[since 2016-10] use [Unix.Error.t] instead"]
+  [@@deprecated "[since 2016-10] use [Unix.Error.t] instead"]
 
 val error_of_sexp : Sexp.t -> Unix.error
-[@@deprecated "[since 2016-10] use [Unix.Error.t] instead"]
+  [@@deprecated "[since 2016-10] use [Unix.Error.t] instead"]
 
 module Error : sig
   (** The type of error codes.  Errors defined in the POSIX standard and additional
@@ -189,7 +189,7 @@ module Syscall_result : module type of Syscall_result with type 'a t = 'a Syscal
 val unix_error : int -> string -> string -> _
 
 val error_message : Error.t -> string
-[@@deprecated "[since 2016-10] use [Unix.Error.message] instead"]
+  [@@deprecated "[since 2016-10] use [Unix.Error.message] instead"]
 
 (** [handle_unix_error f] runs [f ()] and returns the result.  If the exception
     [Unix_error] is raised, it prints a message describing the error and exits with code
@@ -353,7 +353,6 @@ val fork_exec
   -> unit
   -> Pid.t
 
-
 (** [fork ()] forks a new process.  The return value indicates whether we are continuing
     in the child or the parent, and if the parent, includes the child's process id. *)
 val fork : unit -> [ `In_the_child | `In_the_parent of Pid.t ]
@@ -369,7 +368,6 @@ val fork : unit -> [ `In_the_child | `In_the_parent of Pid.t ]
     system call to be retried upon EAGAIN|EINTR.  The nohang variants do not have this
     flag because they don't block. *)
 
-
 type wait_on =
   [ `Any
   | `Group of Pid.t
@@ -377,7 +375,6 @@ type wait_on =
   | `Pid of Pid.t
   ]
 [@@deriving sexp]
-
 
 val wait : ?restart:bool (** defaults to true *) -> wait_on -> Pid.t * Exit_or_signal.t
 val wait_nohang : wait_on -> (Pid.t * Exit_or_signal.t) option
@@ -471,7 +468,6 @@ type open_flag = Unix.open_flag =
   | O_SHARE_DELETE (** Windows only: allow the file to be deleted while still open *)
   | O_CLOEXEC (** Set the close-on-exec flag on the descriptor returned by {!openfile} *)
   | O_KEEPEXEC [@if ocaml_version >= (4, 05, 0)]
-
 
 (** We can't use [with sexp] because pa_sexp inserts two copies of the [val] specs, which
     leads to a spurious "unused" warning. *)
@@ -568,7 +564,6 @@ val read
   -> File_descr.t
   -> buf:Bytes.t
   -> int
-
 
 (** [write fd buff ofs len] writes [len] characters to descriptor
     [fd], taking them from bytes [buff], starting at position [ofs]
@@ -726,7 +721,6 @@ end
 
 (** {6 Locking} *)
 
-
 (** Commands for {!lockf}. *)
 type lock_command = Unix.lock_command =
   | F_ULOCK (** Unlock a region *)
@@ -736,7 +730,6 @@ type lock_command = Unix.lock_command =
   | F_RLOCK (** Lock a region for reading, and block if already locked *)
   | F_TRLOCK (** Lock a region for reading, or fail if already locked *)
 [@@deriving sexp]
-
 
 (** [lockf fd cmd size] place a lock on a file_descr that prevents any other process from
     calling lockf successfully on the same file.  Due to a limitation in the current
@@ -934,7 +927,7 @@ val readdir_opt : dir_handle -> string option
 (** Same as [readdir_opt] except that it signals the end of the directory by raising
     [End_of_file]. *)
 val readdir : dir_handle -> string
-[@@deprecated "[since 2016-08] use [readdir_opt] instead"]
+  [@@deprecated "[since 2016-08] use [readdir_opt] instead"]
 
 (** Reposition the descriptor to the beginning of the directory *)
 val rewinddir : dir_handle -> unit
@@ -947,7 +940,7 @@ module Readdir_detailed : sig
     { name : string
     ; inode : Nativeint.t
     ; kind : file_kind option
-    (** Some OS/filesystems provide the file type of the directory entry, some don't, some
+        (** Some OS/filesystems provide the file type of the directory entry, some don't, some
         do based on mount options. Code should not require the file type to be present,
         merely use it as a way to increase speed or reduce race conditions. *)
     }
@@ -988,7 +981,6 @@ module Process_info : sig
 end
 
 (** Low-level process *)
-
 
 (** [create_process ~prog ~args] forks a new process that executes the program [prog] with
     arguments [args].  The function returns the pid of the process along with file
@@ -1036,7 +1028,6 @@ val create_process_env
   -> env:env
   -> unit
   -> Process_info.t
-
 
 (** High-level pipe and process management. These functions
     (with {!UnixLabels.open_process_out} and {!UnixLabels.open_process})
@@ -1147,8 +1138,7 @@ val pause : unit -> unit
 
 (** The execution times (CPU times) of a process. *)
 type process_times = Unix.process_times =
-  {
-    tms_utime : float (** User time for the process *)
+  { tms_utime : float (** User time for the process *)
   ; tms_stime : float (** System time for the process *)
   ; tms_cutime : float (** User time for the children processes *)
   ; tms_cstime : float (** System time for the children processes *)
@@ -1234,7 +1224,6 @@ val strptime
 (** Schedule a [SIGALRM] signal after the given number of seconds. *)
 val alarm : int -> int
 
-
 (** Stop execution for the given number of seconds. *)
 val sleep : int -> unit
 
@@ -1254,11 +1243,11 @@ val utimes : string -> access:float -> modif:float -> unit
 (** The three kinds of interval timers. *)
 type interval_timer = Unix.interval_timer =
   | ITIMER_REAL
-  (** decrements in real time, and sends the signal [SIGALRM] when expired.*)
+      (** decrements in real time, and sends the signal [SIGALRM] when expired.*)
   | ITIMER_VIRTUAL
-  (**  decrements in process virtual time, and sends [SIGVTALRM] when expired. *)
+      (**  decrements in process virtual time, and sends [SIGVTALRM] when expired. *)
   | ITIMER_PROF
-  (** (for profiling) decrements both when the process
+      (** (for profiling) decrements both when the process
       is running and when the system is running on behalf of the
       process; it sends [SIGPROF] when expired. *)
 [@@deriving sexp]
@@ -1387,7 +1376,7 @@ module Inet_addr : sig
       want a sexp converter to do that.  As we transition away, one can use
       [Blocking_sexp], which has the old behavior. *)
   val t_of_sexp : Sexp.t -> t
-  [@@deprecated "[since 2015-10] Replace [t] by [Stable.V1.t] or by [Blocking_sexp.t]"]
+    [@@deprecated "[since 2015-10] Replace [t] by [Stable.V1.t] or by [Blocking_sexp.t]"]
 
   (** [Blocking_sexp] performs DNS lookup to resolve hostnames to IP addresses. *)
   module Blocking_sexp : sig
@@ -1440,8 +1429,8 @@ module Inet_addr : sig
 
       include
         Stable_with_witness
-        with type t := t
-         and type comparator_witness = comparator_witness
+          with type t := t
+           and type comparator_witness = comparator_witness
     end
   end
 end
@@ -1503,8 +1492,8 @@ module Cidr : sig
   module Stable : sig
     module V1 :
       Stable_comparable.With_stable_witness.V1
-      with type t = t
-      with type comparator_witness = comparator_witness
+        with type t = t
+        with type comparator_witness = comparator_witness
   end
 end
 
@@ -1536,7 +1525,7 @@ type sockaddr = Unix.sockaddr =
 [@@deriving bin_io, compare, sexp_of]
 
 val sockaddr_of_sexp : Sexp.t -> sockaddr
-[@@deprecated "[since 2015-10] Replace [sockaddr] by [sockaddr_blocking_sexp]"]
+  [@@deprecated "[since 2015-10] Replace [sockaddr] by [sockaddr_blocking_sexp]"]
 
 (** [sockaddr_blocking_sexp] is like [sockaddr], with [of_sexp] that performs DNS lookup
     to resolve [Inet_addr.t]. *)
@@ -1719,7 +1708,7 @@ type socket_int_option =
     value of type [int option], with [None] meaning ``disabled''. *)
 type socket_optint_option =
   | SO_LINGER
-  (** Whether to linger on closed connections with sexp that have
+      (** Whether to linger on closed connections with sexp that have
       data present, and for how long (in seconds) *)
 
 (** The socket options that can be consulted with {!UnixLabels.getsockopt_float}
@@ -1792,7 +1781,6 @@ module Host : sig
     ; addresses : Inet_addr.t array
     }
   [@@deriving sexp_of]
-
 
   (** Find an entry in [hosts] with the given name.
 
@@ -1914,7 +1902,6 @@ type getnameinfo_option =
     Raise [Caml.Not_found] or [Not_found_s] if an error occurs. *)
 val getnameinfo : sockaddr -> getnameinfo_option list -> name_info
 
-
 (** {6 Terminal interface} *)
 
 (** The following functions implement the POSIX standard terminal
@@ -1951,7 +1938,7 @@ module Terminal_io : sig
     ; (*_ Local modes: *)
       mutable c_isig : bool (** Generate signal on INTR, QUIT, SUSP. *)
     ; mutable c_icanon : bool
-    (** Enable canonical processing (line buffering and editing) *)
+        (** Enable canonical processing (line buffering and editing) *)
     ; mutable c_noflsh : bool (** Disable flush after INTR, QUIT, SUSP. *)
     ; mutable c_echo : bool (** Echo input characters. *)
     ; mutable c_echoe : bool (** Echo ERASE (to erase previous character). *)
@@ -1965,7 +1952,7 @@ module Terminal_io : sig
     ; mutable c_veof : char (** End-of-file character (usually ctrl-D). *)
     ; mutable c_veol : char (** Alternate end-of-line char. (usually none). *)
     ; mutable c_vmin : int
-    (** Minimum number of characters to read before the read request is satisfied. *)
+        (** Minimum number of characters to read before the read request is satisfied. *)
     ; mutable c_vtime : int (** Maximum read wait (in 0.1s units). *)
     ; mutable c_vstart : char (** Start character (usually ctrl-Q). *)
     ; mutable c_vstop : char (** Stop character (usually ctrl-S). *)
@@ -2032,7 +2019,6 @@ module Terminal_io : sig
       its controlling terminal. *)
   val setsid : unit -> int
 end
-
 
 (** Get a sockaddr from a hostname or IP, and a port *)
 val get_sockaddr : string -> int -> sockaddr
@@ -2351,7 +2337,6 @@ val initgroups : string -> int -> unit
     See 'man getgrouplist'. *)
 val getgrouplist : string -> int -> int array
 
-
 (** Return the list of groups to which the user executing the process belongs. *)
 val getgroups : unit -> int array
 
@@ -2360,11 +2345,10 @@ val getgroups : unit -> int array
 (** no system calls involved *)
 val fnmatch
   :  ?flags:
-    [ `No_escape | `Pathname | `Period | `File_name | `Leading_dir | `Casefold ] list
+       [ `No_escape | `Pathname | `Period | `File_name | `Leading_dir | `Casefold ] list
   -> pat:string
   -> string
   -> bool
-
 
 (** See man page for wordexp. *)
 val wordexp
@@ -2421,7 +2405,6 @@ val mcast_leave
   -> File_descr.t
   -> sockaddr
   -> unit
-
 
 (** [get_mcast_ttl sock] reads the time-to-live value of outgoing multicast packets for
     socket [sock]. *)
@@ -2556,4 +2539,3 @@ module Stable : sig
   module Signal = Signal.Stable
   module Utsname = Utsname.Stable
 end
-

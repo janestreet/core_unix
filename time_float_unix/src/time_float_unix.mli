@@ -10,8 +10,8 @@ module Stable : sig
 
     include
       Stable_comparable.With_stable_witness.V1
-      with type t := t
-      with type comparator_witness := comparator_witness
+        with type t := t
+        with type comparator_witness := comparator_witness
   end
 
   (** Provides a sexp representation that is independent of the time zone of the machine
@@ -22,8 +22,8 @@ module Stable : sig
   module With_utc_sexp : sig
     module V1 :
       Stable_comparable.V1
-      with type t = t
-      with type comparator_witness = comparator_witness
+        with type t = t
+        with type comparator_witness = comparator_witness
 
     module V2 : sig
       type nonrec t = t [@@deriving hash]
@@ -31,8 +31,8 @@ module Stable : sig
 
       include
         Stable_comparable.V1
-        with type t := t
-        with type comparator_witness := comparator_witness
+          with type t := t
+          with type comparator_witness := comparator_witness
     end
   end
 
@@ -78,7 +78,6 @@ module Stable : sig
 
     module Zoned : sig
       module V1 : sig
-
         (** This uses [With_nonchronological_compare.compare]. *)
         type t = Ofday.Zoned.t [@@deriving hash]
 

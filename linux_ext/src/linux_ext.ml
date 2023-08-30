@@ -256,11 +256,11 @@ module Null : Linux_ext_intf.S = struct
       let semaphore = Int63.of_int 0o1
 
       include Flags.Make (struct
-          let allow_intersecting = true
-          let should_print_error = true
-          let remove_zero_flags = false
-          let known = [ nonblock, "nonblock"; cloexec, "cloexec"; semaphore, "semaphore" ]
-        end)
+        let allow_intersecting = true
+        let should_print_error = true
+        let remove_zero_flags = false
+        let known = [ nonblock, "nonblock"; cloexec, "cloexec"; semaphore, "semaphore" ]
+      end)
     end
 
     let create = Or_error.unimplemented "Linux_ext.Eventfd.create"
@@ -282,11 +282,11 @@ module Null : Linux_ext_intf.S = struct
       let cloexec = Int63.of_int 0o2000000
 
       include Flags.Make (struct
-          let allow_intersecting = false
-          let should_print_error = true
-          let remove_zero_flags = false
-          let known = List.rev [ nonblock, "nonblock"; cloexec, "cloexec" ]
-        end)
+        let allow_intersecting = false
+        let should_print_error = true
+        let remove_zero_flags = false
+        let known = List.rev [ nonblock, "nonblock"; cloexec, "cloexec" ]
+      end)
     end
 
     type t = File_descr.t [@@deriving compare, sexp_of]
@@ -419,11 +419,11 @@ module Timerfd = struct
     let cloexec = cloexec ()
 
     include Flags.Make (struct
-        let allow_intersecting = false
-        let should_print_error = true
-        let remove_zero_flags = false
-        let known = List.rev [ nonblock, "nonblock"; cloexec, "cloexec" ]
-      end)
+      let allow_intersecting = false
+      let should_print_error = true
+      let remove_zero_flags = false
+      let known = List.rev [ nonblock, "nonblock"; cloexec, "cloexec" ]
+    end)
   end
 
   type t = File_descr.t [@@deriving compare, sexp_of]
@@ -462,7 +462,7 @@ module Timerfd = struct
     -> interval:Int63.t
     -> Syscall_result.Unit.t
     = "core_linux_timerfd_settime"
-  [@@noalloc]
+    [@@noalloc]
 
   let timerfd_settime t ~absolute ~initial ~interval =
     (* We could accept [interval < 0] or [initial < 0 when absolute], but then the
@@ -473,7 +473,7 @@ module Timerfd = struct
       raise_s
         [%sexp
           "timerfd_settime got invalid parameters (initial < 0 or interval < 0)."
-        , { timerfd = (t : t); initial : Int63.t; interval : Int63.t }];
+          , { timerfd = (t : t); initial : Int63.t; interval : Int63.t }];
     unsafe_timerfd_settime t absolute ~initial ~interval
     |> Syscall_result.Unit.ok_or_unix_error_exn ~syscall_name:"timerfd_settime"
   ;;
@@ -588,11 +588,11 @@ module Eventfd = struct
     let known = [ cloexec, "cloexec"; nonblock, "nonblock"; semaphore, "semaphore" ]
 
     include Flags.Make (struct
-        let allow_intersecting = true
-        let should_print_error = true
-        let known = known
-        let remove_zero_flags = false
-      end)
+      let allow_intersecting = true
+      let should_print_error = true
+      let known = known
+      let remove_zero_flags = false
+    end)
   end
 
   type t = File_descr.t [@@deriving compare, sexp_of]
@@ -654,22 +654,22 @@ module Sysinfo = struct
   let sysinfo =
     Ok
       (fun () ->
-         let raw = raw_sysinfo () in
-         { uptime = Time_float.Span.of_int_sec raw.Raw_sysinfo.uptime
-         ; load1 = raw.Raw_sysinfo.load1
-         ; load5 = raw.Raw_sysinfo.load5
-         ; load15 = raw.Raw_sysinfo.load15
-         ; total_ram = raw.Raw_sysinfo.total_ram
-         ; free_ram = raw.Raw_sysinfo.free_ram
-         ; shared_ram = raw.Raw_sysinfo.shared_ram
-         ; buffer_ram = raw.Raw_sysinfo.buffer_ram
-         ; total_swap = raw.Raw_sysinfo.total_swap
-         ; free_swap = raw.Raw_sysinfo.free_swap
-         ; procs = raw.Raw_sysinfo.procs
-         ; totalhigh = raw.Raw_sysinfo.totalhigh
-         ; freehigh = raw.Raw_sysinfo.freehigh
-         ; mem_unit = raw.Raw_sysinfo.mem_unit
-         })
+        let raw = raw_sysinfo () in
+        { uptime = Time_float.Span.of_int_sec raw.Raw_sysinfo.uptime
+        ; load1 = raw.Raw_sysinfo.load1
+        ; load5 = raw.Raw_sysinfo.load5
+        ; load15 = raw.Raw_sysinfo.load15
+        ; total_ram = raw.Raw_sysinfo.total_ram
+        ; free_ram = raw.Raw_sysinfo.free_ram
+        ; shared_ram = raw.Raw_sysinfo.shared_ram
+        ; buffer_ram = raw.Raw_sysinfo.buffer_ram
+        ; total_swap = raw.Raw_sysinfo.total_swap
+        ; free_swap = raw.Raw_sysinfo.free_swap
+        ; procs = raw.Raw_sysinfo.procs
+        ; totalhigh = raw.Raw_sysinfo.totalhigh
+        ; freehigh = raw.Raw_sysinfo.freehigh
+        ; mem_unit = raw.Raw_sysinfo.mem_unit
+        })
   ;;
 end
 
@@ -813,7 +813,6 @@ let sched_setaffinity ?pid ~cpuset () =
 external raw_sched_getaffinity : pid:int -> int list = "core_linux_sched_getaffinity"
 
 let sched_getaffinity ?pid () = raw_sched_getaffinity ~pid:(pid_to_int_or_zero pid)
-
 
 (* defined in core_unix_stubs.c *)
 external gettid : unit -> int = "core_unix_gettid"

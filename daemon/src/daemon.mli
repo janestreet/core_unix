@@ -6,14 +6,15 @@ open! Core
 open! Import
 
 module Fd_redirection : sig
-  type t = [
-    | `Dev_null
-    | `Dev_null_skip_regular_files (** Redirect to /dev/null unless already redirected to
+  type t =
+    [ `Dev_null
+    | `Dev_null_skip_regular_files
+      (** Redirect to /dev/null unless already redirected to
                                        a regular file. *)
     | `Do_not_redirect
     | `File_append of string
     | `File_truncate of string
-  ]
+    ]
 end
 
 (** [daemonize] makes the executing process a daemon.
@@ -28,13 +29,14 @@ end
 
     Raises [Failure] if fork was unsuccessful. *)
 val daemonize
-  :  ?redirect_stdout : Fd_redirection.t
-  -> ?redirect_stderr : Fd_redirection.t
-  -> ?cd : string
-  -> ?perm : int (** permission to pass to [openfile] when using [`File_append] or
+  :  ?redirect_stdout:Fd_redirection.t
+  -> ?redirect_stderr:Fd_redirection.t
+  -> ?cd:string
+  -> ?perm:int
+       (** permission to pass to [openfile] when using [`File_append] or
                      [`File_truncate] *)
-  -> ?umask : int (** defaults to use existing umask *)
-  -> ?allow_threads_to_have_been_created : bool (** defaults to false *)
+  -> ?umask:int (** defaults to use existing umask *)
+  -> ?allow_threads_to_have_been_created:bool (** defaults to false *)
   -> unit
   -> unit
 
@@ -71,12 +73,13 @@ val daemonize
 
     Raises [Failure] if forking was unsuccessful. *)
 val daemonize_wait
-  :  ?redirect_stdout : Fd_redirection.t  (** default `Dev_null_skip_regular_files *)
-  -> ?redirect_stderr : Fd_redirection.t  (** default `Dev_null_skip_regular_files *)
-  -> ?cd : string  (** default / *)
-  -> ?perm : int (** permission to pass to [openfile] when using [`File_append] or
+  :  ?redirect_stdout:Fd_redirection.t (** default `Dev_null_skip_regular_files *)
+  -> ?redirect_stderr:Fd_redirection.t (** default `Dev_null_skip_regular_files *)
+  -> ?cd:string (** default / *)
+  -> ?perm:int
+       (** permission to pass to [openfile] when using [`File_append] or
                      [`File_truncate] *)
-  -> ?umask : int  (** defaults to use existing umask *)
-  -> ?allow_threads_to_have_been_created : bool (** defaults to false *)
+  -> ?umask:int (** defaults to use existing umask *)
+  -> ?allow_threads_to_have_been_created:bool (** defaults to false *)
   -> unit
   -> (unit -> unit) Staged.t

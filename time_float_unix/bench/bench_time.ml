@@ -935,7 +935,6 @@ module Zone = struct
     let example = find_exn "America/New_York" |> opaque
     let utc_sexp = sexp_of_t utc |> opaque
     let utc_string = to_string utc |> opaque
-
     let full_data_sexp_of_utc = Time.Stable.Zone.Full_data.V1.sexp_of_t utc |> opaque
   end
 

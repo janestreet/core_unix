@@ -29,7 +29,6 @@ val recvfrom_assume_fd_is_nonblocking
   -> Unix.File_descr.t
   -> Unix.sockaddr
 
-
 (** [recvmmsg]'s context comprises data needed by the system call.  Setup can be
     expensive, particularly for many buffers.
 
@@ -68,7 +67,7 @@ val sendto_nonblocking_no_sigpipe
       -> Unix.File_descr.t
       -> Unix.sockaddr
       -> Unix.Syscall_result.Unit.t)
-       Or_error.t
+     Or_error.t
 
 (** Write from the iobuf to the specified channel without changing the iobuf
     window.  Returns the number of bytes written. *)
@@ -104,7 +103,7 @@ module In_channel_optimized : sig
   type 'a channel_op_with_opts :=
     ?fix_win_eol:bool (** defaults to [true] *)
     -> ?buf:(read_write, seek) t
-    (** Allocates a fresh buffer by default; will merrily resize (and rebind!) any passed
+         (** Allocates a fresh buffer by default; will merrily resize (and rebind!) any passed
         buffer. *)
     -> In_channel.t
     -> 'a

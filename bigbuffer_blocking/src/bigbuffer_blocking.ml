@@ -9,7 +9,7 @@ let add_channel buf ic len =
   let pos = buf.pos in
   if pos + len > buf.len then resize buf len;
   Bigstring_unix.really_input ic buf.bstr ~pos ~len;
-  buf.pos <- pos + len;
+  buf.pos <- pos + len
 ;;
 
 let output_buffer oc buf =

@@ -74,10 +74,10 @@ module type S = sig
 
   include
     module type of Time
-    with type t := t
-     and module Zone := Time.Zone
-     and module Ofday := Time.Ofday
-     and module Span := Time.Span
+      with type t := t
+       and module Zone := Time.Zone
+       and module Ofday := Time.Ofday
+       and module Span := Time.Span
 
   val arg_type : t Core.Command.Arg_type.t
 
@@ -90,9 +90,9 @@ module type S = sig
       appropriate time zone. *)
   include
     Identifiable.S
-    with type t := t
-     and type comparator_witness := comparator_witness
-     and module Replace_polymorphic_compare := Replace_polymorphic_compare
+      with type t := t
+       and type comparator_witness := comparator_witness
+       and module Replace_polymorphic_compare := Replace_polymorphic_compare
 
   val get_sexp_zone : unit -> Zone.t
   val set_sexp_zone : Zone.t -> unit
@@ -109,15 +109,12 @@ module type S = sig
 
   val to_date_ofday_zoned : t -> zone:Time.Zone.t -> Date.t * Ofday.Zoned.t
   val to_ofday_zoned : t -> zone:Time.Zone.t -> Ofday.Zoned.t
-
   val to_string_fix_proto : [ `Utc | `Local ] -> t -> string
   val of_string_fix_proto : [ `Utc | `Local ] -> string -> t
-
 
   (** This is like [of_string] except that if the string doesn't specify the zone then it
       raises rather than assume the local timezone. *)
   val of_string_abs : string -> t
-
 
   (** [of_string_gen ~if_no_timezone s] attempts to parse [s] to a [t].  If [s] doesn't
       supply a time zone [if_no_timezone] is consulted. *)
@@ -203,8 +200,8 @@ module type Time_functor = sig
   module type S = S
 
   module Make
-      (Time0 : Time_float.S_kernel_without_zone)
-      (Time : Time_float.S_kernel with module Time := Time0) :
+    (Time0 : Time_float.S_kernel_without_zone)
+    (Time : Time_float.S_kernel with module Time := Time0) :
     S with module Time0 := Time0 and module Time := Time
 end
 

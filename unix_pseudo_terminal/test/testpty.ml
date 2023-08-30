@@ -1,7 +1,6 @@
 open Core
 open Poly
 module Unix = Core_unix
-
 module Pty = Unix_pseudo_terminal
 
 let run_parent fdm fds =
@@ -12,9 +11,11 @@ let run_parent fdm fds =
     let _ = eprintf "%s%!" msg in
     let rlen = Unix.read Unix.stdin ~len:buflen ~buf in
     let s = if rlen < buflen then Bytes.subo buf ~len:rlen else buf in
-    let _:int = Unix.write fdm ~buf:s in
+    let (_ : int) = Unix.write fdm ~buf:s in
     let rlen = Unix.read fdm ~len:buflen ~buf in
-    let s = if rlen < buflen then Bytes.To_string.subo buf ~len:rlen else Bytes.to_string buf in
+    let s =
+      if rlen < buflen then Bytes.To_string.subo buf ~len:rlen else Bytes.to_string buf
+    in
     let _ = eprintf "Master: %s%!" s in
     loop ()
   in
@@ -27,10 +28,12 @@ let run_child fdm fds =
   let buf = Bytes.create buflen in
   let rec loop () =
     let rlen = Unix.read fds ~len:buflen ~buf in
-    let s = if rlen < buflen then Bytes.To_string.subo buf ~len:rlen else Bytes.to_string buf in
+    let s =
+      if rlen < buflen then Bytes.To_string.subo buf ~len:rlen else Bytes.to_string buf
+    in
     let s = String.rstrip s ~drop:(fun c -> c = '\n') in
     eprintf "Slave received [%s]\n%!" s;
-    loop ();
+    loop ()
   in
   Unix.close fdm;
   let term_orig = Unix.Terminal_io.tcgetattr fds in
@@ -74,3 +77,4 @@ let () =
   match Unix.fork () with
   | `In_the_parent _pid -> run_parent fdm fds
   | `In_the_child -> run_child fdm fds
+;;

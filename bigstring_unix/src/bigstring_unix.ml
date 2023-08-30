@@ -232,7 +232,7 @@ external unsafe_send_nonblocking_no_sigpipe
   -> t
   -> Syscall_result.Int.t
   = "bigstring_send_nonblocking_no_sigpipe_stub"
-[@@noalloc]
+  [@@noalloc]
 
 let send_nonblocking_no_sigpipe fd ?(pos = 0) ?len bstr =
   let len = get_opt_len bstr ~pos len in

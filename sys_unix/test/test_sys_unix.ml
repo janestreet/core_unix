@@ -7,7 +7,7 @@ let%test _ =
   [%equal: [ `Native | `Bytecode ]]
     (Sys_unix.execution_mode ())
     (if String.is_suffix argv.(0) ~suffix:".exe"
-     || String.is_suffix argv.(0) ~suffix:".native"
+        || String.is_suffix argv.(0) ~suffix:".native"
      then `Native
      else `Bytecode)
 ;;

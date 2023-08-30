@@ -6,7 +6,6 @@ open! Import
 (** The name of the file containing the executable currently running. *)
 val executable_name : string
 
-
 (** For all of the following functions, [?follow_symlinks] defaults to [true]. *)
 
 (** [file_exists ~follow_symlinks path]
@@ -43,7 +42,6 @@ val is_file_exn : ?follow_symlinks:bool (** defaults to true *) -> string -> boo
 
 (** Remove the given file name from the file system. *)
 val remove : string -> unit
-
 
 (** Rename a file.  [rename oldpath newpath] renames the file
     called [oldpath], giving it [newpath] as its new name,
@@ -87,7 +85,6 @@ val getcwd : unit -> string
     particular, guaranteed to appear in alphabetical order. *)
 val readdir : string -> string array
 
-
 (**
    Call [readdir], and fold over the elements of the array.
    @raise Sys_error _ if readdir fails.
@@ -95,7 +92,6 @@ val readdir : string -> string array
    raises the same exception than opendir and closedir.
 *)
 val fold_dir : init:'acc -> f:('acc -> string -> 'acc) -> string -> 'acc
-
 
 (**
    Same as [readdir], but return a list rather than an array.
@@ -127,7 +123,6 @@ val catch_break : bool -> unit
 *)
 val with_async_exns : (unit -> 'a) -> 'a
 
-
 (** [execution_mode] tests whether the code being executed was compiled natively
     or to bytecode. *)
 val execution_mode : unit -> [ `Bytecode | `Native ]
@@ -136,8 +131,7 @@ val execution_mode : unit -> [ `Bytecode | `Native ]
     files. Note that this can be different from [word_size] and [Nativeint.num_bits]. For
     example, Linux x86-64 should have [word_size = 64], but [c_int_size () = 32]. *)
 external c_int_size : unit -> int = "c_int_size"
-[@@noalloc]
-
+  [@@noalloc]
 
 (** Return the home directory, using the [HOME] environment variable if that is defined,
     and if not, using the effective user's information in the Unix password database. *)
@@ -156,4 +150,3 @@ val home_directory : unit -> string
       by an earlier call to {!get_argv}.
 *)
 val override_argv : string array -> unit
-

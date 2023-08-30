@@ -459,22 +459,22 @@ let%expect_test "our gmtime matches Unix.gmtime" =
     ~trials:100_000
     ~examples:[ 0.; 100.; -100.; 86_400.; -86_400.; 90_000.; -90_000. ]
     ~f:(fun sec_since_epoch ->
-      let time = Time.of_span_since_epoch (Time.Span.of_sec sec_since_epoch) in
-      let my_date, my_ofday = gmtime time in
-      let unix_date, unix_ofday = unix_date_ofday sec_since_epoch in
-      let results = (my_date, my_ofday), (unix_date, unix_ofday) in
-      if not
-           (Tuple.T2.equal
-              ~eq1:Date.equal
-              ~eq2:Time.Ofday.equal
-              (fst results)
-              (snd results))
-      then
-        raise_s
-          [%message
-            "our gmtime doesn't match Unix.gmtime"
-              (sec_since_epoch : float)
-              (results : (Date.t * Time.Ofday.t) * (Date.t * Time.Ofday.t))])
+    let time = Time.of_span_since_epoch (Time.Span.of_sec sec_since_epoch) in
+    let my_date, my_ofday = gmtime time in
+    let unix_date, unix_ofday = unix_date_ofday sec_since_epoch in
+    let results = (my_date, my_ofday), (unix_date, unix_ofday) in
+    if not
+         (Tuple.T2.equal
+            ~eq1:Date.equal
+            ~eq2:Time.Ofday.equal
+            (fst results)
+            (snd results))
+    then
+      raise_s
+        [%message
+          "our gmtime doesn't match Unix.gmtime"
+            (sec_since_epoch : float)
+            (results : (Date.t * Time.Ofday.t) * (Date.t * Time.Ofday.t))])
 ;;
 
 (* we expose the private type of Timish things to help the compiler optimize things
@@ -616,7 +616,7 @@ let%test_module "Time.Stable" =
         (* We generate in units of microseconds because our current sexp representation is
            no more precise than that. *)
         |> Quickcheck.Generator.map ~f:(fun int64 ->
-          Time.of_span_since_epoch (Span.of_us (Int64.to_float int64)))
+             Time.of_span_since_epoch (Span.of_us (Int64.to_float int64)))
       ;;
     end
 
@@ -650,9 +650,9 @@ let%test_module "Time.Stable" =
              For_time.quickcheck_generator
              Int.quickcheck_generator)
         |> Quickcheck.Generator.filter_map ~f:(fun alist ->
-          match Time.Map.of_alist alist with
-          | `Ok map -> Some map
-          | `Duplicate_key _ -> None)
+             match Time.Map.of_alist alist with
+             | `Ok map -> Some map
+             | `Duplicate_key _ -> None)
       ;;
     end
 
@@ -2880,7 +2880,7 @@ let%test_unit "ofday_zoned conversion consistency" =
   let quickcheck_generator =
     Int64.gen_uniform_incl (-10_000_000_000_000_000L) 10_000_000_000_000_000L
     |> Quickcheck.Generator.map ~f:(fun int64 ->
-      Time.of_span_since_epoch (Span.of_us (Int64.to_float int64)))
+         Time.of_span_since_epoch (Span.of_us (Int64.to_float int64)))
   in
   let utc = Zone.utc in
   let nyc = Zone.find_exn "America/New_York" in

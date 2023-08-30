@@ -1,4 +1,3 @@
-
 open Core
 open Expect_test_helpers_core
 module Unix = Core_unix
@@ -306,7 +305,7 @@ let%expect_test "add_business_days_rounding_forward" =
     print_s
       [%sexp
         (Date.add_business_days_rounding_forward ~is_holiday (Date.of_string d1) n
-         : Date.t)]
+          : Date.t)]
   in
   test "2009-01-01" 1;
   [%expect {| 2009-01-05 |}];
@@ -335,7 +334,7 @@ let%expect_test "add_business_days_rounding_backward" =
     print_s
       [%sexp
         (Date.add_business_days_rounding_backward ~is_holiday (Date.of_string d1) n
-         : Date.t)]
+          : Date.t)]
   in
   test "2009-01-01" 1;
   [%expect {| 2009-01-02 |}];

@@ -38,10 +38,10 @@ let parse_command_line ?path ?(summary = default_command_name ^ " SUMMARY") ?rea
 ;;
 
 let parse_command_line_or_error
-      ?path
-      ?(summary = default_command_name ^ " SUMMARY")
-      ?readme
-      param
+  ?path
+  ?(summary = default_command_name ^ " SUMMARY")
+  ?readme
+  param
   =
   stage (fun args ->
     match parse_command_line_raw ~path ~summary ?readme param args with
@@ -182,8 +182,8 @@ module Validate_command_line = struct
     let%bind.Or_error command = command_of_shape shape in
     Ok
       (fun args ->
-         Or_error.try_with (fun () ->
-           Command_unix.run command ~argv:(default_command_name :: args)))
+        Or_error.try_with (fun () ->
+          Command_unix.run command ~argv:(default_command_name :: args)))
   ;;
 end
 

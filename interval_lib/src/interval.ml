@@ -1,4 +1,3 @@
-
 open! Core
 open! Int.Replace_polymorphic_compare
 
@@ -19,8 +18,7 @@ module Stable = struct
         | _exn ->
           (match sexp with
            | Sexp.List [] -> Empty
-           | Sexp.List [ lb; ub ] ->
-             Interval (a_of_sexp lb, a_of_sexp ub)
+           | Sexp.List [ lb; ub ] -> Interval (a_of_sexp lb, a_of_sexp ub)
            | Sexp.Atom _ | Sexp.List _ ->
              of_sexp_error "Interval.t_of_sexp: expected pair or empty list" sexp)
       ;;
@@ -334,10 +332,10 @@ end
 type 'a t = 'a interval [@@deriving bin_io, sexp, compare, hash]
 
 module C = Raw_make (struct
-    type 'a bound = 'a
+  type 'a bound = 'a
 
-    include Poly
-  end)
+  include Poly
+end)
 
 include C.Interval
 
@@ -354,22 +352,22 @@ module Set = struct
 end
 
 module Make (Bound : sig
-    type t [@@deriving bin_io, sexp, hash]
+  type t [@@deriving bin_io, sexp, hash]
 
-    include Comparable.S with type t := t
-  end) =
+  include Comparable.S with type t := t
+end) =
 struct
   type t = Bound.t interval [@@deriving bin_io, sexp, compare, hash]
   type interval = t [@@deriving bin_io, sexp]
   type bound = Bound.t
 
   module C = Raw_make (struct
-      type 'a bound = Bound.t
+    type 'a bound = Bound.t
 
-      let compare = Bound.compare
+    let compare = Bound.compare
 
-      include (Bound : Comparable.Infix with type t := Bound.t)
-    end)
+    include (Bound : Comparable.Infix with type t := Bound.t)
+  end)
 
   include C.Interval
 
@@ -452,14 +450,14 @@ module Int = struct
   ;;
 
   module For_container = Container.Make0 (struct
-      type nonrec t = t
+    type nonrec t = t
 
-      module Elt = Int
+    module Elt = Int
 
-      let iter = `Custom iter
-      let fold = fold
-      let length = `Custom length
-    end)
+    let iter = `Custom iter
+    let fold = fold
+    let length = `Custom length
+  end)
 
   let exists = For_container.exists
   let for_all = For_container.for_all
@@ -492,12 +490,12 @@ module Int = struct
      requires, even though at the end we want to export functions that use the natural
      bounds of the interval.  *)
   module For_binary_search = Binary_searchable.Make (struct
-      type nonrec t = t
-      type nonrec elt = bound
+    type nonrec t = t
+    type nonrec elt = bound
 
-      let length = length
-      let get = get
-    end)
+    let length = length
+    let get = get
+  end)
 
   let binary_search ?pos ?len t ~compare which elt =
     let zero_based_pos = Option.map pos ~f:(fun x -> x - lbound_exn t) in

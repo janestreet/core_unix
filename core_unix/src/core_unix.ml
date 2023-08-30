@@ -953,7 +953,6 @@ let pid_of_wait_on = function
 ;;
 
 type mode = wait_flag list [@@deriving sexp_of]
-
 type _t = mode
 type waitpid_result = (Pid.t * Exit_or_signal_or_stop.t) option [@@deriving sexp_of]
 
@@ -963,10 +962,10 @@ let wait_gen ~mode (type a) (f : waitpid_result -> a option) ~restart wait_on : 
     improve
       ~restart
       (fun () ->
-         let x, ps = Unix.waitpid ~mode pid in
-         x, Exit_or_signal_or_stop.of_unix ps)
+        let x, ps = Unix.waitpid ~mode pid in
+        x, Exit_or_signal_or_stop.of_unix ps)
       (fun () ->
-         [ "mode", sexp_of_list sexp_of_wait_flag mode; "pid", Int.sexp_of_t pid ])
+        [ "mode", sexp_of_list sexp_of_wait_flag mode; "pid", Int.sexp_of_t pid ])
   in
   let waitpid_result =
     if pid = 0
@@ -1037,7 +1036,7 @@ let wait4 ?(restart = true) ~mode wait_on =
       ~restart
       (fun () -> wait4 mode pid)
       (fun () ->
-         [ "mode", sexp_of_list sexp_of_wait_flag mode; "pid", Int.sexp_of_t pid ])
+        [ "mode", sexp_of_list sexp_of_wait_flag mode; "pid", Int.sexp_of_t pid ])
   in
   if x = 0 then None else Some ((Pid.of_int x, Exit_or_signal_or_stop.of_unix ps), rusage)
 ;;
@@ -1339,11 +1338,11 @@ let unix_link ~src ~dst = Unix.link ~src ~dst
 let link ?(force = false) ~target ~link_name () =
   improve
     (fun () ->
-       if force
-       then (
-         try Unix.unlink link_name with
-         | Unix_error (Unix.ENOENT, _, _) -> ());
-       unix_link ~src:target ~dst:link_name)
+      if force
+      then (
+        try Unix.unlink link_name with
+        | Unix_error (Unix.ENOENT, _, _) -> ());
+      unix_link ~src:target ~dst:link_name)
     (fun () -> [ "target", atom target; "link_name", atom link_name ])
 ;;
 
@@ -1390,7 +1389,7 @@ let access filename ~perm =
   improve
     (fun () -> Unix.access filename ~perm)
     (fun () ->
-       [ filename_r filename; "perm", sexp_of_list sexp_of_access_permission perm ])
+      [ filename_r filename; "perm", sexp_of_list sexp_of_access_permission perm ])
 ;;
 
 let access filename perm =
@@ -1399,10 +1398,10 @@ let access filename perm =
       filename
       ~perm:
         (List.map perm ~f:(function
-           | `Read -> Unix.R_OK
-           | `Write -> Unix.W_OK
-           | `Exec -> Unix.X_OK
-           | `Exists -> Unix.F_OK)))
+          | `Read -> Unix.R_OK
+          | `Write -> Unix.W_OK
+          | `Exec -> Unix.X_OK
+          | `Exists -> Unix.F_OK)))
 ;;
 
 let access_exn filename perm = Result.ok_exn (access filename perm)
@@ -1421,10 +1420,10 @@ let dup2 ?close_on_exec ~src ~dst () =
   improve
     (fun () -> Unix.dup2 ?cloexec:close_on_exec ~src ~dst)
     (fun () ->
-       [ "src", File_descr.sexp_of_t src
-       ; "dst", File_descr.sexp_of_t dst
-       ; close_on_exec_r close_on_exec
-       ])
+      [ "src", File_descr.sexp_of_t src
+      ; "dst", File_descr.sexp_of_t dst
+      ; close_on_exec_r close_on_exec
+      ])
 ;;
 
 let set_nonblock = unary_fd Unix.set_nonblock
@@ -1498,12 +1497,12 @@ module Open_flags = struct
   let access_modes = [ rdonly, "rdonly"; rdwr, "rdwr"; wronly, "wronly" ]
 
   include Flags.Make (struct
-      let allow_intersecting = true
-      let should_print_error = true
-      let known = known
-      let remove_zero_flags = true
-      (* remove non existing flags, like cloexec on centos5 *)
-    end)
+    let allow_intersecting = true
+    let should_print_error = true
+    let known = known
+    let remove_zero_flags = true
+    (* remove non existing flags, like cloexec on centos5 *)
+  end)
 
   (* The lower two bits of the open flags are used to specify the access mode:
      rdonly, wronly, rdwr.  So, we have some code to treat those two bits together rather
@@ -1694,7 +1693,7 @@ end
 
 let create_process_internal
   :  working_dir:string option -> setpgid:Spawn.Pgid.t option -> prog:string
-    -> argv:string list -> env:string list -> Process_info.t
+  -> argv:string list -> env:string list -> Process_info.t
   =
   fun ~working_dir ~setpgid ~prog ~argv ~env ->
   let close_on_err = ref [] in
@@ -1756,8 +1755,8 @@ end = struct
       Sys.getenv "PATH"
       |> Option.value_map ~f:(String.split ~on:':') ~default:[ "/bin"; "/usr/bin" ]
       |> List.map ~f:(function
-        | "" -> "."
-        | x -> x)
+           | "" -> "."
+           | x -> x)
   ;;
 
   let candidate_paths ?prog_search_path prog =
@@ -1796,9 +1795,9 @@ end = struct
         Ok
           ((* As crazy as it looks, this is what execvp does. It's even documented in the man
               page. *)
-            spawn
-              ~prog:"/bin/sh"
-              ~argv:("/bin/sh" :: candidate :: args))
+           spawn
+             ~prog:"/bin/sh"
+             ~argv:("/bin/sh" :: candidate :: args))
       | exception (Unix_error (EACCES, _, _) as exn) -> Eaccess exn
       | exception
           (Unix_error
@@ -1845,20 +1844,20 @@ let create_process_env ?working_dir ?prog_search_path ?argv0 ?setpgid ~prog ~arg
 let create_process_env ?working_dir ?prog_search_path ?argv0 ?setpgid ~prog ~args ~env () =
   improve
     (fun () ->
-       create_process_env
-         ?working_dir
-         ?prog_search_path
-         ?argv0
-         ?setpgid
-         ~prog
-         ~args
-         ~env
-         ())
+      create_process_env
+        ?working_dir
+        ?prog_search_path
+        ?argv0
+        ?setpgid
+        ~prog
+        ~args
+        ~env
+        ())
     (fun () ->
-       (match working_dir with
-        | None -> []
-        | Some working_dir -> [ "working_dir", atom working_dir ])
-       @ [ "prog", atom prog; "args", sexp_of_list atom args; "env", sexp_of_env env ])
+      (match working_dir with
+       | None -> []
+       | Some working_dir -> [ "working_dir", atom working_dir ])
+      @ [ "prog", atom prog; "args", sexp_of_list atom args; "env", sexp_of_env env ])
 ;;
 
 let create_process ~prog ~args =
@@ -1886,8 +1885,8 @@ end
 let open_process_full command ~env =
   improve
     (fun () ->
-       let stdout, stdin, stderr = Unix.open_process_full command ~env in
-       { Process_channels.stdin; stdout; stderr })
+      let stdout, stdin, stderr = Unix.open_process_full command ~env in
+      { Process_channels.stdin; stdout; stderr })
     (fun () -> [ "command", atom command; "env", sexp_of_array atom env ])
 ;;
 
@@ -1941,23 +1940,23 @@ let select ?restart ~read ~write ~except ~timeout () =
   improve
     ?restart
     (fun () ->
-       let timeout =
-         match timeout with
-         | `Never -> -1.
-         | `Immediately -> 0.
-         | `After span ->
-           if Time_ns.Span.( < ) span Time_ns.Span.zero
-           then 0.
-           else Time_ns.Span.to_sec span
-       in
-       let read, write, except = Unix.select ~read ~write ~except ~timeout in
-       { Select_fds.read; write; except })
+      let timeout =
+        match timeout with
+        | `Never -> -1.
+        | `Immediately -> 0.
+        | `After span ->
+          if Time_ns.Span.( < ) span Time_ns.Span.zero
+          then 0.
+          else Time_ns.Span.to_sec span
+      in
+      let read, write, except = Unix.select ~read ~write ~except ~timeout in
+      { Select_fds.read; write; except })
     (fun () ->
-       [ "read", sexp_of_list File_descr.sexp_of_t read
-       ; "write", sexp_of_list File_descr.sexp_of_t write
-       ; "except", sexp_of_list File_descr.sexp_of_t except
-       ; "timeout", [%sexp_of: select_timeout] timeout
-       ])
+      [ "read", sexp_of_list File_descr.sexp_of_t read
+      ; "write", sexp_of_list File_descr.sexp_of_t write
+      ; "except", sexp_of_list File_descr.sexp_of_t except
+      ; "timeout", [%sexp_of: select_timeout] timeout
+      ])
 ;;
 
 let pause = Unix.pause
@@ -2191,7 +2190,7 @@ module Passwd = struct
   let getbyname, getbyname_exn =
     make_by'
       (fun name buf ->
-         of_unix (Low_level.getpwnam_r (string_to_zero_terminated_bigstring name) buf))
+        of_unix (Low_level.getpwnam_r (string_to_zero_terminated_bigstring name) buf))
       (fun s -> Getbyname s)
   ;;
 
@@ -2254,7 +2253,7 @@ module Group = struct
   let getbyname, getbyname_exn =
     make_by'
       (fun name buf ->
-         of_unix (Low_level.getgrnam_r (string_to_zero_terminated_bigstring name) buf))
+        of_unix (Low_level.getgrnam_r (string_to_zero_terminated_bigstring name) buf))
       (fun s -> Getbyname s)
   ;;
 
@@ -2319,52 +2318,52 @@ module Inet_addr0 = struct
   include Stable.V1
 
   include Stable_unit_test.Make (struct
-      type nonrec t = t [@@deriving sexp, bin_io]
+    type nonrec t = t [@@deriving sexp, bin_io]
 
-      let equal = equal
+    let equal = equal
 
-      let tests =
-        (* IPv4 *)
-        [ of_string "0.0.0.0", "0.0.0.0", "\0070.0.0.0"
-        ; of_string "10.0.0.0", "10.0.0.0", "\00810.0.0.0"
-        ; of_string "127.0.0.1", "127.0.0.1", "\009127.0.0.1"
-        ; of_string "192.168.1.101", "192.168.1.101", "\013192.168.1.101"
-        ; of_string "255.255.255.255", "255.255.255.255", "\015255.255.255.255" (* IPv6 *)
-        ; ( of_string "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
-          , "2001:db8:85a3::8a2e:370:7334"
-          , "\0282001:db8:85a3::8a2e:370:7334" )
-        ; ( of_string "2001:db8:85a3:0:0:8a2e:370:7334"
-          , "2001:db8:85a3::8a2e:370:7334"
-          , "\0282001:db8:85a3::8a2e:370:7334" )
-        ; ( of_string "2001:db8:85a3::8a2e:370:7334"
-          , "2001:db8:85a3::8a2e:370:7334"
-          , "\0282001:db8:85a3::8a2e:370:7334" )
-        ; of_string "0:0:0:0:0:0:0:1", "::1", "\003::1"
-        ; of_string "::1", "::1", "\003::1"
-        ; of_string "0:0:0:0:0:0:0:0", "::", "\002::"
-        ; of_string "::", "::", "\002::"
-        ; of_string "::ffff:c000:0280", "::ffff:192.0.2.128", "\018::ffff:192.0.2.128"
-        ; of_string "::ffff:192.0.2.128", "::ffff:192.0.2.128", "\018::ffff:192.0.2.128"
-        ; of_string "2001:0db8::0001", "2001:db8::1", "\0112001:db8::1"
-        ; of_string "2001:db8::1", "2001:db8::1", "\0112001:db8::1"
-        ; of_string "2001:db8::2:1", "2001:db8::2:1", "\0132001:db8::2:1"
-        ; ( of_string "2001:db8:0000:1:1:1:1:1"
-          , "2001:db8:0:1:1:1:1:1"
-          , "\0202001:db8:0:1:1:1:1:1" )
-        ; ( of_string "2001:db8::1:1:1:1:1"
-          , "2001:db8:0:1:1:1:1:1"
-          , "\0202001:db8:0:1:1:1:1:1" )
-        ; ( of_string "2001:db8:0:1:1:1:1:1"
-          , "2001:db8:0:1:1:1:1:1"
-          , "\0202001:db8:0:1:1:1:1:1" )
-        ; of_string "2001:db8:0:0:1:0:0:1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
-        ; of_string "2001:db8:0:0:1::1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
-        ; of_string "2001:db8::1:0:0:1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
-        ; of_string "2001:DB8::1", "2001:db8::1", "\0112001:db8::1"
-        ; of_string "2001:db8::1", "2001:db8::1", "\0112001:db8::1"
-        ]
-      ;;
-    end)
+    let tests =
+      (* IPv4 *)
+      [ of_string "0.0.0.0", "0.0.0.0", "\0070.0.0.0"
+      ; of_string "10.0.0.0", "10.0.0.0", "\00810.0.0.0"
+      ; of_string "127.0.0.1", "127.0.0.1", "\009127.0.0.1"
+      ; of_string "192.168.1.101", "192.168.1.101", "\013192.168.1.101"
+      ; of_string "255.255.255.255", "255.255.255.255", "\015255.255.255.255" (* IPv6 *)
+      ; ( of_string "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+        , "2001:db8:85a3::8a2e:370:7334"
+        , "\0282001:db8:85a3::8a2e:370:7334" )
+      ; ( of_string "2001:db8:85a3:0:0:8a2e:370:7334"
+        , "2001:db8:85a3::8a2e:370:7334"
+        , "\0282001:db8:85a3::8a2e:370:7334" )
+      ; ( of_string "2001:db8:85a3::8a2e:370:7334"
+        , "2001:db8:85a3::8a2e:370:7334"
+        , "\0282001:db8:85a3::8a2e:370:7334" )
+      ; of_string "0:0:0:0:0:0:0:1", "::1", "\003::1"
+      ; of_string "::1", "::1", "\003::1"
+      ; of_string "0:0:0:0:0:0:0:0", "::", "\002::"
+      ; of_string "::", "::", "\002::"
+      ; of_string "::ffff:c000:0280", "::ffff:192.0.2.128", "\018::ffff:192.0.2.128"
+      ; of_string "::ffff:192.0.2.128", "::ffff:192.0.2.128", "\018::ffff:192.0.2.128"
+      ; of_string "2001:0db8::0001", "2001:db8::1", "\0112001:db8::1"
+      ; of_string "2001:db8::1", "2001:db8::1", "\0112001:db8::1"
+      ; of_string "2001:db8::2:1", "2001:db8::2:1", "\0132001:db8::2:1"
+      ; ( of_string "2001:db8:0000:1:1:1:1:1"
+        , "2001:db8:0:1:1:1:1:1"
+        , "\0202001:db8:0:1:1:1:1:1" )
+      ; ( of_string "2001:db8::1:1:1:1:1"
+        , "2001:db8:0:1:1:1:1:1"
+        , "\0202001:db8:0:1:1:1:1:1" )
+      ; ( of_string "2001:db8:0:1:1:1:1:1"
+        , "2001:db8:0:1:1:1:1:1"
+        , "\0202001:db8:0:1:1:1:1:1" )
+      ; of_string "2001:db8:0:0:1:0:0:1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
+      ; of_string "2001:db8:0:0:1::1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
+      ; of_string "2001:db8::1:0:0:1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
+      ; of_string "2001:DB8::1", "2001:db8::1", "\0112001:db8::1"
+      ; of_string "2001:db8::1", "2001:db8::1", "\0112001:db8::1"
+      ]
+    ;;
+  end)
 
   let arg_type = Core.Command.Arg_type.create of_string
 end
@@ -2411,9 +2410,7 @@ module Inet_addr = struct
   exception Get_inet_addr of string * string [@@deriving sexp]
 
   let of_string_or_getbyname name =
-    try
-      of_string name
-    with
+    try of_string name with
     | Failure _ ->
       (match Host.getbyname name with
        | None -> raise (Get_inet_addr (name, "host not found"))
@@ -2505,15 +2502,15 @@ module Cidr = struct
       module T1 = Sexpable.Stable.Of_stringable.V1 (T0)
 
       module T2 = Comparator.Stable.V1.Make (struct
-          include T0
-          include T1
-        end)
+        include T0
+        include T1
+      end)
 
       module T3 = Comparable.Stable.V1.With_stable_witness.Make (struct
-          include T0
-          include T1
-          include T2
-        end)
+        include T0
+        include T1
+        include T2
+      end)
 
       include T0
       include T1
@@ -2563,12 +2560,12 @@ module Cidr = struct
   ;;
 
   include Identifiable.Make_using_comparator (struct
-      let module_name = "Core_unix.Cidr"
+    let module_name = "Core_unix.Cidr"
 
-      include Stable.V1.T0
-      include Stable.V1.T1
-      include Stable.V1.T2
-    end)
+    include Stable.V1.T0
+    include Stable.V1.T1
+    include Stable.V1.T2
+  end)
 
   let arg_type = Core.Command.Arg_type.create of_string
 end
@@ -2671,11 +2668,11 @@ let socket_or_pair f ?close_on_exec ~domain ~kind ~protocol () =
   improve
     (fun () -> f ?cloexec:close_on_exec ~domain ~kind ~protocol)
     (fun () ->
-       [ "domain", sexp_of_socket_domain domain
-       ; "kind", sexp_of_socket_type kind
-       ; "protocol", Int.sexp_of_t protocol
-       ; close_on_exec_r close_on_exec
-       ])
+      [ "domain", sexp_of_socket_domain domain
+      ; "kind", sexp_of_socket_type kind
+      ; "protocol", Int.sexp_of_t protocol
+      ; close_on_exec_r close_on_exec
+      ])
 ;;
 
 let socket = socket_or_pair Unix.socket
@@ -2754,9 +2751,9 @@ type shutdown_command = Unix.shutdown_command =
 let shutdown fd ~mode =
   improve
     (fun () ->
-       try Unix.shutdown fd ~mode with
-       (* the error below is benign, it means that the other side disconnected *)
-       | Unix.Unix_error (Unix.ENOTCONN, _, _) -> ())
+      try Unix.shutdown fd ~mode with
+      (* the error below is benign, it means that the other side disconnected *)
+      | Unix.Unix_error (Unix.ENOTCONN, _, _) -> ())
     (fun () -> [ fd_r fd; "mode", sexp_of_shutdown_command mode ])
 ;;
 
@@ -2773,11 +2770,11 @@ let recv_send f fd ~buf ~pos ~len ~mode =
   improve
     (fun () -> f fd ~buf ~pos ~len ~mode)
     (fun () ->
-       [ fd_r fd
-       ; "pos", Int.sexp_of_t pos
-       ; len_r len
-       ; "mode", sexp_of_list sexp_of_msg_flag mode
-       ])
+      [ fd_r fd
+      ; "pos", Int.sexp_of_t pos
+      ; len_r len
+      ; "mode", sexp_of_list sexp_of_msg_flag mode
+      ])
 ;;
 
 let recv = recv_send Unix.recv
@@ -2789,12 +2786,12 @@ let sendto fd ~buf ~pos ~len ~mode ~addr =
   improve
     (fun () -> Unix.sendto fd ~buf ~pos ~len ~mode ~addr)
     (fun () ->
-       [ fd_r fd
-       ; "pos", Int.sexp_of_t pos
-       ; len_r len
-       ; "mode", sexp_of_list sexp_of_msg_flag mode
-       ; "addr", sexp_of_sockaddr addr
-       ])
+      [ fd_r fd
+      ; "pos", Int.sexp_of_t pos
+      ; len_r len
+      ; "mode", sexp_of_list sexp_of_msg_flag mode
+      ; "addr", sexp_of_sockaddr addr
+      ])
 ;;
 
 [%%if ocaml_version >= (4, 05, 0)]
@@ -2813,12 +2810,12 @@ let sendto_substring fd ~buf ~pos ~len ~mode ~addr =
   improve
     (fun () -> unix_sendto_substring fd ~buf ~pos ~len ~mode addr)
     (fun () ->
-       [ fd_r fd
-       ; "pos", Int.sexp_of_t pos
-       ; len_r len
-       ; "mode", sexp_of_list sexp_of_msg_flag mode
-       ; "addr", sexp_of_sockaddr addr
-       ])
+      [ fd_r fd
+      ; "pos", Int.sexp_of_t pos
+      ; len_r len
+      ; "mode", sexp_of_list sexp_of_msg_flag mode
+      ; "addr", sexp_of_sockaddr addr
+      ])
 ;;
 
 [%%if ocaml_version >= (4, 12, 0)]
@@ -2993,10 +2990,10 @@ let getaddrinfo host service opts =
   improve
     (fun () -> Unix.getaddrinfo host service opts)
     (fun () ->
-       [ "host", atom host
-       ; "service", atom service
-       ; "opts", sexp_of_list sexp_of_getaddrinfo_option opts
-       ])
+      [ "host", atom host
+      ; "service", atom service
+      ; "opts", sexp_of_list sexp_of_getaddrinfo_option opts
+      ])
 ;;
 
 type name_info = Unix.name_info =
@@ -3016,18 +3013,18 @@ type getnameinfo_option = Unix.getnameinfo_option =
 let getnameinfo addr opts =
   improve
     (fun () ->
-       try Unix.getnameinfo addr opts with
-       | Stdlib.Not_found ->
-         raise
-           (Not_found_s
-              [%message
-                "Unix.getnameinfo: not found"
-                  (addr : sockaddr)
-                  (opts : getnameinfo_option list)]))
+      try Unix.getnameinfo addr opts with
+      | Stdlib.Not_found ->
+        raise
+          (Not_found_s
+             [%message
+               "Unix.getnameinfo: not found"
+                 (addr : sockaddr)
+                 (opts : getnameinfo_option list)]))
     (fun () ->
-       [ "addr", sexp_of_sockaddr addr
-       ; "opts", sexp_of_list sexp_of_getnameinfo_option opts
-       ])
+      [ "addr", sexp_of_sockaddr addr
+      ; "opts", sexp_of_list sexp_of_getnameinfo_option opts
+      ])
 ;;
 
 module Terminal_io = struct

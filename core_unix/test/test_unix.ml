@@ -6,7 +6,7 @@ let%expect_test "[File_descr.sexp_of_t]" =
   print_s
     [%sexp
       (List.map [ -1; 0; 1; 2; 3 ] ~f:(fun i -> i, i |> File_descr.of_int)
-       : (int * File_descr.t) list)];
+        : (int * File_descr.t) list)];
   [%expect {|
     ((-1 -1)
      (0  0)
@@ -97,26 +97,26 @@ let%test_unit "fork_exec ~env last binding takes precedence" =
     ~finally:remove
     (Filename_unix.temp_file "test" "fork_exec.env.last-wins")
     ~f:(fun temp_file ->
-      let var_in_child env =
-        waitpid_exn
-          (fork_exec
-             ()
-             ~env
-             ~prog:"sh"
-             ~argv:[ "sh"; "-c"; "echo -n ${VAR-undefined} > " ^ temp_file ]);
-        In_channel.read_all temp_file
-      in
-      let env = [ "VAR", "first"; "VAR", "last" ] in
-      List.iter
-        [ `Replace_raw (List.map env ~f:(fun (v, s) -> v ^ "=" ^ s))
-        ; `Replace env
-        ; `Extend env
-        ; `Override (List.map env ~f:(fun (v, s) -> v, Some s))
-        ]
-        ~f:(fun env -> [%test_result: string] ~expect:"last" (var_in_child env));
-      Unix.putenv ~key:"VAR" ~data:"in-process";
-      let env = `Override [ "VAR", None ] in
-      [%test_result: string] ~expect:"undefined" (var_in_child env))
+    let var_in_child env =
+      waitpid_exn
+        (fork_exec
+           ()
+           ~env
+           ~prog:"sh"
+           ~argv:[ "sh"; "-c"; "echo -n ${VAR-undefined} > " ^ temp_file ]);
+      In_channel.read_all temp_file
+    in
+    let env = [ "VAR", "first"; "VAR", "last" ] in
+    List.iter
+      [ `Replace_raw (List.map env ~f:(fun (v, s) -> v ^ "=" ^ s))
+      ; `Replace env
+      ; `Extend env
+      ; `Override (List.map env ~f:(fun (v, s) -> v, Some s))
+      ]
+      ~f:(fun env -> [%test_result: string] ~expect:"last" (var_in_child env));
+    Unix.putenv ~key:"VAR" ~data:"in-process";
+    let env = `Override [ "VAR", None ] in
+    [%test_result: string] ~expect:"undefined" (var_in_child env))
 ;;
 
 let%test_module _ =
@@ -254,7 +254,7 @@ let%expect_test "strptime trailing input" =
   print_s
     [%sexp
       (strptime ~allow_trailing_input:true ~fmt:"%Y-%m-%d" "2012-05-23 10:14:23"
-       : Unix_tm_for_testing.t)];
+        : Unix_tm_for_testing.t)];
   [%expect
     {|
     ((tm_sec   0)
@@ -519,8 +519,8 @@ let%test_unit "readdir_detailed" =
     raise_s
       [%sexp
         "couldn't find file in directory"
-      , `dir_contents (l : Readdir_detailed.t list)
-      , `basename (cwd_base : string)]
+        , `dir_contents (l : Readdir_detailed.t list)
+        , `basename (cwd_base : string)]
   | Some x ->
     (match x.kind with
      | None | Some S_DIR -> ()

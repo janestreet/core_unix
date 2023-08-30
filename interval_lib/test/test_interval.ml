@@ -35,54 +35,54 @@ let%test_module _ =
 
     let%test_module "Interval.V1.Float" =
       (module Stable_unit_test.Make (struct
-           include V1.Float
+        include V1.Float
 
-           let equal = [%compare.equal: t]
+        let equal = [%compare.equal: t]
 
-           let tests =
-             make_stable_unit_tests_v1
-               ~coerce:V1.Private.to_float
-               ~non_empty:
-                 [ ( (1.5, 120.)
-                   , "(1.5 120)"
-                   , "\000\000\000\000\000\000\000\248?\000\000\000\000\000\000^@" )
-                 ]
-           ;;
-         end))
+        let tests =
+          make_stable_unit_tests_v1
+            ~coerce:V1.Private.to_float
+            ~non_empty:
+              [ ( (1.5, 120.)
+                , "(1.5 120)"
+                , "\000\000\000\000\000\000\000\248?\000\000\000\000\000\000^@" )
+              ]
+        ;;
+      end))
     ;;
 
     let%test_module "Interval.V1.Int" =
       (module Stable_unit_test.Make (struct
-           include V1.Int
+        include V1.Int
 
-           let equal = [%compare.equal: t]
+        let equal = [%compare.equal: t]
 
-           let tests =
-             make_stable_unit_tests_v1
-               ~coerce:V1.Private.to_int
-               ~non_empty:[ (-5, 789), "(-5 789)", "\000\255\251\254\021\003" ]
-           ;;
-         end))
+        let tests =
+          make_stable_unit_tests_v1
+            ~coerce:V1.Private.to_int
+            ~non_empty:[ (-5, 789), "(-5 789)", "\000\255\251\254\021\003" ]
+        ;;
+      end))
     ;;
 
     let%test_module "Interval.V1.Ofday" =
       (module Stable_unit_test.Make (struct
-           include V1.Ofday
+        include V1.Ofday
 
-           let equal = [%compare.equal: t]
+        let equal = [%compare.equal: t]
 
-           let tests =
-             let t1 = Time_float.Ofday.create ~hr:7 ~min:30 ~sec:7 ~ms:12 ~us:5 () in
-             let t2 = Time_float.Ofday.create ~hr:9 ~min:45 ~sec:8 ~ms:0 ~us:1 () in
-             make_stable_unit_tests_v1
-               ~coerce:V1.Private.to_ofday
-               ~non_empty:
-                 [ ( (t1, t2)
-                   , "(07:30:07.012005 09:45:08.000001)"
-                   , "\000\153\158\176\196\192_\218@\223\024\002\000\128$\225@" )
-                 ]
-           ;;
-         end))
+        let tests =
+          let t1 = Time_float.Ofday.create ~hr:7 ~min:30 ~sec:7 ~ms:12 ~us:5 () in
+          let t2 = Time_float.Ofday.create ~hr:9 ~min:45 ~sec:8 ~ms:0 ~us:1 () in
+          make_stable_unit_tests_v1
+            ~coerce:V1.Private.to_ofday
+            ~non_empty:
+              [ ( (t1, t2)
+                , "(07:30:07.012005 09:45:08.000001)"
+                , "\000\153\158\176\196\192_\218@\223\024\002\000\128$\225@" )
+              ]
+        ;;
+      end))
     ;;
   end)
 ;;
@@ -249,7 +249,7 @@ let%test_module "vs array" =
         interval_and_nearby_int
         ~sexp_of:[%sexp_of: t * int]
         ~f:(fun (t, i) ->
-          [%test_result: bool] ~expect:(Array.mem ~equal:Int.equal (to_array t) i) (mem t i))
+        [%test_result: bool] ~expect:(Array.mem ~equal:Int.equal (to_array t) i) (mem t i))
     ;;
 
     let%test_unit "binary_search" =

@@ -114,7 +114,6 @@ let%expect_test "sample transitions" =
   [%expect {| (((2013-11-03 01:00:00.000000-05:00) -1h)) |}]
 ;;
 
-
 let same_day =
   [ "America/New_York", "2013-10-07", "01:00"
   ; "America/New_York", "2013-10-07", "02:00"

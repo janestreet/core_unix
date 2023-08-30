@@ -25,7 +25,6 @@ module Examples = struct
     [%expect {| (((2013-11-03 01:00:00.000000-05:00) -1h)) |}]
   ;;
 
-
   (* Most of our examples are of times that occur exactly once, not during a DST
      transition: *)
 
@@ -206,14 +205,14 @@ let%expect_test "Time.of_date_ofday" =
   test
     (module Time)
     (fun ~title ~zone ~date ~ofday ~times ->
-       match times with
-       | `Once time | `Echo (time, _) | `Never (`Synthetic time) | `Twice (_, time) ->
-         require_equal
-           [%here]
-           ~message:title
-           (module Time)
-           (Time.of_date_ofday ~zone date ofday)
-           time);
+      match times with
+      | `Once time | `Echo (time, _) | `Never (`Synthetic time) | `Twice (_, time) ->
+        require_equal
+          [%here]
+          ~message:title
+          (module Time)
+          (Time.of_date_ofday ~zone date ofday)
+          time);
   [%expect {| |}]
 ;;
 
@@ -221,14 +220,14 @@ let%expect_test "Time_ns.of_date_ofday" =
   test
     (module Time_ns)
     (fun ~title ~zone ~date ~ofday ~times ->
-       match times with
-       | `Once time | `Echo (time, _) | `Never (`Synthetic time) | `Twice (_, time) ->
-         require_equal
-           [%here]
-           ~message:title
-           (module Time_ns)
-           (Time_ns.of_date_ofday ~zone date ofday)
-           time);
+      match times with
+      | `Once time | `Echo (time, _) | `Never (`Synthetic time) | `Twice (_, time) ->
+        require_equal
+          [%here]
+          ~message:title
+          (module Time_ns)
+          (Time_ns.of_date_ofday ~zone date ofday)
+          time);
   [%expect {| |}]
 ;;
 
@@ -236,16 +235,16 @@ let%expect_test "Time.to_date" =
   test
     (module Time)
     (fun ~title ~zone ~date ~ofday:_ ~times ->
-       let f time =
-         require_equal [%here] ~message:title (module Date) (Time.to_date ~zone time) date
-       in
-       match times with
-       | `Never (`Synthetic time) -> f time
-       | `Once time -> f time
-       | `Echo (time, _) -> f time
-       | `Twice (time1, time2) ->
-         f time1;
-         f time2);
+      let f time =
+        require_equal [%here] ~message:title (module Date) (Time.to_date ~zone time) date
+      in
+      match times with
+      | `Never (`Synthetic time) -> f time
+      | `Once time -> f time
+      | `Echo (time, _) -> f time
+      | `Twice (time1, time2) ->
+        f time1;
+        f time2);
   [%expect {| |}]
 ;;
 
@@ -253,21 +252,21 @@ let%expect_test "Time_ns.to_date" =
   test
     (module Time_ns)
     (fun ~title ~zone ~date ~ofday:_ ~times ->
-       let f time =
-         require_equal
-           [%here]
-           ~message:title
-           (module Date)
-           (Time_ns.to_date ~zone time)
-           date
-       in
-       match times with
-       | `Never (`Synthetic time) -> f time
-       | `Once time -> f time
-       | `Echo (time, _) -> f time
-       | `Twice (time1, time2) ->
-         f time1;
-         f time2);
+      let f time =
+        require_equal
+          [%here]
+          ~message:title
+          (module Date)
+          (Time_ns.to_date ~zone time)
+          date
+      in
+      match times with
+      | `Never (`Synthetic time) -> f time
+      | `Once time -> f time
+      | `Echo (time, _) -> f time
+      | `Twice (time1, time2) ->
+        f time1;
+        f time2);
   [%expect {| |}]
 ;;
 
@@ -275,31 +274,31 @@ let%expect_test "Time.to_ofday" =
   test
     (module Time)
     (fun ~title ~zone ~date:_ ~ofday ~times ->
-       let f time =
-         require_equal
-           [%here]
-           ~message:title
-           (module Time.Ofday)
-           (Time.to_ofday ~zone time)
-           ofday
-       in
-       match times with
-       | `Once time -> f time
-       | `Echo (time, _) -> f time
-       | `Twice (time1, time2) ->
-         f time1;
-         f time2
-       | `Never (`Synthetic synthetic_time) ->
-         let synthetic_ofday = Time.to_ofday ~zone synthetic_time in
-         require
-           [%here]
-           (not (Time.Ofday.equal ofday synthetic_ofday))
-           ~if_false_then_print_s:
-             (lazy
-               [%message
-                 "impossible time occurred"
-                   (synthetic_time : Time.t)
-                   (synthetic_ofday : Time.Ofday.t)]));
+      let f time =
+        require_equal
+          [%here]
+          ~message:title
+          (module Time.Ofday)
+          (Time.to_ofday ~zone time)
+          ofday
+      in
+      match times with
+      | `Once time -> f time
+      | `Echo (time, _) -> f time
+      | `Twice (time1, time2) ->
+        f time1;
+        f time2
+      | `Never (`Synthetic synthetic_time) ->
+        let synthetic_ofday = Time.to_ofday ~zone synthetic_time in
+        require
+          [%here]
+          (not (Time.Ofday.equal ofday synthetic_ofday))
+          ~if_false_then_print_s:
+            (lazy
+              [%message
+                "impossible time occurred"
+                  (synthetic_time : Time.t)
+                  (synthetic_ofday : Time.Ofday.t)]));
   [%expect {| |}]
 ;;
 
@@ -307,31 +306,31 @@ let%expect_test "Time_ns.to_ofday" =
   test
     (module Time_ns)
     (fun ~title ~zone ~date:_ ~ofday ~times ->
-       let f time =
-         require_equal
-           [%here]
-           ~message:title
-           (module Time_ns.Ofday)
-           (Time_ns.to_ofday ~zone time)
-           ofday
-       in
-       match times with
-       | `Once time -> f time
-       | `Echo (time, _) -> f time
-       | `Twice (time1, time2) ->
-         f time1;
-         f time2
-       | `Never (`Synthetic synthetic_time) ->
-         let synthetic_ofday = Time_ns.to_ofday ~zone synthetic_time in
-         require
-           [%here]
-           (not (Time_ns.Ofday.equal ofday synthetic_ofday))
-           ~if_false_then_print_s:
-             (lazy
-               [%message
-                 "impossible time occurred"
-                   (synthetic_time : Time_ns.t)
-                   (synthetic_ofday : Time_ns.Ofday.t)]));
+      let f time =
+        require_equal
+          [%here]
+          ~message:title
+          (module Time_ns.Ofday)
+          (Time_ns.to_ofday ~zone time)
+          ofday
+      in
+      match times with
+      | `Once time -> f time
+      | `Echo (time, _) -> f time
+      | `Twice (time1, time2) ->
+        f time1;
+        f time2
+      | `Never (`Synthetic synthetic_time) ->
+        let synthetic_ofday = Time_ns.to_ofday ~zone synthetic_time in
+        require
+          [%here]
+          (not (Time_ns.Ofday.equal ofday synthetic_ofday))
+          ~if_false_then_print_s:
+            (lazy
+              [%message
+                "impossible time occurred"
+                  (synthetic_time : Time_ns.t)
+                  (synthetic_ofday : Time_ns.Ofday.t)]));
   [%expect {| |}]
 ;;
 
@@ -339,21 +338,21 @@ let%expect_test "Time.to_date_ofday" =
   test
     (module Time)
     (fun ~title ~zone ~date:_ ~ofday:_ ~times ->
-       let f time =
-         require_equal
-           [%here]
-           ~message:title
-           (module Date_and_ofday)
-           (Time.to_date_ofday ~zone time)
-           (Time.to_date ~zone time, Time.to_ofday ~zone time)
-       in
-       match times with
-       | `Never (`Synthetic time) -> f time
-       | `Once time -> f time
-       | `Echo (time, _) -> f time
-       | `Twice (time1, time2) ->
-         f time1;
-         f time2);
+      let f time =
+        require_equal
+          [%here]
+          ~message:title
+          (module Date_and_ofday)
+          (Time.to_date_ofday ~zone time)
+          (Time.to_date ~zone time, Time.to_ofday ~zone time)
+      in
+      match times with
+      | `Never (`Synthetic time) -> f time
+      | `Once time -> f time
+      | `Echo (time, _) -> f time
+      | `Twice (time1, time2) ->
+        f time1;
+        f time2);
   [%expect {| |}]
 ;;
 
@@ -361,21 +360,21 @@ let%expect_test "Time_ns.to_date_ofday" =
   test
     (module Time_ns)
     (fun ~title ~zone ~date:_ ~ofday:_ ~times ->
-       let f time =
-         require_equal
-           [%here]
-           ~message:title
-           (module Date_and_ofday_ns)
-           (Time_ns.to_date_ofday ~zone time)
-           (Time_ns.to_date ~zone time, Time_ns.to_ofday ~zone time)
-       in
-       match times with
-       | `Never (`Synthetic time) -> f time
-       | `Once time -> f time
-       | `Echo (time, _) -> f time
-       | `Twice (time1, time2) ->
-         f time1;
-         f time2);
+      let f time =
+        require_equal
+          [%here]
+          ~message:title
+          (module Date_and_ofday_ns)
+          (Time_ns.to_date_ofday ~zone time)
+          (Time_ns.to_date ~zone time, Time_ns.to_ofday ~zone time)
+      in
+      match times with
+      | `Never (`Synthetic time) -> f time
+      | `Once time -> f time
+      | `Echo (time, _) -> f time
+      | `Twice (time1, time2) ->
+        f time1;
+        f time2);
   [%expect {| |}]
 ;;
 
@@ -383,18 +382,18 @@ let%expect_test "Time.of_date_ofday_precise" =
   test
     (module Time)
     (fun ~title ~zone ~date ~ofday ~times ->
-       require_equal
-         [%here]
-         ~message:title
-         (module Time_precise)
-         (Time.of_date_ofday_precise ~zone date ofday)
-         (match times with
-          | (`Once _ | `Twice _) as times -> times
-          | `Echo (time, _) -> `Once time
-          | `Never (`Synthetic time) ->
-            (match Time.Zone.prev_clock_shift zone ~at_or_before:time with
-             | None -> raise_s [%message "skipped time has no prior transition"]
-             | Some (transition, _) -> `Never transition)));
+      require_equal
+        [%here]
+        ~message:title
+        (module Time_precise)
+        (Time.of_date_ofday_precise ~zone date ofday)
+        (match times with
+         | (`Once _ | `Twice _) as times -> times
+         | `Echo (time, _) -> `Once time
+         | `Never (`Synthetic time) ->
+           (match Time.Zone.prev_clock_shift zone ~at_or_before:time with
+            | None -> raise_s [%message "skipped time has no prior transition"]
+            | Some (transition, _) -> `Never transition)));
   [%expect {| |}]
 ;;
 
@@ -402,40 +401,40 @@ let%expect_test "Time.to_date_ofday_precise" =
   test
     (module Time)
     (fun ~title ~zone ~date ~ofday ~times ->
-       match times with
-       | `Once time ->
-         require_equal
-           [%here]
-           ~message:title
-           (module Date_ofday_precise)
-           (Time.to_date_ofday_precise ~zone time)
-           (date, ofday, `Only)
-       | `Echo (time, `Of other_ofday) ->
-         require_equal
-           [%here]
-           ~message:title
-           (module Date_ofday_precise)
-           (Time.to_date_ofday_precise ~zone time)
-           (date, ofday, `Also_skipped (date, other_ofday))
-       | `Never (`Synthetic time) ->
-         require_equal
-           [%here]
-           ~message:title
-           (module Date_ofday_precise)
-           (Time.to_date_ofday_precise ~zone time)
-           (Time.to_date ~zone time, Time.to_ofday ~zone time, `Also_skipped (date, ofday))
-       | `Twice (time1, time2) ->
-         require_equal
-           [%here]
-           ~message:title
-           (module Date_ofday_precise)
-           (Time.to_date_ofday_precise ~zone time1)
-           (date, ofday, `Also_at time2);
-         require_equal
-           [%here]
-           ~message:title
-           (module Date_ofday_precise)
-           (Time.to_date_ofday_precise ~zone time2)
-           (date, ofday, `Also_at time1));
+      match times with
+      | `Once time ->
+        require_equal
+          [%here]
+          ~message:title
+          (module Date_ofday_precise)
+          (Time.to_date_ofday_precise ~zone time)
+          (date, ofday, `Only)
+      | `Echo (time, `Of other_ofday) ->
+        require_equal
+          [%here]
+          ~message:title
+          (module Date_ofday_precise)
+          (Time.to_date_ofday_precise ~zone time)
+          (date, ofday, `Also_skipped (date, other_ofday))
+      | `Never (`Synthetic time) ->
+        require_equal
+          [%here]
+          ~message:title
+          (module Date_ofday_precise)
+          (Time.to_date_ofday_precise ~zone time)
+          (Time.to_date ~zone time, Time.to_ofday ~zone time, `Also_skipped (date, ofday))
+      | `Twice (time1, time2) ->
+        require_equal
+          [%here]
+          ~message:title
+          (module Date_ofday_precise)
+          (Time.to_date_ofday_precise ~zone time1)
+          (date, ofday, `Also_at time2);
+        require_equal
+          [%here]
+          ~message:title
+          (module Date_ofday_precise)
+          (Time.to_date_ofday_precise ~zone time2)
+          (date, ofday, `Also_at time1));
   [%expect {| |}]
 ;;

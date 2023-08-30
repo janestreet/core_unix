@@ -50,10 +50,10 @@ let lock = flock ~exclusive:true
 [%%endif]
 
 let create
-      ?(message = Pid.to_string (Unix.getpid ()))
-      ?(close_on_exec = true)
-      ?(unlink_on_exit = false)
-      path
+  ?(message = Pid.to_string (Unix.getpid ()))
+  ?(close_on_exec = true)
+  ?(unlink_on_exit = false)
+  path
   =
   let message = sprintf "%s\n" message in
   (* We use [~perm:0o664] rather than our usual default perms, [0o666], because
@@ -158,13 +158,13 @@ let repeat_with_timeout ?max_retry_delay ?(random = random) ?timeout lockf path 
 
 (* default timeout is to wait indefinitely *)
 let blocking_create
-      ?max_retry_delay
-      ?random
-      ?timeout
-      ?message
-      ?close_on_exec
-      ?unlink_on_exit
-      path
+  ?max_retry_delay
+  ?random
+  ?timeout
+  ?message
+  ?close_on_exec
+  ?unlink_on_exit
+  path
   =
   repeat_with_timeout
     ?max_retry_delay
