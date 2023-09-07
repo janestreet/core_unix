@@ -766,6 +766,54 @@ let%expect_test "when_parsing_succeeds" =
     (raised (command.ml.Exit_called (status 1))) |}]
 ;;
 
+let%expect_test "global normalized path and args" =
+  let command =
+    Command.group
+      ~summary:""
+      [ ( "outer"
+        , Command.group
+            ~summary:""
+            [ ( "inner"
+              , Command.basic
+                  ~summary:""
+                  (let%map_open.Command input =
+                     flag "input" (required string) ~doc:"input"
+                   and sinput = flag "sinput" (required string) ~doc:"sinput" in
+                   fun () -> printf "Ran command with input value: %s %s\n" input sinput)
+              )
+            ] )
+      ]
+  in
+  let print_normalized_path_and_args () =
+    let default = "<NO-VALUE>" in
+    let normalized_path =
+      Command.For_telemetry.normalized_path ()
+      |> Option.value_map ~f:(String.concat ~sep:" ") ~default
+    in
+    let normalized_args =
+      Command.For_telemetry.normalized_args ()
+      |> Option.value_map ~f:(String.concat ~sep:" ") ~default
+    in
+    printf "Normalized path: %s\nNormalized args: %s\n" normalized_path normalized_args
+  in
+  print_normalized_path_and_args ();
+  [%expect {|
+    Normalized path: __exe_name__
+    Normalized args: |}];
+  let run args =
+    run
+      ~when_parsing_succeeds:print_normalized_path_and_args
+      ~argv:("__exe_name__" :: args)
+      command
+  in
+  run [ "o"; "i"; "-in"; "test"; "-si"; "test2" ];
+  [%expect
+    {|
+    Normalized path: __exe_name__ outer inner
+    Normalized args: -input test -sinput test2
+    Ran command with input value: test test2 |}]
+;;
+
 let%expect_test "special cased help before group member" =
   let module Simple_group = Test_command_completion_shared.Simple_group in
   (* We treat this as equivalent to [group basic -help]. *)
