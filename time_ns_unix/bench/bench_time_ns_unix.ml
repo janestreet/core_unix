@@ -947,7 +947,7 @@ module Ofday = struct
     let string_of_start_of_day = opaque (to_string start_of_day)
     let string_of_morning = opaque (to_string morning)
     let string_of_evening = opaque (to_string evening)
-    let int63_of_start_of_day = opaque (Stable.Ofday.V1.to_int63 start_of_day)
+    let int63_of_start_of_day = opaque (Stable.V1.to_int63 start_of_day)
   end
 
   open Ofday_constants
@@ -1292,6 +1292,29 @@ module Ofday = struct
     let%bench "to_string" = to_string example
     let of_string = of_string
     let%bench "of_string" = of_string example_string
+
+    module Stable = struct
+      open Stable
+
+      module V1 = struct
+        open V1
+
+        type nonrec t = t [@@deriving bin_io, stable_witness]
+
+        let compare = compare
+        let%bench "compare (<)" = compare zero_utc example
+        let%bench "compare (>)" = compare example zero_utc
+        let%bench "compare (=)" = compare zero_utc zero_utc
+        let hash = hash
+        let%bench "hash" = hash zero_utc
+        let hash_fold_t = hash_fold_t
+        let%bench "hash_fold_t" = hash_fold_t hash_state zero_utc
+        let sexp_of_t = sexp_of_t
+        let%bench "sexp_of_t" = sexp_of_t example
+        let t_of_sexp = t_of_sexp
+        let%bench "t_of_sexp" = t_of_sexp example_sexp
+      end
+    end
   end
 
   module Option = struct
@@ -1506,6 +1529,39 @@ module Ofday = struct
         let%bench "of_int63_exn (none)" = of_int63_exn int63_of_none
         let%bench "of_int63_exn (some)" = of_int63_exn int63_of_some_start_of_day
       end
+    end
+  end
+
+  module Stable = struct
+    open Stable
+
+    module V1 = struct
+      open V1
+
+      type nonrec t = t [@@deriving bin_io, sexp_grammar, stable_witness]
+      type nonrec comparator_witness = comparator_witness
+
+      let comparator = comparator
+      let hash = hash
+      let%bench "hash" = hash start_of_day
+      let hash_fold_t = hash_fold_t
+      let%bench "hash_fold_t" = hash_fold_t hash_state start_of_day
+      let compare = compare
+      let%bench "compare" = compare start_of_day evening
+      let equal = equal
+      let%bench "equal" = equal start_of_day start_of_next_day
+      let sexp_of_t = sexp_of_t
+      let%bench "sexp_of_t (midnight)" = sexp_of_t start_of_day
+      let%bench "sexp_of_t (morning)" = sexp_of_t morning
+      let%bench "sexp_of_t (evening)" = sexp_of_t evening
+      let t_of_sexp = t_of_sexp
+      let%bench "t_of_sexp (midnight)" = t_of_sexp sexp_of_start_of_day
+      let%bench "t_of_sexp (morning)" = t_of_sexp sexp_of_morning
+      let%bench "t_of_sexp (evening)" = t_of_sexp sexp_of_evening
+      let to_int63 = to_int63
+      let%bench "to_int63" = to_int63 start_of_day
+      let of_int63_exn = of_int63_exn
+      let%bench "of_int63_exn" = of_int63_exn int63_of_start_of_day
     end
   end
 end
@@ -2052,6 +2108,13 @@ module Alternate_sexp = struct
   type nonrec comparator_witness = comparator_witness
 
   let comparator = comparator
+
+  module Alternate_sexp_constants = struct
+    let sexp_of_epoch = opaque (sexp_of_t epoch)
+  end
+
+  open Alternate_sexp_constants
+
   let sexp_of_t = sexp_of_t
   let%bench "sexp_of_t" = sexp_of_t epoch
   let t_of_sexp = t_of_sexp
@@ -2568,12 +2631,18 @@ module Stable = struct
       open Time_ns.Stable.Ofday.V1
       open Ofday_constants
 
-      type nonrec t = t [@@deriving bin_io, stable_witness]
+      type nonrec t = t [@@deriving bin_io, sexp_grammar, stable_witness]
       type nonrec comparator_witness = comparator_witness
 
       let comparator = comparator
+      let hash = hash
+      let%bench "hash" = hash start_of_day
+      let hash_fold_t = hash_fold_t
+      let%bench "hash_fold_t" = hash_fold_t hash_state start_of_day
       let compare = compare
       let%bench "compare" = compare start_of_day evening
+      let equal = equal
+      let%bench "equal" = equal start_of_day start_of_next_day
       let sexp_of_t = sexp_of_t
       let%bench "sexp_of_t (midnight)" = sexp_of_t start_of_day
       let%bench "sexp_of_t (morning)" = sexp_of_t morning

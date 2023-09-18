@@ -62,6 +62,14 @@ module type Ofday = sig
           or any day. *)
       type nonrec t = t [@@deriving bin_io, sexp, compare, equal, hash]
     end
+
+    module Stable : sig
+      module V1 : sig
+        type nonrec t = t [@@deriving hash]
+
+        include Stable_without_comparator_with_witness with type t := t
+      end
+    end
   end
 
   module Option : sig
@@ -293,10 +301,14 @@ module type Time_ns_unix = sig
     end
 
     module Ofday : sig
-      module V1 :
-        Stable_int63able_with_witness
-          with type t = Ofday.t
-          with type comparator_witness = Time_ns.Stable.Ofday.V1.comparator_witness
+      module V1 : sig
+        type t = Ofday.t [@@deriving equal, hash, sexp_grammar]
+
+        include
+          Stable_int63able_with_witness
+            with type t := Ofday.t
+             and type comparator_witness = Time_ns.Stable.Ofday.V1.comparator_witness
+      end
 
       module Zoned : sig
         module V1 : sig

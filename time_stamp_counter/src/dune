@@ -1,8 +1,6 @@
 (library (name time_stamp_counter) (public_name core_unix.time_stamp_counter)
  (preprocess (pps ppx_jane ppx_optcomp)) (preprocessor_deps config.h)
- (c_names time_stamp_counter_stubs)
- (js_of_ocaml (javascript_files time_stamp_counter_stubs.js))
- (libraries core ocaml_intrinsics))
+ (c_names time_stamp_counter_stubs) (libraries core ocaml_intrinsics))
 
 (rule (targets config.h) (deps)
  (action (bash "cp %{lib:jst-config:config.h} %{targets}")))

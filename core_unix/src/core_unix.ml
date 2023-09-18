@@ -923,12 +923,11 @@ external sys_exit : int -> 'a = "caml_sys_exit"
 let fork_exec ~prog ~argv ?preexec_fn ?use_path ?env () =
   match fork () with
   | `In_the_child ->
-    (match preexec_fn with
-     | Some preexec_fn -> preexec_fn ()
-     | None -> ());
-    never_returns
-      (try exec ~prog ~argv ?use_path ?env () with
-       | _ -> sys_exit 127)
+    (try
+       Option.call ~f:preexec_fn ();
+       never_returns (exec ~prog ~argv ?use_path ?env ())
+     with
+     | _ -> sys_exit 127)
   | `In_the_parent pid -> pid
 ;;
 
