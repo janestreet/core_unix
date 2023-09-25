@@ -200,6 +200,15 @@ val handle_unix_error : (unit -> 'a) -> 'a
     case [f ()] is run again until it raises a different error or returns a value. *)
 val retry_until_no_eintr : (unit -> 'a) -> 'a
 
+module Private : sig
+  (** [sexp_to_string_hum] formats the sexp as a human readable string. Used to
+      prettify syscall arguments and attach them to the [Unix_error] in case it fails.
+
+      The reason to expose this function is to make it easy for alternative
+      implementations of these functions to produce error messages in the same format. *)
+  val sexp_to_string_hum : Sexp.t -> string
+end
+
 (** {6 Access to the process environment}
 
     If you're looking for [getenv], that's in the Sys module. *)

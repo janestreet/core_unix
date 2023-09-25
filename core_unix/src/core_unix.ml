@@ -23,19 +23,26 @@ let rec retry_until_no_eintr f =
   | Unix.Unix_error (EINTR, _, _) -> retry_until_no_eintr f
 ;;
 
+let sexp_to_string_hum sexp =
+  let buf = Buffer.create 100 in
+  let fmt = Format.formatter_of_buffer buf in
+  Format.pp_set_margin fmt 10000;
+  Sexp.pp_hum fmt sexp;
+  Format.pp_print_flush fmt ();
+  Buffer.contents buf
+;;
+
+module Private = struct
+  let sexp_to_string_hum = sexp_to_string_hum
+end
+
 (* This wrapper improves the content of the Unix_error exception raised by the standard
    library (by including a sexp of the function arguments), and it optionally restarts
    syscalls on EINTR. *)
 let improve ?(restart = false) f make_arg_sexps =
   try if restart then retry_until_no_eintr f else f () with
   | Unix.Unix_error (e, s, _) ->
-    let buf = Buffer.create 100 in
-    let fmt = Format.formatter_of_buffer buf in
-    Format.pp_set_margin fmt 10000;
-    Sexp.pp_hum fmt (record (make_arg_sexps ()));
-    Format.pp_print_flush fmt ();
-    let arg_str = Buffer.contents buf in
-    raise (Unix.Unix_error (e, s, arg_str))
+    raise (Unix.Unix_error (e, s, sexp_to_string_hum (record (make_arg_sexps ()))))
 ;;
 
 module File_descr = File_descr
