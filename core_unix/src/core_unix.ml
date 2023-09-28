@@ -1697,21 +1697,48 @@ module Process_info = struct
   [@@deriving sexp_of]
 end
 
-let create_process_internal
-  :  working_dir:string option -> setpgid:Spawn.Pgid.t option -> prog:string
-  -> argv:string list -> env:string list -> Process_info.t
-  =
-  fun ~working_dir ~setpgid ~prog ~argv ~env ->
+module Fd_spec = struct
+  type 'maybe_fd t =
+    | Generate : File_descr.t t
+    | Use_this : File_descr.t -> [ `Did_not_create_fd ] t
+end
+
+module Pid_with_generated_fds = struct
+  type ('stdin, 'stdout, 'stderr) t =
+    { pid : Pid.t
+    ; stdin : 'stdin
+    ; stdout : 'stdout
+    ; stderr : 'stderr
+    }
+
+  let process_info { pid; stdin; stdout; stderr } =
+    { Process_info.pid; stdin; stdout; stderr }
+  ;;
+end
+
+let create_process_internal ~stdin ~stdout ~stderr ~working_dir ~setpgid ~prog ~argv ~env =
   let close_on_err = ref [] in
-  let safe_pipe () =
-    let ((fd_read, fd_write) as result) = Spawn.safe_pipe () in
-    close_on_err := fd_read :: fd_write :: !close_on_err;
-    result
+  let close_on_success = ref [] in
+  let safe_pipe ~is_stdin =
+    let fd_for_parent, fd_for_child =
+      let fd_read, fd_write = Spawn.safe_pipe () in
+      if is_stdin then fd_write, fd_read else fd_read, fd_write
+    in
+    close_on_err := fd_for_parent :: fd_for_child :: !close_on_err;
+    close_on_success := fd_for_child :: !close_on_success;
+    fd_for_parent, fd_for_child
   in
   try
-    let in_read, in_write = safe_pipe () in
-    let out_read, out_write = safe_pipe () in
-    let err_read, err_write = safe_pipe () in
+    let get_fds (type maybe_fd) (fd : maybe_fd Fd_spec.t) ~is_stdin
+      : maybe_fd * File_descr.t
+      =
+      match fd with
+      | Use_this fd -> `Did_not_create_fd, fd
+      | Generate -> safe_pipe ~is_stdin
+    in
+    let stdin_for_parent, stdin_for_child = get_fds stdin ~is_stdin:true in
+    let stdout_for_parent, stdout_for_child = get_fds stdout ~is_stdin:false in
+    let stderr_for_parent, stderr_for_child = get_fds stderr ~is_stdin:false in
     let pid =
       Spawn.spawn
         ?cwd:(Option.map working_dir ~f:(fun x -> Spawn.Working_dir.Path x))
@@ -1719,16 +1746,18 @@ let create_process_internal
         ~prog
         ~argv
         ~env:(Spawn.Env.of_list env)
-        ~stdin:in_read
-        ~stdout:out_write
-        ~stderr:err_write
+        ~stdin:stdin_for_child
+        ~stdout:stdout_for_child
+        ~stderr:stderr_for_child
         ()
       |> Pid.of_int
     in
-    close in_read;
-    close out_write;
-    close err_write;
-    { pid; stdin = in_write; stdout = out_read; stderr = err_read }
+    List.iter !close_on_success ~f:close;
+    { Pid_with_generated_fds.pid
+    ; stdin = stdin_for_parent
+    ; stdout = stdout_for_parent
+    ; stderr = stderr_for_parent
+    }
   with
   | exn ->
     List.iter !close_on_err ~f:(fun x ->
@@ -1834,36 +1863,60 @@ end = struct
   ;;
 end
 
-let create_process_env ?working_dir ?prog_search_path ?argv0 ?setpgid ~prog ~args ~env () =
-  let env_assignments = Env.expand env in
-  Execvp_emulation.run
-    ~prog
-    ~args
-    ?argv0
-    ?prog_search_path
-    ~working_dir
-    ~spawn:(fun ~prog ~argv ->
-      create_process_internal ~working_dir ~setpgid ~prog ~argv ~env:env_assignments)
-    ()
-;;
-
-let create_process_env ?working_dir ?prog_search_path ?argv0 ?setpgid ~prog ~args ~env () =
+let create_process_with_fds
+  ?working_dir
+  ?prog_search_path
+  ?argv0
+  ?setpgid
+  ?(env = `Extend [])
+  ~prog
+  ~args
+  ~stdin
+  ~stdout
+  ~stderr
+  ()
+  =
   improve
     (fun () ->
-      create_process_env
-        ?working_dir
-        ?prog_search_path
-        ?argv0
-        ?setpgid
+      let env_assignments = Env.expand env in
+      Execvp_emulation.run
         ~prog
         ~args
-        ~env
+        ?argv0
+        ?prog_search_path
+        ~working_dir
+        ~spawn:(fun ~prog ~argv ->
+          create_process_internal
+            ~working_dir
+            ~setpgid
+            ~prog
+            ~argv
+            ~env:env_assignments
+            ~stdin
+            ~stdout
+            ~stderr)
         ())
     (fun () ->
       (match working_dir with
        | None -> []
        | Some working_dir -> [ "working_dir", atom working_dir ])
       @ [ "prog", atom prog; "args", sexp_of_list atom args; "env", sexp_of_env env ])
+;;
+
+let create_process_env ?working_dir ?prog_search_path ?argv0 ?setpgid ~prog ~args ~env () =
+  create_process_with_fds
+    ?working_dir
+    ?prog_search_path
+    ?argv0
+    ?setpgid
+    ~stdin:Generate
+    ~stdout:Generate
+    ~stderr:Generate
+    ~prog
+    ~args
+    ~env
+    ()
+  |> Pid_with_generated_fds.process_info
 ;;
 
 let create_process ~prog ~args =

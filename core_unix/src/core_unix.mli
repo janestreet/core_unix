@@ -1038,6 +1038,46 @@ val create_process_env
   -> unit
   -> Process_info.t
 
+module Fd_spec : sig
+  type 'maybe_fd t =
+    | Generate : File_descr.t t
+    | Use_this : File_descr.t -> [ `Did_not_create_fd ] t
+end
+
+module Pid_with_generated_fds : sig
+  type ('stdin, 'stdout, 'stderr) t =
+    { pid : Pid.t
+    ; stdin : 'stdin
+    ; stdout : 'stdout
+    ; stderr : 'stderr
+    }
+end
+
+(** Like [create_process_env], but allowing existing file descriptors for std{in,out,err}
+    for the child process, instead of generating fresh ones. [create_process_env] is
+    essentially [create_process_with_fds] with [Generate] passed for all three.
+
+    Note that each file descriptor is either passed in via [Use_this fd] or returned due
+    to [Generate]. Those passed in will be used by the new (child) process, while those
+    returned will be used by this (the parent) process. E.g., a supplied stdin must be
+    readable (by the child), while a returned stdin will be writable (by the parent).
+
+    File descriptors passed in via [Use_this fd] can be CLOEXEC; they will be [dup]ed for
+    the new process. *)
+val create_process_with_fds
+  :  ?working_dir:string
+  -> ?prog_search_path:string list
+  -> ?argv0:string
+  -> ?setpgid:Pgid.t
+  -> ?env:env (** default: [`Extend []], i.e., use the current environment  *)
+  -> prog:string
+  -> args:string list
+  -> stdin:'stdin Fd_spec.t
+  -> stdout:'stdout Fd_spec.t
+  -> stderr:'stderr Fd_spec.t
+  -> unit
+  -> ('stdin, 'stdout, 'stderr) Pid_with_generated_fds.t
+
 (** High-level pipe and process management. These functions
     (with {!UnixLabels.open_process_out} and {!UnixLabels.open_process})
     run the given command in parallel with the program,

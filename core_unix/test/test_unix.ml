@@ -429,6 +429,46 @@ let%test_module "the search path passed to [create_process_env] has an effect" =
   end)
 ;;
 
+let%test_unit "create_process_with_fds works" =
+  let str = "hello" in
+  let len = String.length str in
+  let test ~prog ~args ~stdin ~stdout =
+    let result =
+      Unix.create_process_with_fds ~prog ~args ~stdin ~stdout ~stderr:Generate ()
+    in
+    waitpid_exn result.pid;
+    result
+  in
+  let check_output fd =
+    let buf = Bytes.create len in
+    let bytes_read = read fd ~buf in
+    [%test_result: int] bytes_read ~expect:len;
+    [%test_result: string] (Bytes.to_string buf) ~expect:str
+  in
+  (* Test stdin *)
+  let stdin_r, stdin_w = pipe ~close_on_exec:true () in
+  let bytes_written = write stdin_w ~buf:(Bytes.of_string str) in
+  [%test_result: int] bytes_written ~expect:len;
+  close stdin_w;
+  let result =
+    test ~prog:"/bin/cat" ~args:[] ~stdin:(Use_this stdin_r) ~stdout:Generate
+  in
+  check_output result.stdout;
+  (* Test stdout *)
+  let test_file = "create_process_with_fds_test_file" in
+  let rm_test_file () =
+    try unlink test_file with
+    | _ -> ()
+  in
+  rm_test_file ();
+  let stdout = openfile test_file ~mode:[ O_CREAT; O_WRONLY ] in
+  let _ =
+    test ~prog:"/bin/echo" ~args:[ str ] ~stdin:Generate ~stdout:(Use_this stdout)
+  in
+  with_file test_file ~mode:[ O_RDONLY ] ~f:check_output;
+  rm_test_file ()
+;;
+
 let%expect_test "unix socket path limit workaround" =
   if Sys_unix.file_exists_exn "/proc"
   then
