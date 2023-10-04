@@ -403,54 +403,15 @@ end
 include Stable0.V1.Comparator
 
 module Option = struct
-  type time = t [@@deriving sexp, compare]
-  type t = Span.Option.t [@@deriving bin_io, compare, hash, typerep, quickcheck]
-
-  let none = Span.Option.none
-  let some time = Span.Option.some (to_span_since_epoch time)
-  let is_none = Span.Option.is_none
-  let is_some = Span.Option.is_some
-
-  let some_is_representable time =
-    Span.Option.some_is_representable (to_span_since_epoch time)
-  ;;
-
-  let value t ~default =
-    of_span_since_epoch (Span.Option.value ~default:(to_span_since_epoch default) t)
-  ;;
-
-  let value_exn t =
-    if is_some t
-    then of_span_since_epoch (Span.Option.unchecked_value t)
-    else raise_s [%message [%here] "Time_ns_unix.Option.value_exn none"]
-  ;;
-
-  let unchecked_value t = of_span_since_epoch (Span.Option.unchecked_value t)
-
-  let of_option = function
-    | None -> none
-    | Some t -> some t
-  ;;
-
-  let to_option t = if is_none t then None else Some (value_exn t)
-
-  module Optional_syntax = struct
-    module Optional_syntax = struct
-      let is_none = is_none
-      let unsafe_value = unchecked_value
-    end
-  end
+  include Time_ns.Option
 
   module Stable = struct
     module V1 = struct
       module T = struct
-        type nonrec t = t [@@deriving compare, bin_io]
+        include Stable.V1
 
-        let stable_witness : t Stable_witness.t = Stable_witness.assert_stable
         let sexp_of_t t = [%sexp_of: Stable0.V1.t option] (to_option t)
         let t_of_sexp s = of_option ([%of_sexp: Stable0.V1.t option] s)
-        let to_int63 t = Span.Option.Stable.V1.to_int63 t
-        let of_int63_exn t = Span.Option.Stable.V1.of_int63_exn t
       end
 
       include T
@@ -472,7 +433,7 @@ module Option = struct
   end)
 
   (* bring back the efficient implementation of comparison operators *)
-  include (Span.Option : Core.Comparisons.S with type t := t)
+  include (Time_ns.Option : Core.Comparisons.S with type t := t)
 end
 
 (* Note: This is FIX standard millisecond precision. You should use

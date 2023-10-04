@@ -563,9 +563,9 @@ val with_file
   -> f:(File_descr.t -> 'a)
   -> 'a
 
-(** [read fd buff ofs len] reads [len] characters from descriptor
-    [fd], storing them in string [buff], starting at position [ofs]
-    in string [buff]. Return the number of characters actually read. *)
+(** [read ~pos ~len fd ~buf] reads [len] bytes from descriptor [fd],
+    storing them in byte sequence [buf], starting at position [pos] in
+    [buf]. Return the number of bytes actually read. *)
 val read
   :  ?restart:bool (** defaults to false *)
   -> ?pos:int
@@ -574,10 +574,9 @@ val read
   -> buf:Bytes.t
   -> int
 
-(** [write fd buff ofs len] writes [len] characters to descriptor
-    [fd], taking them from bytes [buff], starting at position [ofs]
-    in bytes [buff]. Return the number of characters actually
-    written.
+(** [write ~pos ~len fd ~buf] writes [len] bytes to descriptor [fd],
+    taking them from byte sequence [buf], starting at position [pos]
+    in [buff]. Return the number of bytes actually written.
 
     When an error is reported some characters might have already been
     written.  Use [single_write] instead to ensure that this is not the

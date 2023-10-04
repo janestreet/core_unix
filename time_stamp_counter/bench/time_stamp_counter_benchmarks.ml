@@ -46,3 +46,9 @@ let%bench_fun "TSC.Span.to_ns" =
   let c = Int63.of_int_exn 123 |> TSC.Span.of_ns ~calibrator in
   fun () -> TSC.Span.to_ns c ~calibrator
 ;;
+
+let%bench_fun "TSC.Span.of_time_ns_span" =
+  let calibrator = force TSC.calibrator in
+  let span_ns = Time_ns.Span.of_sec 1. in
+  fun () -> TSC.Span.of_time_ns_span span_ns ~calibrator
+;;

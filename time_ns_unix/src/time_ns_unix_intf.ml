@@ -118,6 +118,7 @@ module type Time_ns_unix = sig
     with module Span := Time_ns.Span
     with module Ofday := Time_ns.Ofday
     with module Stable := Time_ns.Stable
+    with module Option := Time_ns.Option
 
   module Span : Span
 
@@ -126,7 +127,7 @@ module type Time_ns_unix = sig
   (** [Option.t] is like [t option], except that the value is immediate.  This module
       should mainly be used to avoid allocations. *)
   module Option : sig
-    include Option with type value := t
+    include Option with type t = Time_ns.Option.t with type value := t
     include Quickcheck.S with type t := t
 
     module Stable : sig

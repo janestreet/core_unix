@@ -2173,8 +2173,7 @@ let%test_module "Time_ns.Option" =
       require_does_raise [%here] ~hide_positions:true (fun () -> value_exn none);
       [%expect
         {|
-        (lib/time_ns_unix/src/time_ns_unix.ml:LINE:COL
-         "Time_ns_unix.Option.value_exn none") |}]
+        (lib/core/src/time_ns.ml:LINE:COL "Time_ns.Option.value_exn none") |}]
     ;;
   end)
 ;;
