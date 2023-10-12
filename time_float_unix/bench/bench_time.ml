@@ -1348,7 +1348,7 @@ module Stable = struct
       open Time.Stable.Zone.V1
       open Zone_constants
 
-      type nonrec t = t [@@deriving bin_io, stable_witness]
+      type nonrec t = t [@@deriving bin_io, sexp_grammar, stable_witness]
 
       let compare = compare
       let%bench "compare" = compare utc utc

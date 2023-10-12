@@ -88,7 +88,7 @@ module Stable : sig
 
   module Zone : sig
     module V1 : sig
-      type t = Timezone.Stable.V1.t [@@deriving hash]
+      type t = Timezone.Stable.V1.t [@@deriving hash, sexp_grammar]
 
       include Stable_without_comparator_with_witness with type t := t
     end

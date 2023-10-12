@@ -1213,8 +1213,8 @@ CAMLprim value core_unix_if_nametoindex(value v_name) {
 #include <caml/socketaddr.h>
 
 /* Keep this in sync with the type Core_unix.Mcast_action.t */
-#define VAL_MCAST_ACTION_ADD (Val_int(0))
-#define VAL_MCAST_ACTION_DROP (Val_int(1))
+#define INT_MCAST_ACTION_ADD (0)
+#define INT_MCAST_ACTION_DROP (1)
 
 CAMLprim value core_unix_mcast_modify(value v_action, value v_ifname_opt,
                                       value v_source_opt, value v_fd,
@@ -1259,12 +1259,13 @@ CAMLprim value core_unix_mcast_modify(value v_action, value v_ifname_opt,
 
       int optname;
 
-      switch (v_action) {
-      case VAL_MCAST_ACTION_ADD:
+      assert(!Is_block(v_action));
+      switch (Long_val(v_action)) {
+      case INT_MCAST_ACTION_ADD:
         optname = IP_ADD_SOURCE_MEMBERSHIP;
         break;
 
-      case VAL_MCAST_ACTION_DROP:
+      case INT_MCAST_ACTION_DROP:
         optname = IP_DROP_SOURCE_MEMBERSHIP;
         break;
 
@@ -1286,12 +1287,13 @@ CAMLprim value core_unix_mcast_modify(value v_action, value v_ifname_opt,
 
       assert(v_source_opt == Val_long(0) /* None */);
 
-      switch (v_action) {
-      case VAL_MCAST_ACTION_ADD:
+      assert(!Is_block(v_action));
+      switch (Long_val(v_action)) {
+      case INT_MCAST_ACTION_ADD:
         optname = IP_ADD_MEMBERSHIP;
         break;
 
-      case VAL_MCAST_ACTION_DROP:
+      case INT_MCAST_ACTION_DROP:
         optname = IP_DROP_MEMBERSHIP;
         break;
 

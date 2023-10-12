@@ -2970,7 +2970,7 @@ external if_indextoname : int -> string = "core_unix_if_indextoname"
 external if_nametoindex : string -> int = "core_unix_if_nametoindex"
 
 module Mcast_action = struct
-  (* Keep this in sync with the VAL_MCAST_ACTION_* #defines in unix_stubs.c *)
+  (* Keep this in sync with the INT_MCAST_ACTION_* #defines in unix_stubs.c *)
   type t =
     | Add
     | Drop
