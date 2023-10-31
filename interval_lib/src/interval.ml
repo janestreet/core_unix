@@ -9,9 +9,10 @@ module Stable = struct
       type 'a t =
         | Interval of 'a * 'a
         | Empty
-      [@@deriving bin_io, of_sexp, variants, compare, hash, stable_witness]
+      [@@deriving bin_io, of_sexp, variants, compare, hash, sexp_grammar, stable_witness]
 
-      type 'a interval = 'a t [@@deriving bin_io, of_sexp, compare, hash, stable_witness]
+      type 'a interval = 'a t
+      [@@deriving bin_io, of_sexp, compare, hash, sexp_grammar, stable_witness]
 
       let interval_of_sexp a_of_sexp sexp =
         try interval_of_sexp a_of_sexp sexp (* for backwards compatibility *) with
@@ -28,15 +29,29 @@ module Stable = struct
         | Empty -> Sexp.List []
         | Interval (lb, ub) -> Sexp.List [ sexp_of_a lb; sexp_of_a ub ]
       ;;
+
+      let interval_sexp_grammar a_sexp_grammar =
+        Sexplib0.Sexp_grammar.coerce
+          { untyped =
+              Union
+                [ (interval_sexp_grammar a_sexp_grammar).untyped
+                ; List Empty
+                ; List
+                    (Cons (a_sexp_grammar.untyped, Cons (a_sexp_grammar.untyped, Empty)))
+                ]
+          }
+      ;;
     end
 
     open T
 
-    type 'a t = 'a interval [@@deriving sexp, bin_io, compare, hash, stable_witness]
+    type 'a t = 'a interval
+    [@@deriving sexp, bin_io, compare, hash, sexp_grammar, stable_witness]
 
     module Float = struct
       module T = struct
-        type t = float interval [@@deriving sexp, bin_io, compare, hash, stable_witness]
+        type t = float interval
+        [@@deriving sexp, bin_io, compare, hash, sexp_grammar, stable_witness]
       end
 
       include T
@@ -45,7 +60,8 @@ module Stable = struct
 
     module Int = struct
       module T = struct
-        type t = int interval [@@deriving sexp, bin_io, compare, hash, stable_witness]
+        type t = int interval
+        [@@deriving sexp, bin_io, compare, hash, sexp_grammar, stable_witness]
       end
 
       include T
@@ -58,7 +74,7 @@ module Stable = struct
     module Ofday = struct
       module T = struct
         type t = Core.Time_float.Stable.Ofday.V1.t interval
-        [@@deriving sexp, bin_io, compare, hash, stable_witness]
+        [@@deriving sexp, bin_io, compare, hash, sexp_grammar, stable_witness]
       end
 
       include T
@@ -68,7 +84,7 @@ module Stable = struct
     module Ofday_ns = struct
       module T = struct
         type t = Core.Time_ns.Stable.Ofday.V1.t interval
-        [@@deriving sexp, bin_io, compare, stable_witness]
+        [@@deriving sexp, bin_io, compare, sexp_grammar, stable_witness]
       end
 
       include T

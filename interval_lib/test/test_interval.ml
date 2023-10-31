@@ -51,6 +51,11 @@ let%test_module _ =
       end))
     ;;
 
+    let%expect_test "Interval.V1.Float.t_sexp_grammar" =
+      print_endline [%sexp_digest: V1.Float.t];
+      [%expect {| 6af0cb32d43233f53d0fe7d78544fe29 |}]
+    ;;
+
     let%test_module "Interval.V1.Int" =
       (module Stable_unit_test.Make (struct
         include V1.Int
@@ -63,6 +68,11 @@ let%test_module _ =
             ~non_empty:[ (-5, 789), "(-5 789)", "\000\255\251\254\021\003" ]
         ;;
       end))
+    ;;
+
+    let%expect_test "Interval.V1.Int.t_sexp_grammar" =
+      print_endline [%sexp_digest: V1.Int.t];
+      [%expect {| cc2bf35f949d1c1381da1c176ca3cce7 |}]
     ;;
 
     let%test_module "Interval.V1.Ofday" =
@@ -83,6 +93,16 @@ let%test_module _ =
               ]
         ;;
       end))
+    ;;
+
+    let%expect_test "Interval.V1.Ofday.t_sexp_grammar" =
+      print_endline [%sexp_digest: V1.Ofday.t];
+      [%expect {| 1893c2cb5f9a4f741e0751d13b2d812e |}]
+    ;;
+
+    let%expect_test "Interval.V1.Ofday_ns.t_sexp_grammar" =
+      print_endline [%sexp_digest: V1.Ofday_ns.t];
+      [%expect {| 62c867fbc256b26e42454ebee3d48b09 |}]
     ;;
   end)
 ;;

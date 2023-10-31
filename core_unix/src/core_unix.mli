@@ -2581,6 +2581,17 @@ end
 val getifaddrs : unit -> Ifaddr.t list
 val get_all_ifnames : unit -> string list
 
+module Expert : sig
+  (** [Expert.exec] is essentially equivalent to the non-expert [exec], but it allocates
+      less. *)
+  val exec
+    :  prog:string
+    -> argv:string array
+    -> use_path:bool
+    -> env:string array option
+    -> never_returns
+end
+
 module Stable : sig
   module Inet_addr = Inet_addr.Stable
   module Cidr = Cidr.Stable

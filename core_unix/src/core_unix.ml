@@ -903,9 +903,7 @@ module Pgid = struct
   let of_pid = Spawn.Pgid.of_pid
 end
 
-let exec ~prog ~argv ?(use_path = true) ?env () =
-  let argv = Array.of_list argv in
-  let env = Option.map env ~f:Env.expand_array in
+let exec_internal ~prog ~argv ~use_path ~env =
   match use_path, env with
   | false, None -> execv ~prog ~argv
   | false, Some env -> execve ~prog ~argv ~env
@@ -927,12 +925,14 @@ let fork () =
 (* Same as [Caml.exit] but does not run at_exit handlers *)
 external sys_exit : int -> 'a = "caml_sys_exit"
 
-let fork_exec ~prog ~argv ?preexec_fn ?use_path ?env () =
+let fork_exec ~prog ~argv ?preexec_fn ?(use_path = true) ?env () =
+  let argv = Array.of_list argv in
+  let env = Option.map env ~f:Env.expand_array in
   match fork () with
   | `In_the_child ->
     (try
        Option.call ~f:preexec_fn ();
-       never_returns (exec ~prog ~argv ?use_path ?env ())
+       never_returns (exec_internal ~prog ~argv ~use_path ~env)
      with
      | _ -> sys_exit 127)
   | `In_the_parent pid -> pid
@@ -3358,4 +3358,14 @@ module Stable = struct
   module Cidr = Cidr.Stable
   module Signal = Signal.Stable
   module Utsname = Utsname.Stable
+end
+
+let exec ~prog ~argv ?(use_path = true) ?env () =
+  let argv = Array.of_list argv in
+  let env = Option.map env ~f:Env.expand_array in
+  exec_internal ~prog ~argv ~use_path ~env
+;;
+
+module Expert = struct
+  let exec = exec_internal
 end

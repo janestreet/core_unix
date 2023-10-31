@@ -1969,6 +1969,18 @@ let%bench "prev_multiple" =
   prev_multiple ~base:min_value_for_1us_rounding ~before:epoch ~interval:Span.minute ()
 ;;
 
+let round_up_to_us = round_up_to_us
+let%bench "round_up_to_us" = round_up_to_us min_value_for_1us_rounding
+let round_up_to_ms = round_up_to_ms
+let%bench "round_up_to_ms" = round_up_to_ms min_value_for_1us_rounding
+let round_up_to_sec = round_up_to_sec
+let%bench "round_up_to_sec" = round_up_to_sec min_value_for_1us_rounding
+let round_down_to_us = round_down_to_us
+let%bench "round_down_to_us" = round_down_to_us min_value_for_1us_rounding
+let round_down_to_ms = round_down_to_ms
+let%bench "round_down_to_ms" = round_down_to_ms min_value_for_1us_rounding
+let round_down_to_sec = round_down_to_sec
+let%bench "round_down_to_sec" = round_down_to_sec min_value_for_1us_rounding
 let occurrence = occurrence
 
 let%bench "occurrence" =
@@ -2104,7 +2116,7 @@ module Alternate_sexp = struct
   module Set = Set
   module Map = Map
 
-  type nonrec t = t [@@deriving sexp_grammar]
+  type nonrec t = t [@@deriving bin_io, sexp_grammar]
   type nonrec comparator_witness = comparator_witness
 
   let comparator = comparator
