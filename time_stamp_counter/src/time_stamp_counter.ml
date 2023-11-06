@@ -95,9 +95,12 @@ let zero = Int63.zero
 
 [%%ifdef JSC_ARCH_SIXTYFOUR]
 
+external rdtsc : unit -> (int64[@unboxed]) = "caml_rdtsc" "caml_rdtsc_unboxed"
+  [@@noalloc] [@@builtin]
+
 (* noalloc on x86_64 only *)
 let[@inline] now () =
-  let tsc64 = Ocaml_intrinsics.Perfmon.rdtsc () in
+  let tsc64 = rdtsc () in
   (* Matching on Sys.backend_type is guaranteed to be optimized out. *)
   match Sys.backend_type with
   | Native -> tsc64 |> Stdlib.Int64.to_int |> Int63.of_int

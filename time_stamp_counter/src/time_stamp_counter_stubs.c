@@ -22,6 +22,40 @@
 
 #include "ocaml_utils.h"
 
+/* CAMLweakdef allows linking with the Ocaml_intrinsics library,
+   which also implements these stubs. The stubs cannot be renamed
+   because our compiler's [@@builtin] recognition relies on them.
+
+   The `rdtsc` implementation is duplicated to assure it always
+   matches the strong symbol in OCaml_intrinsics.
+*/
+
+#if (defined(__i386__) || defined(__x86_64__))
+static uint64_t rdtsc()
+{
+  uint32_t hi, lo;
+  __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+  return ((uint64_t)lo) | (((uint64_t)hi)<<32);
+}
+#elif defined(__aarch64__)
+static uint64_t rdtsc()
+{
+  uint64_t tsc;
+  asm volatile("mrs %0, cntvct_el0" : "=r" (tsc));
+  return tsc;
+}
+#endif
+
+CAMLprim CAMLweakdef uint64_t caml_rdtsc_unboxed(value unit) {
+  (void)unit;
+  return rdtsc();
+}
+
+CAMLprim CAMLweakdef value caml_rdtsc(value unit) {
+  (void)unit;
+  return caml_copy_int64(rdtsc());
+}
+
 CAMLprim value tsc_get()
 {
 #ifdef __x86_64__
@@ -36,7 +70,7 @@ CAMLprim value tsc_get()
   if ( clock_gettime( CLOCK_MONOTONIC, &ts ) != 0 )
     unix_error(errno, "clock_gettime", Nothing);
   else
-    return caml_alloc_int63(NANOS_PER_SECOND * ts.tv_sec + ts.tv_nsec);
+    return  caml_alloc_int63(NANOS_PER_SECOND * ts.tv_sec + ts.tv_nsec);
 #endif
 }
 

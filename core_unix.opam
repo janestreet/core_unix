@@ -16,7 +16,6 @@ depends: [
   "expect_test_helpers_core"
   "jane-street-headers"
   "jst-config"
-  "ocaml_intrinsics"
   "ppx_jane"
   "ppx_optcomp"
   "sexplib"
