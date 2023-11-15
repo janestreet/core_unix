@@ -324,6 +324,54 @@ module type S = sig
     end
   end
 
+  (** {2 Memfd functions} *)
+
+  module Memfd : sig
+    module Flags : sig
+      type t [@@deriving sexp_of]
+
+      include Flags.S with type t := t
+
+      (** MFD_CLOEXEC *)
+      val cloexec : t
+
+      (** MFD_ALLOW_SEALING *)
+      val allow_sealing : t
+
+      (** MFD_HUGETLB *)
+      val hugetlb : t
+
+      (** MFD_NOEXEC_SEAL *)
+      val noexec_seal : t
+
+      (** MFD_EXEC *)
+      val exec : t
+
+      (** MFD_HUGE_2MB *)
+      val huge_2mb : t
+
+      (** MFD_HUGE_1GB *)
+      val huge_1gb : t
+    end
+
+    type t = private File_descr.t [@@deriving sexp_of]
+
+    val to_file_descr : t -> File_descr.t
+
+    (** From memfd_create():
+
+        [create] creates an anonymous file and returns a file descriptor that refers to
+        it.  The file behaves like a regular file, and so can be modified, truncated,
+        memory-mapped, and so on.  However, unlike a regular file, it lives in RAM and has
+        a volatile backing storage.
+
+        Once all references to the file are dropped, it is automatically released.
+        Anonymous memory is used for all backing pages of the file.  Therefore, files
+        created by [create] have the same semantics as other anonymous memory allocations
+        such as those allocated using [mmap] with the [MAP_ANONYMOUS] flag. *)
+    val create : (?flags:Flags.t -> ?initial_size:int -> string -> t) Or_error.t
+  end
+
   (** {2 Parent death notifications} *)
 
   (** [pr_set_pdeathsig s] sets the signal [s] to be sent to the executing process when

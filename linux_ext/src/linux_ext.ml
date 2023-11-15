@@ -311,6 +311,44 @@ module Null : Linux_ext_intf.S = struct
     end
   end
 
+  module Memfd = struct
+    module Flags = struct
+      (* As per include/uapi/linux/memfd.h *)
+
+      let i63 = Int63.of_int
+      let cloexec = i63 0x0001
+      let allow_sealing = i63 0x0002
+      let hugetlb = i63 0x0004
+      let noexec_seal = i63 0x0008
+      let exec = i63 0x0010
+      let hugetlb_flag_encode_shift = 26
+      let huge_2mb = i63 (21 lsl hugetlb_flag_encode_shift)
+      let huge_1gb = i63 (30 lsl hugetlb_flag_encode_shift)
+
+      include Flags.Make (struct
+        let allow_intersecting = true (* huge_* flags intersect *)
+        let should_print_error = true
+        let remove_zero_flags = false
+
+        let known =
+          [ cloexec, "cloexec"
+          ; allow_sealing, "allow_sealing"
+          ; hugetlb, "hugetlb"
+          ; noexec_seal, "noexec_seal"
+          ; exec, "exec"
+          ; huge_2mb, "huge_2mb"
+          ; huge_1gb, "huge_1gb"
+          ]
+        ;;
+      end)
+    end
+
+    type t = File_descr.t [@@deriving sexp_of]
+
+    let to_file_descr = Fn.id
+    let create = Or_error.unimplemented "Linux_ext.Memfd.create"
+  end
+
   module Extended_file_attributes = struct
     module Get_attr_result = struct
       type t =
@@ -570,6 +608,68 @@ end
 [%%else]
 
 module Timerfd = Null.Timerfd
+
+[%%endif]
+[%%ifdef JSC_MEMFD]
+
+module Memfd = struct
+  module Flags = struct
+    external cloexec : unit -> Int63.t = "core_linux_memfd_MFD_CLOEXEC"
+    external allow_sealing : unit -> Int63.t = "core_linux_memfd_MFD_ALLOW_SEALING"
+    external hugetlb : unit -> Int63.t = "core_linux_memfd_MFD_HUGETLB"
+    external noexec_seal : unit -> Int63.t = "core_linux_memfd_MFD_NOEXEC_SEAL"
+    external exec : unit -> Int63.t = "core_linux_memfd_MFD_EXEC"
+    external huge_2mb : unit -> Int63.t = "core_linux_memfd_MFD_HUGE_2MB"
+    external huge_1gb : unit -> Int63.t = "core_linux_memfd_MFD_HUGE_1GB"
+
+    let cloexec = cloexec ()
+    let allow_sealing = allow_sealing ()
+    let hugetlb = hugetlb ()
+    let noexec_seal = noexec_seal ()
+    let exec = exec ()
+    let huge_2mb = huge_2mb ()
+    let huge_1gb = huge_1gb ()
+
+    include Flags.Make (struct
+      let allow_intersecting = true (* huge_* flags intersect *)
+      let should_print_error = true
+      let remove_zero_flags = false
+
+      let known =
+        [ cloexec, "cloexec"
+        ; allow_sealing, "allow_sealing"
+        ; hugetlb, "hugetlb"
+        ; noexec_seal, "noexec_seal"
+        ; exec, "exec"
+        ; huge_2mb, "huge_2mb"
+        ; huge_1gb, "huge_1gb"
+        ]
+      ;;
+    end)
+  end
+
+  type t = File_descr.t [@@deriving compare, sexp_of]
+
+  external create
+    :  flags:Flags.t
+    -> initial_size:int
+    -> name:string
+    -> t
+    = "core_linux_memfd_create"
+
+  let create =
+    let create ?(flags = Flags.empty) ?(initial_size = 0) name =
+      create ~flags ~initial_size ~name
+    in
+    Or_error.return create
+  ;;
+
+  let to_file_descr t = t
+end
+
+[%%else]
+
+module Memfd = Null.Memfd
 
 [%%endif]
 [%%ifdef JSC_LINUX_EXT]

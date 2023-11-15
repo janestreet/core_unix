@@ -51,6 +51,32 @@ let%test_module "[Timerfd]" =
   end)
 ;;
 
+let%test_module "[Memfd]" =
+  (module struct
+    open Memfd
+
+    let%test_unit "[create] returns file descriptors that look correct in \
+                   [/proc/self/fd/...] and are the right size"
+      =
+      match create with
+      | Error _ -> ()
+      | Ok create ->
+        let name = "foo" in
+        let initial_size = 4096 * 2 in
+        let fd =
+          create ~flags:Flags.(cloexec + allow_sealing) ~initial_size name
+          |> to_file_descr
+        in
+        let basename =
+          Unix.readlink [%string "/proc/self/fd/%{fd#File_descr}"] |> Filename.basename
+        in
+        assert (String.(basename = [%string "memfd:%{name} (deleted)"]));
+        assert (Int64.((Unix.fstat fd).st_size = of_int initial_size));
+        Unix.close fd
+    ;;
+  end)
+;;
+
 let%test_unit _ =
   match cores with
   | Error _ -> ()
