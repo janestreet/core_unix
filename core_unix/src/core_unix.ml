@@ -2908,14 +2908,18 @@ type socket_bool_option = Unix.socket_bool_option =
 
 [%%endif]
 
-type socket_int_option = Unix.socket_int_option =
-  | SO_SNDBUF
-  | SO_RCVBUF
-  | SO_ERROR
-  | SO_TYPE
-  | SO_RCVLOWAT
-  | SO_SNDLOWAT
-[@@deriving sexp]
+include struct
+  [@@@alert "-deprecated"]
+
+  type socket_int_option = Unix.socket_int_option =
+    | SO_SNDBUF
+    | SO_RCVBUF
+    | SO_ERROR
+    | SO_TYPE
+    | SO_RCVLOWAT
+    | SO_SNDLOWAT
+  [@@deriving sexp]
+end
 
 type socket_optint_option = Unix.socket_optint_option = SO_LINGER [@@deriving sexp]
 
