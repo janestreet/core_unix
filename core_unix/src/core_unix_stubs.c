@@ -1376,7 +1376,7 @@ CAMLprim value core_unix_mcast_set_loop(value v_socket, value v_loop) {
 /* Scheduling */
 
 #if defined(_POSIX_PRIORITY_SCHEDULING) && (_POSIX_PRIORITY_SCHEDULING + 0 > 0)
-static int sched_policy_table[] = {SCHED_FIFO, SCHED_RR, SCHED_OTHER};
+static const int sched_policy_table[] = {SCHED_FIFO, SCHED_RR, SCHED_OTHER};
 
 CAMLprim value core_unix_sched_setscheduler(value v_pid, value v_policy,
                                             value v_priority) {
@@ -1421,7 +1421,7 @@ CAMLprim value core_unix_unsetenv(value var) {
   return Val_unit;
 }
 
-static int mman_mcl_flags_table[] = {MCL_CURRENT, MCL_FUTURE};
+static const int mman_mcl_flags_table[] = {MCL_CURRENT, MCL_FUTURE};
 
 CAMLprim value core_unix_mlockall(value v_flags) {
   CAMLparam1(v_flags);
@@ -1631,7 +1631,7 @@ static value alloc_ifaddrs(struct ifaddrs *ifap, value family_variant) {
 #endif
 
 /* THE ORDERING OF THESE CONSTANTS MUST MATCH core_unix.ml!!! */
-static uint32_t iff_table[] = {
+static const uint32_t iff_table[] = {
     IFF_ALLMULTI, IFF_AUTOMEDIA,  IFF_BROADCAST,   IFF_DEBUG,
     IFF_DYNAMIC,  IFF_LOOPBACK,   IFF_MASTER,      IFF_MULTICAST,
     IFF_NOARP,    IFF_NOTRAILERS, IFF_POINTOPOINT, IFF_PORTSEL,
@@ -1822,7 +1822,7 @@ static value alloc_process_status(int pid, int status) {
   return res;
 }
 
-static int wait_flag_table[] = {WNOHANG, WUNTRACED};
+static const int wait_flag_table[] = {WNOHANG, WUNTRACED};
 CAMLprim value core_unix_wait4(value flags, value pid_req) {
   CAMLparam0();
   CAMLlocal3(v_status, v_rusage, res);

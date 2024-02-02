@@ -91,8 +91,8 @@ CAMLprim value core_linux_sysinfo(value __unused v_unit) {
 
 /**/
 
-static int linux_tcpopt_bool[] = {TCP_CORK, TCP_QUICKACK};
-static int linux_tcpopt_string[] = {TCP_CONGESTION};
+static const int linux_tcpopt_bool[] = {TCP_CORK, TCP_QUICKACK};
+static const int linux_tcpopt_string[] = {TCP_CONGESTION};
 
 enum option_type {
   TYPE_BOOL = 0,

@@ -27,7 +27,7 @@ int posix_openpt(int flags)
 }
 #endif
 
-static int posix_openpt_flag_table[2] = { O_RDWR, O_NOCTTY };
+static const int posix_openpt_flag_table[2] = { O_RDWR, O_NOCTTY };
 
 CAMLprim value unix_posix_openpt(value flags)
 {
