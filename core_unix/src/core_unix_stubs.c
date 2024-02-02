@@ -1333,11 +1333,22 @@ enum option_type {
 #define caml_unix_setsockopt_aux unix_setsockopt_aux
 #endif
 
+/* caml_unix_getsockopt_aux and caml_unix_setsockopt_aux come from C
+   stubs distributed with the OCaml compiler. At the time of writing
+   they live in otherlibs/unix/sockopt_{unix,win32}.c. */
+#if OCAML_VERSION < 50300
 extern value caml_unix_getsockopt_aux(char *name, enum option_type ty,
                                       int level, int option, value v_socket);
 extern value caml_unix_setsockopt_aux(char *name, enum option_type ty,
                                       int level, int option, value v_socket,
                                       value v_status);
+#else
+extern value caml_unix_getsockopt_aux(const char *name, enum option_type ty,
+                                      int level, int option, value v_socket);
+extern value caml_unix_setsockopt_aux(const char *name, enum option_type ty,
+                                      int level, int option, value v_socket,
+                                      value v_status);
+#endif
 
 CAMLprim value core_unix_mcast_get_ttl(value v_socket) {
   return caml_unix_getsockopt_aux("getsockopt", TYPE_INT, IPPROTO_IP,

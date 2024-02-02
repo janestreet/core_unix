@@ -108,14 +108,22 @@ enum option_type {
 #define caml_unix_setsockopt_aux unix_setsockopt_aux
 #endif
 
-/* unix_getsockopt_aux and unix_setsockopt_aux come from C stubs distributed
-   with the OCaml compiler.  At the time of writing they live in
-   otherlibs/unix/sockopt.c. */
+/* caml_unix_getsockopt_aux and caml_unix_setsockopt_aux come from C
+   stubs distributed with the OCaml compiler. At the time of writing
+   they live in otherlibs/unix/sockopt_{unix,win32}.c. */
+#if OCAML_VERSION < 50300
 extern value caml_unix_getsockopt_aux(char *name, enum option_type ty,
                                       int level, int option, value v_socket);
 extern value caml_unix_setsockopt_aux(char *name, enum option_type ty,
                                       int level, int option, value v_socket,
                                       value v_status);
+#else
+extern value caml_unix_getsockopt_aux(const char *name, enum option_type ty,
+                                      int level, int option, value v_socket);
+extern value caml_unix_setsockopt_aux(const char *name, enum option_type ty,
+                                      int level, int option, value v_socket,
+                                      value v_status);
+#endif
 
 CAMLprim value core_linux_gettcpopt_bool_stub(value v_socket, value v_option) {
   int option = linux_tcpopt_bool[Int_val(v_option)];
