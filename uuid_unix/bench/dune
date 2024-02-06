@@ -1,2 +1,5 @@
-(library (name uuid_unix_bench) (libraries uuid_unix)
- (preprocess (pps ppx_jane)))
+(library
+ (name uuid_unix_bench)
+ (libraries uuid_unix)
+ (preprocess
+  (pps ppx_jane)))

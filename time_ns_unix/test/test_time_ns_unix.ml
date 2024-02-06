@@ -405,7 +405,7 @@ let%test_module "Time_ns.Span.to_string,of_string" =
          The exact fraction might change if [Random.State] ever changes in a future ocaml
          version, that's okay. *)
       print_ratio ();
-      [%expect {| 19987/20000 equality tests were exact |}];
+      [%expect {| 19981/20000 equality tests were exact |}];
       for _ = 1 to 20000 do
         let float = Random.State.float_range rand (-5.0) 5.0 in
         let float_str = sprintf "%.25f" float in
@@ -420,7 +420,7 @@ let%test_module "Time_ns.Span.to_string,of_string" =
          The exact fraction might change if [Random.State] ever changes in a future ocaml
          version, that's okay. *)
       print_ratio ();
-      [%expect {| 19652/20000 equality tests were exact |}]
+      [%expect {| 19664/20000 equality tests were exact |}]
     ;;
 
     (* Test a bunch of random floats, but this time specifically generated to be on

@@ -1,2 +1,6 @@
-(library (name date_unix) (public_name core_unix.date_unix)
- (libraries core time_float_unix) (preprocess (pps ppx_jane)))
+(library
+ (name date_unix)
+ (public_name core_unix.date_unix)
+ (libraries core time_float_unix)
+ (preprocess
+  (pps ppx_jane)))

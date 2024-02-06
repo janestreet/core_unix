@@ -5,6 +5,9 @@ let threads_have_been_created = ref false
 
 include Caml_threads.Thread [@@ocaml.alert "-deprecated"]
 
+let wait_timed_read = wait_timed_read [@@ocaml.alert "-deprecated"]
+let wait_timed_write = wait_timed_write [@@ocaml.alert "-deprecated"]
+let exit = exit [@@ocaml.alert "-deprecated"]
 let sexp_of_t t = [%message "thread" ~id:(id t : int)]
 let create_should_raise = ref false
 

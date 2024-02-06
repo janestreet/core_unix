@@ -148,7 +148,10 @@ val zero : t
 
     The first time this lazy value is forced, it spends approximately 3ms calibrating.
 
-    While the [Async] scheduler is running, this value is recalibrated regularly. *)
+    While the [Async] scheduler is running, this value is recalibrated regularly.
+    IF NOT USING THE ASYNC SCHEDULER, you must have some other means of making
+    sure recalibration occurs.
+*)
 val calibrator : Calibrator.t Lazy.t
 
 (**

@@ -1,7 +1,16 @@
-(rule (targets config.h) (deps)
- (action (bash "cp %{lib:jst-config:config.h} .")))
+(rule
+ (targets config.h)
+ (deps)
+ (action
+  (bash "cp %{lib:jst-config:config.h} .")))
 
-(library (name core_thread) (public_name core_unix.core_thread)
+(library
+ (foreign_stubs
+  (language c)
+  (names pthread_np_stubs))
+ (name core_thread)
+ (public_name core_unix.core_thread)
  (libraries core_kernel.caml_threads core signal_unix unix)
- (c_names pthread_np_stubs) (preprocessor_deps config.h)
- (preprocess (pps ppx_jane ppx_optcomp)))
+ (preprocessor_deps config.h)
+ (preprocess
+  (pps ppx_jane ppx_optcomp)))

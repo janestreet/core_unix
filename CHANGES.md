@@ -1432,7 +1432,7 @@ complete history of the changes made for this release.
   Previously, this was done in a strange way, using with type 'a t =
   private 'a t on the signature of Blang.Stable.V1. In addition to
   being strange, this line no longer builds in OCaml 4.01, which
-  caused problems for building Real World Ocaml.
+  caused problems for building Real World OCaml.
 
   This patch changed the code to something much more straightforward,
   although not quite so straightforward as we expect to be able to

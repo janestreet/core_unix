@@ -1,2 +1,5 @@
-(library (name sys_unix_test) (libraries sys_unix)
- (preprocess (pps ppx_jane)))
+(library
+ (name sys_unix_test)
+ (libraries sys_unix)
+ (preprocess
+  (pps ppx_jane)))

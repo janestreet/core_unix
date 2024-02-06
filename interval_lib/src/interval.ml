@@ -287,15 +287,35 @@ module Raw_make (T : Bound) = struct
   end
 
   module Set = struct
+    (* The intervals are sorted by their lower bound *)
+    let drop_empty_intervals_and_sort intervals =
+      List.filter intervals ~f:(fun i -> not (Interval.is_empty i))
+      |> List.sort ~compare:(Comparable.lift T.compare ~f:Interval.lbound_exn)
+    ;;
+
     let create_from_intervals_exn intervals =
-      let intervals = List.filter intervals ~f:(fun i -> not (Interval.is_empty i)) in
-      let intervals =
-        let lb i = Interval.lbound_exn i in
-        List.sort intervals ~compare:(fun i i' -> T.compare (lb i) (lb i'))
-      in
+      let intervals = drop_empty_intervals_and_sort intervals in
       if not (Interval.are_disjoint intervals)
       then failwith "Interval_set.create: intervals were not disjoint"
       else intervals
+    ;;
+
+    let create_merging_intervals intervals =
+      (* We only need to check for overlapping intervals that are adjacent in the sorted
+         order.  That's because, if you have intervals [abc] that are sorted by their
+         lower-bound, if a intersects with c, then b must intersect with c as well.
+
+         As a result we can just iteratively merge together adjacent intervals that
+         intersect, and that will capture all necessary merges.  *)
+      drop_empty_intervals_and_sort intervals
+      |> List.fold ~init:[] ~f:(fun acc interval ->
+           match acc with
+           | [] -> [ interval ]
+           | prev_interval :: tl ->
+             if Interval.are_disjoint [ prev_interval; interval ]
+             then interval :: acc
+             else Interval.convex_hull [ prev_interval; interval ] :: tl)
+      |> List.rev
     ;;
 
     let create_exn pair_list =
@@ -342,6 +362,10 @@ module Raw_make (T : Bound) = struct
          | None -> assert false
          | Some x -> Some x)
     ;;
+
+    let union_list ts = List.concat_no_order ts |> create_merging_intervals
+    let union t1 t2 = union_list [ t1; t2 ]
+    let inter t1 t2 = Interval.list_intersect t1 t2 |> create_from_intervals_exn
   end
 end
 
@@ -486,13 +510,13 @@ module Int = struct
   let fold_result = For_container.fold_result
   let fold_until = For_container.fold_until
 
-  let min_elt t ~compare:((compare : _ -> _ -> _) [@local]) =
+  let min_elt t ~(compare : _ -> _ -> _) =
     if not (phys_equal compare Int.compare)
     then For_container.min_elt t ~compare
     else lbound t
   ;;
 
-  let max_elt t ~compare:((compare : _ -> _ -> _) [@local]) =
+  let max_elt t ~(compare : _ -> _ -> _) =
     if not (phys_equal compare Int.compare)
     then For_container.max_elt t ~compare
     else ubound t

@@ -60,8 +60,8 @@ module Io_test (Ch : sig
 
   val create_out : Unix.File_descr.t -> out_
   val close_out : out_ -> unit
-  val write : (([> read ], seek) Iobuf.t[@local]) -> out_ -> unit
-  val peek_write : (([> read ], _) Iobuf.t[@local]) -> out_ -> int
+  val write : ([> read ], seek) Iobuf.t -> out_ -> unit
+  val peek_write : ([> read ], _) Iobuf.t -> out_ -> int
 end) =
 struct
   let%test_unit "write + read" =

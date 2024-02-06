@@ -1,5 +1,12 @@
-(alias (name runtest) (deps daemonize_test.exe)
- (action (bash ./daemonize_test.exe)))
+(rule
+ (alias runtest)
+ (deps daemonize_test.exe)
+ (action
+  (bash ./daemonize_test.exe)))
 
-(executables (names daemonize_test) (libraries core_unix daemon)
- (preprocess (pps ppx_jane)))
+(executables
+ (modes byte exe)
+ (names daemonize_test)
+ (libraries core_unix daemon)
+ (preprocess
+  (pps ppx_jane)))

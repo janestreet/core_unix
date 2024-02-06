@@ -334,3 +334,107 @@ let%test_module _ =
     let%test _ = Int.is_empty (Int.convex_hull intervals)
   end)
 ;;
+
+(* Tests for set functions *)
+let%test_module _ =
+  (module struct
+    module Set = Interval.Set
+
+    type t = int Set.t [@@deriving sexp]
+
+    (** Turn an unsorted list of bounds into a sequence. First dedup, and then pair things
+        up nicely.  If there's an odd number of elements, drop the last one. *)
+    let make_intervals bounds =
+      let[@tail_mod_cons] rec pair_up list =
+        match list with
+        | [] -> []
+        | [ _ ] -> []
+        | hd1 :: hd2 :: tl -> (hd1, hd2) :: pair_up tl
+      in
+      List.dedup_and_sort bounds ~compare:Int.compare |> pair_up
+    ;;
+
+    let%expect_test "make_intervals" =
+      let test l = print_s [%sexp (make_intervals l : (int * int) list)] in
+      test [];
+      [%expect {| () |}];
+      test [ 1; 3; 4 ];
+      [%expect {| ((1 3)) |}];
+      test [ 5; 1; 10; 11; 1; 7; 9; 2; 5 ];
+      [%expect {|
+        ((1 2)
+         (5 7)
+         (9 10)) |}]
+    ;;
+
+    let quickcheck_generator =
+      Quickcheck.Generator.map [%quickcheck.generator: int list] ~f:(fun bounds ->
+        Set.create_exn (make_intervals bounds))
+    ;;
+
+    let%expect_test "Generated intervals sets are very likely both to contain and not \
+                     contain random ints"
+      =
+      let gen = [%quickcheck.generator: t * int] in
+      Quickcheck.test_can_generate gen ~trials:10 ~f:(fun (t, x) -> Set.contains t x);
+      Quickcheck.test_can_generate gen ~trials:10 ~f:(fun (t, x) ->
+        not (Set.contains t x))
+    ;;
+
+    (* As long as the tests are passing anyway, there's no reason to bother writing a
+       sophisticated shrinker. *)
+    let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
+
+    let%quick_test "union" =
+      fun (t1 : t) (t2 : t) (xs : int list) ->
+      let t3 = Set.union t1 t2 in
+      List.iter xs ~f:(fun x ->
+        [%test_result: bool]
+          (Set.contains t3 x)
+          ~expect:(Set.contains t1 x || Set.contains t2 x))
+    ;;
+
+    let%quick_test "intersect" =
+      fun (t1 : t) (t2 : t) (xs : int list) ->
+      let t3 = Set.inter t1 t2 in
+      List.iter xs ~f:(fun x ->
+        [%test_result: bool]
+          (Set.contains t3 x)
+          ~expect:(Set.contains t1 x && Set.contains t2 x))
+    ;;
+
+    let%quick_test "union_list" =
+      fun (ts : t list) (xs : int list) ->
+      let t = Set.union_list ts in
+      List.iter xs ~f:(fun x ->
+        [%test_result: bool]
+          (Set.contains t x)
+          ~expect:(List.exists ts ~f:(fun t -> Set.contains t x)))
+    ;;
+
+    let t1 = Set.create_exn [ 1, 5; 6, 10; 15, 20 ]
+    let t2 = Set.create_exn [ 3, 12 ]
+
+    let%expect_test "union demo" =
+      print_s [%sexp (Set.union t1 t2 : int Set.t)];
+      [%expect {|
+        ((1  12)
+         (15 20)) |}]
+    ;;
+
+    let%expect_test "intersect demo" =
+      print_s [%sexp (Set.inter t1 t2 : int Set.t)];
+      [%expect {|
+        ((3 5)
+         (6 10)) |}]
+    ;;
+
+    let%expect_test "union_list demo" =
+      let ts = [ t1; t2; Set.create_exn [ 11, 13; 14, 15 ]; Set.create_exn [ 20, 22 ] ] in
+      print_s [%sexp (Set.union_list ts : int Set.t)];
+      [%expect {|
+        ((1  13)
+         (14 22)) |}]
+    ;;
+  end)
+;;

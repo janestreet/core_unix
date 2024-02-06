@@ -1,2 +1,9 @@
-(library (name syslog) (public_name core_unix.syslog) (libraries core)
- (c_names syslog_stubs) (preprocess (pps ppx_jane)))
+(library
+ (foreign_stubs
+  (language c)
+  (names syslog_stubs))
+ (name syslog)
+ (public_name core_unix.syslog)
+ (libraries core)
+ (preprocess
+  (pps ppx_jane)))

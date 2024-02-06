@@ -1,8 +1,17 @@
-(library (name linux_ext) (public_name core_unix.linux_ext)
+(library
+ (foreign_stubs
+  (language c)
+  (names linux_ext_stubs))
+ (name linux_ext)
+ (public_name core_unix.linux_ext)
  (libraries core_kernel.bounded_int_table core core_thread filename_unix
-  time_ns_unix)
- (c_names linux_ext_stubs) (preprocessor_deps config.h)
- (preprocess (pps ppx_jane ppx_optcomp)))
+   time_ns_unix)
+ (preprocessor_deps config.h)
+ (preprocess
+  (pps ppx_jane ppx_optcomp)))
 
-(rule (targets config.h) (deps)
- (action (bash "cp %{lib:jst-config:config.h} .")))
+(rule
+ (targets config.h)
+ (deps)
+ (action
+  (bash "cp %{lib:jst-config:config.h} .")))

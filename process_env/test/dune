@@ -1,2 +1,5 @@
-(library (name process_env_test) (libraries core process_env)
- (preprocess (pps ppx_jane)))
+(library
+ (name process_env_test)
+ (libraries core process_env)
+ (preprocess
+  (pps ppx_jane)))

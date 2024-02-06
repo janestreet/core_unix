@@ -1,6 +1,12 @@
-(library (name time_stamp_counter_test)
+(library
+ (name time_stamp_counter_test)
  (libraries core expect_test_helpers_core time_float_unix time_stamp_counter)
- (preprocessor_deps config.h) (preprocess (pps ppx_jane ppx_optcomp)))
+ (preprocessor_deps config.h)
+ (preprocess
+  (pps ppx_jane ppx_optcomp)))
 
-(rule (targets config.h) (deps)
- (action (bash "cp %{lib:jst-config:config.h} .")))
+(rule
+ (targets config.h)
+ (deps)
+ (action
+  (bash "cp %{lib:jst-config:config.h} .")))

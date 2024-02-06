@@ -1,3 +1,5 @@
-(library (name interval_lib_test)
+(library
+ (name interval_lib_test)
  (libraries expect_test_helpers_core interval_lib)
- (preprocess (pps ppx_jane ppx_sexp_digest)))
+ (preprocess
+  (pps ppx_jane ppx_sexp_digest ppx_quick_test)))

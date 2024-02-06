@@ -141,6 +141,18 @@ module type Gen_set = sig
   val lbound_exn : 'a t -> 'a bound
   val ubound : 'a t -> 'a bound option
   val lbound : 'a t -> 'a bound option
+
+  (** [inter t1 t2] computes the intersection of sets [t1] and [t2].
+      [O(length t1 * length t2)]. *)
+  val inter : 'a t -> 'a t -> 'a t
+
+  (** [union t1 t2] computes the union of sets [t1] and [t2].
+      [O((length t1 + length t2) * log(length t1 + length t2))]. *)
+  val union : 'a t -> 'a t -> 'a t
+
+  (** [union_list l] computes the union of a list of sets.
+      [O(sum length * log(sum length))]. *)
+  val union_list : 'a t list -> 'a t
 end
 
 module type S = sig
