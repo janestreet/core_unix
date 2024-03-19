@@ -38,8 +38,7 @@ module _ = struct
       ~add_validate_parsing_flag:true
       ~argv:[ "prog"; "-f"; "alpha"; "bravo"; "-validate-parsing" ]
       command;
-    [%expect {|
-      (command.ml.Exit_called (status 0)) |}]
+    [%expect {| (command.ml.Exit_called (status 0)) |}]
   ;;
 
   let%expect_test "Parsing incorrectly" =
@@ -58,13 +57,13 @@ module _ = struct
 
         prog -help
 
-      (raised (command.ml.Exit_called (status 1))) |}]
+      (raised (command.ml.Exit_called (status 1)))
+      |}]
   ;;
 
   let%expect_test "Running normally" =
     run ~add_validate_parsing_flag:true ~argv:[ "prog"; "-f"; "alpha"; "bravo" ] command;
-    [%expect {|
-      executing |}]
+    [%expect {| executing |}]
   ;;
 
   let%expect_test "help text" =
@@ -84,7 +83,8 @@ module _ = struct
         [-version]                 . print the version of this build and exit
         [-help], -?                . print this help text and exit
 
-      (command.ml.Exit_called (status 0)) |}]
+      (command.ml.Exit_called (status 0))
+      |}]
   ;;
 end
 
@@ -110,8 +110,7 @@ module _ = struct
       ~add_validate_parsing_flag:true
       ~argv:[ "prog"; "one"; "-validate-parsing"; "1" ]
       command;
-    [%expect {|
-      (command.ml.Exit_called (status 0)) |}]
+    [%expect {| (command.ml.Exit_called (status 0)) |}]
   ;;
 
   let%expect_test "Parsing incorrectly one" =
@@ -130,7 +129,8 @@ module _ = struct
 
         prog one -help
 
-      (raised (command.ml.Exit_called (status 1))) |}]
+      (raised (command.ml.Exit_called (status 1)))
+      |}]
   ;;
 
   let%expect_test "One help test" =
@@ -147,13 +147,13 @@ module _ = struct
                                      immediately
         [-help], -?                . print this help text and exit
 
-      (command.ml.Exit_called (status 0)) |}]
+      (command.ml.Exit_called (status 0))
+      |}]
   ;;
 
   let%expect_test "One normal execution" =
     run ~add_validate_parsing_flag:true ~argv:[ "prog"; "one"; "1" ] command;
-    [%expect {|
-      executing one |}]
+    [%expect {| executing one |}]
   ;;
 
   let%expect_test "Only available in subcommands" =
@@ -171,7 +171,8 @@ module _ = struct
         version                    . print version information
         help                       . explain a given subcommand (perhaps recursively)
 
-      (command.ml.Exit_called (status 0)) |}]
+      (command.ml.Exit_called (status 0))
+      |}]
   ;;
 
   let%expect_test "Parsing correctly two" =
@@ -179,7 +180,6 @@ module _ = struct
       ~add_validate_parsing_flag:true
       ~argv:[ "prog"; "two"; "-validate-parsing"; "-f"; "foo" ]
       command;
-    [%expect {|
-      (command.ml.Exit_called (status 0)) |}]
+    [%expect {| (command.ml.Exit_called (status 0)) |}]
   ;;
 end

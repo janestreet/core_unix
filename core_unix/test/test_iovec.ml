@@ -13,17 +13,20 @@ let%expect_test "[IOVec.of_string] on empty string" =
   [%expect {|
     ((buf "")
      (pos 0)
-     (len 0)) |}];
+     (len 0))
+    |}];
   print_of_string "foo" ~len:0;
   [%expect {|
     ((buf foo)
      (pos 0)
-     (len 0)) |}];
+     (len 0))
+    |}];
   print_of_string "foo" ~pos:3;
   [%expect {|
     ((buf foo)
      (pos 3)
-     (len 0)) |}];
+     (len 0))
+    |}];
   return ()
 ;;
 
@@ -32,12 +35,14 @@ let%expect_test "[IOVec.of_string] on full string" =
   [%expect {|
     ((buf foo)
      (pos 0)
-     (len 3)) |}];
+     (len 3))
+    |}];
   print_of_string "foo" ~len:3;
   [%expect {|
     ((buf foo)
      (pos 0)
-     (len 3)) |}];
+     (len 3))
+    |}];
   return ()
 ;;
 
@@ -46,12 +51,14 @@ let%expect_test "[IOVec.of_string] on trailing end of string" =
   [%expect {|
     ((buf foo)
      (pos 1)
-     (len 2)) |}];
+     (len 2))
+    |}];
   print_of_string "foo" ~pos:1 ~len:2;
   [%expect {|
     ((buf foo)
      (pos 1)
-     (len 2)) |}];
+     (len 2))
+    |}];
   return ()
 ;;
 
@@ -75,17 +82,20 @@ let%expect_test "[IOVec.of_bigstring] on empty bigstring" =
   [%expect {|
     ((buf "")
      (pos 0)
-     (len 0)) |}];
+     (len 0))
+    |}];
   print_of_bigstring "foo" ~len:0;
   [%expect {|
     ((buf foo)
      (pos 0)
-     (len 0)) |}];
+     (len 0))
+    |}];
   print_of_bigstring "foo" ~pos:3;
   [%expect {|
     ((buf foo)
      (pos 3)
-     (len 0)) |}];
+     (len 0))
+    |}];
   return ()
 ;;
 
@@ -94,12 +104,14 @@ let%expect_test "[IOVec.of_bigstring] on full bigstring" =
   [%expect {|
     ((buf foo)
      (pos 0)
-     (len 3)) |}];
+     (len 3))
+    |}];
   print_of_bigstring "foo" ~len:3;
   [%expect {|
     ((buf foo)
      (pos 0)
-     (len 3)) |}];
+     (len 3))
+    |}];
   return ()
 ;;
 
@@ -108,12 +120,14 @@ let%expect_test "[IOVec.of_bigstring] on trailing end of bigstring" =
   [%expect {|
     ((buf foo)
      (pos 1)
-     (len 2)) |}];
+     (len 2))
+    |}];
   print_of_bigstring "foo" ~pos:1 ~len:2;
   [%expect {|
     ((buf foo)
      (pos 1)
-     (len 2)) |}];
+     (len 2))
+    |}];
   return ()
 ;;
 

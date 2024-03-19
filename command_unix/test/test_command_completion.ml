@@ -21,36 +21,43 @@ let%expect_test "completion of anons" =
   [%expect {|
     false
     true
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   test [ "t" ];
   [%expect {|
     true
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   test [ "f" ];
   [%expect {|
     false
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   test [ "true"; "" ];
   [%expect {|
     false
     true
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   test [ "true"; "t" ];
   [%expect {|
     true
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   (* First argument is invalid, but we can still complete later arguments. *)
   test [ "bool"; "" ];
   [%expect {|
     false
     true
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   (* The list passed into the escape completer is all the args after the escape flag. *)
   test [ "a"; "b"; "--"; "c"; "d" ];
   [%expect {|
     c
     d
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   ()
 ;;
 
@@ -62,16 +69,19 @@ let%expect_test "completion after [-help]" =
     -build-info
     -help
     -version
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   test [ "-h" ];
   [%expect {|
     -help
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   test [ "-help"; "" ];
   [%expect {|
     false
     true
-    (command.ml.Exit_called (status 0)) |}]
+    (command.ml.Exit_called (status 0))
+    |}]
 ;;
 
 let%expect_test "special debug flags shouldn't offer autocomplete suggestions" =
@@ -107,7 +117,8 @@ let%expect_test "special debug flags shouldn't offer autocomplete suggestions" =
     │            │ -build-info │ false, true  │
     │            │ -help       │ false, true  │
     │            │ -version    │ false, true  │
-    └────────────┴─────────────┴──────────────┘ |}];
+    └────────────┴─────────────┴──────────────┘
+    |}];
   test Simple_group.group ~all_prefixes_of_subcommand:[ "basic" ];
   [%expect
     {|
@@ -120,7 +131,8 @@ let%expect_test "special debug flags shouldn't offer autocomplete suggestions" =
     │ basic      │ -build-info │                      │
     │ basic      │ -help       │ false, true          │
     │ basic      │ -version    │                      │
-    └────────────┴─────────────┴──────────────────────┘ |}];
+    └────────────┴─────────────┴──────────────────────┘
+    |}];
   test Simple_group.command ~all_prefixes_of_subcommand:[ "group"; "basic" ];
   [%expect
     {|
@@ -136,7 +148,8 @@ let%expect_test "special debug flags shouldn't offer autocomplete suggestions" =
     │ group basic │ -build-info │                      │
     │ group basic │ -help       │ false, true          │
     │ group basic │ -version    │                      │
-    └─────────────┴─────────────┴──────────────────────┘ |}]
+    └─────────────┴─────────────┴──────────────────────┘
+    |}]
 ;;
 
 let%expect_test "demo [complete_subcommands]" =
@@ -147,7 +160,8 @@ let%expect_test "demo [complete_subcommands]" =
   test Simple_group.command ?complete_subcommands:None ~args:[ "g" ];
   [%expect {|
     group
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   let complete_subcommands ~path ~part choices =
     print_s
       [%message
@@ -172,7 +186,8 @@ let%expect_test "demo [complete_subcommands]" =
       (path (__exe_name__))
       (part we-can-put-anything-here-command-doesn't-seem-to-care))
     we just give back what was returned
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   test
     Simple_group.command
     ~complete_subcommands

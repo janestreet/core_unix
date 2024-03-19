@@ -2,6 +2,7 @@ open! Core
 open! Import
 module Time := Core.Time_float
 include Time_functor_intf.S with module Time0 := Time and module Time := Time
+include Diffable.S_atomic with type t := t
 
 module Stable : sig
   module V1 : sig
@@ -12,6 +13,8 @@ module Stable : sig
       Stable_comparable.With_stable_witness.V1
         with type t := t
         with type comparator_witness := comparator_witness
+
+    include Diffable.S_atomic with type t := t
   end
 
   (** Provides a sexp representation that is independent of the time zone of the machine
@@ -54,18 +57,21 @@ module Stable : sig
       type t = Time.Stable.Span.V1.t [@@deriving hash, equal]
 
       include Stable_without_comparator_with_witness with type t := t
+      include Diffable.S_atomic with type t := t
     end
 
     module V2 : sig
       type t = Time.Stable.Span.V2.t [@@deriving hash, equal, sexp_grammar]
 
       include Stable_without_comparator_with_witness with type t := t
+      include Diffable.S_atomic with type t := t
     end
 
     module V3 : sig
       type t = Time.Stable.Span.V3.t [@@deriving hash, typerep, equal, sexp_grammar]
 
       include Stable_without_comparator_with_witness with type t := t
+      include Diffable.S_atomic with type t := t
     end
   end
 
@@ -74,6 +80,7 @@ module Stable : sig
       type t = Time.Stable.Ofday.V1.t [@@deriving hash, sexp_grammar]
 
       include Stable_without_comparator_with_witness with type t := t
+      include Diffable.S_atomic with type t := t
     end
 
     module Zoned : sig
@@ -91,6 +98,7 @@ module Stable : sig
       type t = Timezone.Stable.V1.t [@@deriving hash, sexp_grammar]
 
       include Stable_without_comparator_with_witness with type t := t
+      include Diffable.S_atomic with type t := t
     end
 
     module Full_data : sig

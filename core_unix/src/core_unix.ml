@@ -2283,7 +2283,7 @@ module Group = struct
     ; gid : int
     ; mem : string array
     }
-  [@@deriving sexp_of]
+  [@@deriving fields ~getters, sexp_of]
 
   let of_unix u =
     { name = u.Unix.gr_name

@@ -10,7 +10,8 @@ let%expect_test "list_intersect" =
     ((4  4)
      (5  7)
      (9  10)
-     (14 15)) |}]
+     (14 15))
+    |}]
 ;;
 
 let make_stable_unit_tests_v1 ~coerce ~non_empty =
@@ -316,8 +317,7 @@ let%test_module _ =
 
     let%expect_test _ =
       print_s [%sexp (Int.convex_hull intervals : Int.t)];
-      [%expect {|
-        (2 7) |}]
+      [%expect {| (2 7) |}]
     ;;
 
     let intervals =
@@ -326,8 +326,7 @@ let%test_module _ =
 
     let%expect_test _ =
       print_s [%sexp (Int.convex_hull intervals : Int.t)];
-      [%expect {|
-        (2 6) |}]
+      [%expect {| (2 6) |}]
     ;;
 
     let intervals = [ Int.empty; Int.empty ]
@@ -364,7 +363,8 @@ let%test_module _ =
       [%expect {|
         ((1 2)
          (5 7)
-         (9 10)) |}]
+         (9 10))
+        |}]
     ;;
 
     let quickcheck_generator =
@@ -419,14 +419,16 @@ let%test_module _ =
       print_s [%sexp (Set.union t1 t2 : int Set.t)];
       [%expect {|
         ((1  12)
-         (15 20)) |}]
+         (15 20))
+        |}]
     ;;
 
     let%expect_test "intersect demo" =
       print_s [%sexp (Set.inter t1 t2 : int Set.t)];
       [%expect {|
         ((3 5)
-         (6 10)) |}]
+         (6 10))
+        |}]
     ;;
 
     let%expect_test "union_list demo" =
@@ -434,7 +436,8 @@ let%test_module _ =
       print_s [%sexp (Set.union_list ts : int Set.t)];
       [%expect {|
         ((1  13)
-         (14 22)) |}]
+         (14 22))
+        |}]
     ;;
   end)
 ;;

@@ -301,7 +301,8 @@ let%expect_test "[Epoll.Expert.clear_ready]" =
       print_num_ready ();
       [%expect {|
         (!num_ready 1)
-        (!num_ready 0) |}])
+        (!num_ready 0)
+        |}])
 ;;
 
 (* Eventfd *)
@@ -389,7 +390,8 @@ let%test_module "getpriority and setpriority" =
         1
         2
         3
-        4 |}];
+        4
+        |}];
       setpriority starting_priority;
       print_s
         [%sexp ([%equal: Linux_ext.Priority.t] starting_priority (getpriority ()) : bool)];
@@ -561,7 +563,8 @@ let%test_module "getxattr and setxattr" =
           (Unix.Unix_error
            "Operation not permitted"
            lsetxattr
-           temporary-file-for-testing-xattr.symlink) |}];
+           temporary-file-for-testing-xattr.symlink)
+          |}];
         set_and_print ~follow_symlinks:true ~path:symlink_to_path ~name ~value:"bar" ();
         [%expect {| Ok |}];
         get_and_print ~follow_symlinks:false ~path:symlink_to_path ~name;
@@ -623,17 +626,19 @@ let%test_module "getxattr and setxattr" =
         set_and_print ~follow_symlinks:true ~path ~name ~value:"xyz" ());
       [%expect
         {|
-       (Unix.Unix_error
-        "No such file or directory"
-        setxattr
-        some-file-that-doesnt-exist) |}];
+        (Unix.Unix_error
+         "No such file or directory"
+         setxattr
+         some-file-that-doesnt-exist)
+        |}];
       expect_error (fun () -> get_and_print ~follow_symlinks:true ~path ~name);
       [%expect
         {|
-       (Unix.Unix_error
-        "No such file or directory"
-        getxattr
-        some-file-that-doesnt-exist) |}]
+        (Unix.Unix_error
+         "No such file or directory"
+         getxattr
+         some-file-that-doesnt-exist)
+        |}]
     ;;
   end)
 ;;
@@ -706,22 +711,22 @@ let%expect_test "cpu_list_of_string_exn" =
     | e -> print_endline [%string "Error: %{e#Exn}"]);
   [%expect
     {|
-       CPUs:
-       CPUs: 0
-       CPUs: 0,2,10
-       CPUs: 0,2,3,4,5
-       Error: ("cpu_list_of_string_exn: range start is after end" (first 5) (last 2))
-       CPUs: 0,2,3,4,5
-       CPUs: 0,2,4,6,8,9,10,11,12,13,14,15
-       Error: ("cpu_list_of_string_exn: expected separated integer pair" (sep -) (str 3-))
-       CPUs: 0,1,2,3
-       Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt 0)
-         (stride 20))
-       Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt -2)
-         (stride 0))
-       Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt 0)
-         (stride 0))
-       |}]
+    CPUs:
+    CPUs: 0
+    CPUs: 0,2,10
+    CPUs: 0,2,3,4,5
+    Error: ("cpu_list_of_string_exn: range start is after end" (first 5) (last 2))
+    CPUs: 0,2,3,4,5
+    CPUs: 0,2,4,6,8,9,10,11,12,13,14,15
+    Error: ("cpu_list_of_string_exn: expected separated integer pair" (sep -) (str 3-))
+    CPUs: 0,1,2,3
+    Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt 0)
+      (stride 20))
+    Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt -2)
+      (stride 0))
+    Error: ("cpu_list_of_string_exn: invalid grouped range stride or amount" (amt 0)
+      (stride 0))
+    |}]
 ;;
 
 let%expect_test "TCP_CONGESTION" =
@@ -745,10 +750,11 @@ let%expect_test "TCP_CONGESTION" =
       settcpopt_string sock TCP_CONGESTION garbage));
   [%expect
     {|
-       (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
-       (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
-       (raised (Unix.Unix_error "No such file or directory" setsockopt ""))
-       (raised (Unix.Unix_error "No such file or directory" setsockopt "")) |}];
+    (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
+    (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
+    (raised (Unix.Unix_error "No such file or directory" setsockopt ""))
+    (raised (Unix.Unix_error "No such file or directory" setsockopt ""))
+    |}];
   (* We need to close the socket to clean up the test... *)
   Unix.close sock;
   (* But it also gives us an opportunity to demonstrate correct behaviour (gracefully
@@ -758,6 +764,7 @@ let%expect_test "TCP_CONGESTION" =
     settcpopt_string sock TCP_CONGESTION "reno");
   [%expect
     {|
-       (raised (Unix.Unix_error "Bad file descriptor" getsockopt ""))
-       (raised (Unix.Unix_error "Bad file descriptor" setsockopt "")) |}]
+    (raised (Unix.Unix_error "Bad file descriptor" getsockopt ""))
+    (raised (Unix.Unix_error "Bad file descriptor" setsockopt ""))
+    |}]
 ;;

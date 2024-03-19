@@ -53,7 +53,8 @@ module Constants = struct
         [%expect
           {|
           (2013-01-03 12:00:00.000000-05:00)
-          (2013-01-03 12:00:00.000000 Only) |}]
+          (2013-01-03 12:00:00.000000 Only)
+          |}]
       ;;
 
       let%expect_test "summer" =
@@ -61,7 +62,8 @@ module Constants = struct
         [%expect
           {|
           (2014-07-04 12:00:00.000000-04:00)
-          (2014-07-04 12:00:00.000000 Only) |}]
+          (2014-07-04 12:00:00.000000 Only)
+          |}]
       ;;
 
       let%expect_test "transition" =
@@ -69,7 +71,8 @@ module Constants = struct
         [%expect
           {|
           (2015-11-01 01:30:00.000000-05:00)
-          (2015-11-01 01:30:00.000000 (Also_at (2015-11-01 01:30:00.000000-04:00))) |}]
+          (2015-11-01 01:30:00.000000 (Also_at (2015-11-01 01:30:00.000000-04:00)))
+          |}]
       ;;
 
       let%expect_test "skip" =
@@ -77,7 +80,8 @@ module Constants = struct
         [%expect
           {|
           (2015-03-08 03:30:00.000000-04:00)
-          (2015-03-08 03:30:00.000000 (Also_skipped (2015-03-08 02:30:00.000000))) |}]
+          (2015-03-08 03:30:00.000000 (Also_skipped (2015-03-08 02:30:00.000000)))
+          |}]
       ;;
     end)
   ;;
@@ -105,6 +109,7 @@ module Span = struct
   module Table = Table
   module Hash_set = Hash_set
   module Hash_queue = Hash_queue
+  module Diff = Diff
 
   type nonrec underlying = underlying
   type nonrec t = t [@@deriving bin_io, quickcheck, sexp_grammar, typerep]
@@ -335,6 +340,7 @@ module Ofday = struct
   module Table = Table
   module Hash_set = Hash_set
   module Hash_queue = Hash_queue
+  module Diff = Diff
 
   type nonrec t = t [@@deriving bin_io, quickcheck, sexp_grammar, typerep]
   type nonrec comparator_witness = comparator_witness
@@ -569,6 +575,7 @@ module Ofday = struct
   end
 end
 
+module Diff = Diff
 module Map = Map
 module Set = Set
 module Table = Table
@@ -915,6 +922,7 @@ module Zone = struct
   module Table = Table
   module Hash_set = Hash_set
   module Hash_queue = Hash_queue
+  module Diff = Diff
 
   type nonrec t = t [@@deriving bin_io, sexp_grammar]
   type nonrec comparator_witness = comparator_witness
@@ -1149,6 +1157,7 @@ end
 module Stable = struct
   module V1 = struct
     open Stable.V1
+    module Diff = Diff
     module Map = Map
     module Set = Set
 
@@ -1230,6 +1239,7 @@ module Stable = struct
       open Span
       open Time.Stable.Span.V1
       open Span_constants
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, stable_witness]
 
@@ -1253,6 +1263,7 @@ module Stable = struct
       open Span
       open Time.Stable.Span.V2
       open Span_constants
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, sexp_grammar, stable_witness]
 
@@ -1276,6 +1287,7 @@ module Stable = struct
       open Span
       open Time.Stable.Span.V3
       open Span_constants
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, typerep, sexp_grammar, stable_witness]
 
@@ -1301,6 +1313,7 @@ module Stable = struct
       open Ofday
       open Time.Stable.Ofday.V1
       open Ofday_constants
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, stable_witness, sexp_grammar]
 
@@ -1347,6 +1360,7 @@ module Stable = struct
       open Zone
       open Time.Stable.Zone.V1
       open Zone_constants
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, sexp_grammar, stable_witness]
 

@@ -2,6 +2,6 @@
  (name nano_mutex)
  (public_name core_unix.nano_mutex)
  (libraries core core_thread error_checking_mutex
-   core_kernel.thread_safe_queue)
+   core_kernel.thread_safe_queue uopt)
  (preprocess
   (pps ppx_jane)))

@@ -80,7 +80,8 @@ module _ = struct
         help                       . explain a given subcommand (perhaps recursively)
 
       missing subcommand for command CMD foo1
-      (command.ml.Exit_called (status 1)) |}]
+      (command.ml.Exit_called (status 1))
+      |}]
   ;;
 
   let%expect_test "subcommand__present_subcommand" =
@@ -102,7 +103,8 @@ module _ = struct
         help                       . explain a given subcommand (perhaps recursively)
 
       subcommand foo is an ambiguous prefix: foo1, foo2
-      (command.ml.Exit_called (status 1)) |}]
+      (command.ml.Exit_called (status 1))
+      |}]
   ;;
 
   let%expect_test "subcommand__unambiguous_prefix" =
@@ -127,12 +129,13 @@ module _ = struct
     test exec_dev_null [];
     [%expect
       {|
-        ("[Exec _] commands are not validated to avoid unexpected external dependencies."
-         (exec_info (
-           (summary     "")
-           (working_dir ELIDED-IN-TEST)
-           (path_to_exe /dev/null)
-           (child_subcommand ())))) |}]
+      ("[Exec _] commands are not validated to avoid unexpected external dependencies."
+       (exec_info (
+         (summary     "")
+         (working_dir ELIDED-IN-TEST)
+         (path_to_exe /dev/null)
+         (child_subcommand ()))))
+      |}]
   ;;
 end
 
@@ -165,7 +168,8 @@ module _ = struct
       -|
       -|  CMD -help
       -|
-      -|(command.ml.Exit_called (status 1)) |}]
+      -|(command.ml.Exit_called (status 1))
+      |}]
   ;;
 
   module _ = struct
@@ -180,15 +184,16 @@ module _ = struct
       test_prefix [ "-f" ];
       [%expect
         {|
-          Error parsing command line:
+        Error parsing command line:
 
-            flag -f is an ambiguous prefix: -foobar, -fubar
+          flag -f is an ambiguous prefix: -foobar, -fubar
 
-          For usage information, run
+        For usage information, run
 
-            CMD -help
+          CMD -help
 
-          (command.ml.Exit_called (status 1)) |}]
+        (command.ml.Exit_called (status 1))
+        |}]
     ;;
   end
 
@@ -204,15 +209,16 @@ module _ = struct
       test_flags [ "-a"; "_" ];
       [%expect
         {|
-          Error parsing command line:
+        Error parsing command line:
 
-            too many anonymous arguments
+          too many anonymous arguments
 
-          For usage information, run
+        For usage information, run
 
-            CMD -help
+          CMD -help
 
-          (command.ml.Exit_called (status 1)) |}]
+        (command.ml.Exit_called (status 1))
+        |}]
     ;;
 
     let%expect_test "params_arg_types__passing_wrong_arg_type" =
@@ -230,27 +236,29 @@ module _ = struct
         -|
         -|  CMD -help
         -|
-        -|(command.ml.Exit_called (status 1)) |}]
+        -|(command.ml.Exit_called (status 1))
+        |}]
     ;;
 
     let%expect_test "params_arg_types__passing_correct_arg_type" =
       test_flags [ "-b"; "1" ];
-      [%expect {||}]
+      [%expect {| |}]
     ;;
 
     let%expect_test "params_arg_types__passing_flag_but_no_arg" =
       test_flags [ "-b" ];
       [%expect
         {|
-          Error parsing command line:
+        Error parsing command line:
 
-            missing argument for flag -b
+          missing argument for flag -b
 
-          For usage information, run
+        For usage information, run
 
-            CMD -help
+          CMD -help
 
-          (command.ml.Exit_called (status 1)) |}]
+        (command.ml.Exit_called (status 1))
+        |}]
     ;;
 
     let%expect_test "params_arg_types__passing_arg_which_looks_like_a_flag" =
@@ -258,17 +266,18 @@ module _ = struct
       test_flags [ "-b"; "-b" ];
       [%expect
         {|
-          Diff of validate_command (-) vs validate_command_line (+):
-          -|Error parsing command line:
-          -|
-          -|  failed to parse -b value "-b".
-          -|  (Failure "Int.of_string: \"-b\"")
-          -|
-          -|For usage information, run
-          -|
-          -|  CMD -help
-          -|
-          -|(command.ml.Exit_called (status 1)) |}]
+        Diff of validate_command (-) vs validate_command_line (+):
+        -|Error parsing command line:
+        -|
+        -|  failed to parse -b value "-b".
+        -|  (Failure "Int.of_string: \"-b\"")
+        -|
+        -|For usage information, run
+        -|
+        -|  CMD -help
+        -|
+        -|(command.ml.Exit_called (status 1))
+        |}]
     ;;
 
     let%expect_test "params_arg_types__passing_flag_twice_but_arg_once" =
@@ -290,7 +299,8 @@ module _ = struct
 
           CMD -help
 
-        (command.ml.Exit_called (status 1)) |}]
+        (command.ml.Exit_called (status 1))
+        |}]
     ;;
   end
 
@@ -311,30 +321,32 @@ module _ = struct
       test_alias [ "-c" ];
       [%expect
         {|
-          Error parsing command line:
+        Error parsing command line:
 
-            unknown flag -c
+          unknown flag -c
 
-          For usage information, run
+        For usage information, run
 
-            CMD -help
+          CMD -help
 
-          (command.ml.Exit_called (status 1)) |}]
+        (command.ml.Exit_called (status 1))
+        |}]
     ;;
 
     let%expect_test "params_aliases__internal_alias_exluded_from_help" =
       test [] [ "--help" ];
       [%expect
         {|
-            CMD
+          CMD
 
-          === flags ===
+        === flags ===
 
-            [-build-info]              . print info about this build and exit
-            [-version]                 . print the version of this build and exit
-            [-help], -?                . print this help text and exit
+          [-build-info]              . print info about this build and exit
+          [-version]                 . print the version of this build and exit
+          [-help], -?                . print this help text and exit
 
-          (command.ml.Exit_called (status 0)) |}]
+        (command.ml.Exit_called (status 0))
+        |}]
     ;;
   end
 
@@ -358,15 +370,16 @@ module _ = struct
       test_anons_vs_flag_args [ "-a"; "2" ];
       [%expect
         {|
-          Error parsing command line:
+        Error parsing command line:
 
-            missing anonymous argument: A
+          missing anonymous argument: A
 
-          For usage information, run
+        For usage information, run
 
-            CMD -help
+          CMD -help
 
-          (command.ml.Exit_called (status 1)) |}]
+        (command.ml.Exit_called (status 1))
+        |}]
     ;;
 
     let%expect_test "params_anonymous_flags_and_args__anon_and_no-arg_flag" =
@@ -389,19 +402,20 @@ module _ = struct
          handle side-effects like escape args *)
       [%expect
         {|
-          Diff of validate_command (-) vs validate_command_line (+):
-          Error parsing command line:
+        Diff of validate_command (-) vs validate_command_line (+):
+        Error parsing command line:
 
 
-          -|(Failure "Int.of_string: \"foo\"")
-          +|too many anonymous arguments
+        -|(Failure "Int.of_string: \"foo\"")
+        +|too many anonymous arguments
 
 
-          For usage information, run
+        For usage information, run
 
-            CMD -help
+          CMD -help
 
-          (command.ml.Exit_called (status 1)) |}]
+        (command.ml.Exit_called (status 1))
+        |}]
     ;;
 
     let%expect_test "params_escape__correct_escaped_arg_type" =
@@ -409,16 +423,17 @@ module _ = struct
       test_escape [ "--"; "1" ];
       [%expect
         {|
-          Diff of validate_command (-) vs validate_command_line (+):
-          +|Error parsing command line:
-          +|
-          +|  too many anonymous arguments
-          +|
-          +|For usage information, run
-          +|
-          +|  CMD -help
-          +|
-          +|(command.ml.Exit_called (status 1)) |}]
+        Diff of validate_command (-) vs validate_command_line (+):
+        +|Error parsing command line:
+        +|
+        +|  too many anonymous arguments
+        +|
+        +|For usage information, run
+        +|
+        +|  CMD -help
+        +|
+        +|(command.ml.Exit_called (status 1))
+        |}]
     ;;
   end
 
@@ -480,7 +495,8 @@ module _ = struct
 
             CMD -help
 
-          (command.ml.Exit_called (status 1)) |}]
+          (command.ml.Exit_called (status 1))
+          |}]
       ;;
 
       let%expect_test "params_counting_flags__required" =
@@ -500,7 +516,8 @@ module _ = struct
 
             CMD -help
 
-          (command.ml.Exit_called (status 1)) |}];
+          (command.ml.Exit_called (status 1))
+          |}];
         test 1;
         [%expect {| $ CMD -a 1 |}];
         test 2;
@@ -515,7 +532,8 @@ module _ = struct
 
             CMD -help
 
-          (command.ml.Exit_called (status 1)) |}]
+          (command.ml.Exit_called (status 1))
+          |}]
       ;;
     end
 
@@ -563,7 +581,8 @@ module _ = struct
 
             CMD -help
 
-          (command.ml.Exit_called (status 1)) |}]
+          (command.ml.Exit_called (status 1))
+          |}]
       ;;
 
       let%expect_test "params_counting_anonymous_args__required" =
@@ -583,7 +602,8 @@ module _ = struct
 
             CMD -help
 
-          (command.ml.Exit_called (status 1)) |}];
+          (command.ml.Exit_called (status 1))
+          |}];
         test 1;
         [%expect {| $ CMD 1 |}];
         test 2;
@@ -598,7 +618,8 @@ module _ = struct
 
             CMD -help
 
-          (command.ml.Exit_called (status 1)) |}]
+          (command.ml.Exit_called (status 1))
+          |}]
       ;;
 
       let%expect_test "params_counting_anonymous_args__required_and_maybe" =
@@ -622,7 +643,8 @@ module _ = struct
 
             CMD -help
 
-          (command.ml.Exit_called (status 1)) |}];
+          (command.ml.Exit_called (status 1))
+          |}];
         test 1;
         [%expect {| $ CMD 1 |}];
         test 2;

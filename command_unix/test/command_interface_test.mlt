@@ -23,4 +23,4 @@ module Command :
   with module Open_on_rhs_intf := Open_on_rhs_intf =
   Command
 
-[%%expect]
+[%%expect {| |}]

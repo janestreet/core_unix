@@ -43,7 +43,8 @@ let%expect_test "anon after [anon_escape]" =
   [%expect
     {|
     (Failure
-     "the grammar LAST [ARG ...] AFTER for anonymous arguments is not supported because there is the possibility for arguments (AFTER) following a variable number of arguments (LAST [ARG ...]).  Supporting such grammars would complicate the implementation significantly.") |}]
+     "the grammar LAST [ARG ...] AFTER for anonymous arguments is not supported because there is the possibility for arguments (AFTER) following a variable number of arguments (LAST [ARG ...]).  Supporting such grammars would complicate the implementation significantly.")
+    |}]
 ;;
 
 let%expect_test "completion" =
@@ -51,7 +52,8 @@ let%expect_test "completion" =
   [%expect {|
     Bar
     Foo
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   Command_test_helpers.complete param ~args:[ "Foo"; "" ];
   [%expect {| (command.ml.Exit_called (status 0)) |}];
   Command_test_helpers.complete param ~args:[ "-" ];
@@ -61,5 +63,6 @@ let%expect_test "completion" =
     -flag
     -help
     -version
-    (command.ml.Exit_called (status 0)) |}]
+    (command.ml.Exit_called (status 0))
+    |}]
 ;;

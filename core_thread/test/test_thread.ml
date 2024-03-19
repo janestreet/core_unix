@@ -33,7 +33,8 @@ let%expect_test "~on_uncaught_exn:`Print_to_stderr" =
     --- STDERR ---
     Uncaught exception:
 
-      (Failure "exception thrown out of thread_main") |}];
+      (Failure "exception thrown out of thread_main")
+    |}];
   return ()
 ;;
 
@@ -51,7 +52,8 @@ let%expect_test "~on_uncaught_exn:`Kill_whole_process" =
     --- STDERR ---
     Uncaught exception:
 
-      (Failure "exception thrown out of thread_main") |}];
+      (Failure "exception thrown out of thread_main")
+    |}];
   return ()
 ;;
 
@@ -65,6 +67,7 @@ let%expect_test "Caml_threads.Thread.create's behaviour with exceptions, for com
     Caml.at_exit callback ran
     Core.at_exit callback ran
     --- STDERR ---
-    Thread 1 killed on uncaught exception Failure("exception thrown out of thread_main") |}];
+    Thread 1 killed on uncaught exception Failure("exception thrown out of thread_main")
+    |}];
   return ()
 ;;

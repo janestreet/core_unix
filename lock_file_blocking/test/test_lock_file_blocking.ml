@@ -69,10 +69,10 @@ let%expect_test "Symlink lock protocol" =
   in
   let lock = lock_expect_success ~metadata:"hello world" in
   lock_expect_failure ~metadata:"goodbye world";
-  [%expect {|("Somebody else took it" ((metadata (Ok "hello world"))))|}];
+  [%expect {| ("Somebody else took it" ((metadata (Ok "hello world")))) |}];
   let () = Symlink.unlock_exn lock in
   let lock = lock_expect_success ~metadata:"hi" in
   lock_expect_failure ~metadata:"hi";
-  [%expect {|("Somebody else took it" ((metadata (Ok hi))))|}];
+  [%expect {| ("Somebody else took it" ((metadata (Ok hi)))) |}];
   Symlink.unlock_exn lock
 ;;

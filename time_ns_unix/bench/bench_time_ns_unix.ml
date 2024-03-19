@@ -59,6 +59,7 @@ module Span = struct
   module Hash_set = Hash_set
   module Hash_queue = Hash_queue
   module O = O
+  module Diff = Diff
 
   (* Nothing interesting to benchmark in [Parts]. *)
   module Parts = Parts
@@ -599,8 +600,9 @@ module Span = struct
 
     module V1 = struct
       open V1
+      module Diff = Diff
 
-      type nonrec t = t [@@deriving bin_io, hash, stable_witness]
+      type nonrec t = t [@@deriving bin_io, hash, sexp_grammar, stable_witness]
       type nonrec comparator_witness = comparator_witness
 
       let comparator = comparator
@@ -639,6 +641,7 @@ module Span = struct
       open V2
       module Map = Map
       module Set = Set
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, hash, sexp_grammar, stable_witness]
       type nonrec comparator_witness = comparator_witness
@@ -676,6 +679,7 @@ module Span = struct
     module Table = Table
     module Hash_set = Hash_set
     module Hash_queue = Hash_queue
+    module Diff = Diff
 
     type nonrec t = t [@@deriving bin_io, quickcheck, typerep]
     type nonrec comparator_witness = comparator_witness
@@ -841,6 +845,7 @@ module Span = struct
 
       module V1 = struct
         open V1
+        module Diff = Diff
 
         type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
@@ -864,6 +869,7 @@ module Span = struct
 
       module V2 = struct
         open V2
+        module Diff = Diff
 
         type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
@@ -895,6 +901,7 @@ module Ofday = struct
   module Table = Table
   module Hash_set = Hash_set
   module Hash_queue = Hash_queue
+  module Diff = Diff
 
   type nonrec underlying = underlying
   type nonrec t = t [@@deriving bin_io, quickcheck, sexp_grammar, typerep]
@@ -1319,6 +1326,7 @@ module Ofday = struct
 
   module Option = struct
     open Option
+    module Diff = Diff
     module Map = Map
     module Set = Set
     module Table = Table
@@ -1509,6 +1517,7 @@ module Ofday = struct
 
       module V1 = struct
         open V1
+        module Diff = Diff
 
         type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
@@ -1537,6 +1546,7 @@ module Ofday = struct
 
     module V1 = struct
       open V1
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, sexp_grammar, stable_witness]
       type nonrec comparator_witness = comparator_witness
@@ -1579,6 +1589,7 @@ let interruptible_pause = interruptible_pause
 let gen_incl = gen_incl
 let gen_uniform_incl = gen_uniform_incl
 
+module Diff = Diff
 module Map = Map
 module Set = Set
 module Table = Table
@@ -1666,7 +1677,8 @@ module Time_constants = struct
         [%expect
           {|
           (2013-01-03 12:00:00.000000000-05:00)
-          (2013-01-03 12:00:00.000000000 Only) |}]
+          (2013-01-03 12:00:00.000000000 Only)
+          |}]
       ;;
 
       let%expect_test "summer" =
@@ -1674,7 +1686,8 @@ module Time_constants = struct
         [%expect
           {|
           (2014-07-04 12:00:00.000000000-04:00)
-          (2014-07-04 12:00:00.000000000 Only) |}]
+          (2014-07-04 12:00:00.000000000 Only)
+          |}]
       ;;
 
       let%expect_test "transition" =
@@ -1683,7 +1696,8 @@ module Time_constants = struct
           {|
           (2015-11-01 01:30:00.000000000-05:00)
           (2015-11-01 01:30:00.000000000
-           (Also_at (2015-11-01 01:30:00.000000000-04:00))) |}]
+           (Also_at (2015-11-01 01:30:00.000000000-04:00)))
+          |}]
       ;;
 
       let%expect_test "skip" =
@@ -1692,7 +1706,8 @@ module Time_constants = struct
           {|
           (2015-03-08 03:30:00.000000000-04:00)
           (2015-03-08 03:30:00.000000000
-           (Also_skipped (2015-03-08 02:30:00.000000000))) |}]
+           (Also_skipped (2015-03-08 02:30:00.000000000)))
+          |}]
       ;;
     end)
   ;;
@@ -2115,6 +2130,7 @@ module Alternate_sexp = struct
   open Alternate_sexp
   module Set = Set
   module Map = Map
+  module Diff = Diff
 
   type nonrec t = t [@@deriving bin_io, sexp_grammar]
   type nonrec comparator_witness = comparator_witness
@@ -2247,6 +2263,7 @@ end
 
 module Option = struct
   open Option
+  module Diff = Diff
   module Map = Map
   module Set = Set
   module Table = Table
@@ -2422,6 +2439,7 @@ module Option = struct
 
     module V1 = struct
       open V1
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, stable_witness]
       type nonrec comparator_witness = comparator_witness
@@ -2452,6 +2470,7 @@ module Stable = struct
     open Stable.V1
     module Map = Map
     module Set = Set
+    module Diff = Diff
 
     type nonrec t = t [@@deriving bin_io, stable_witness, hash]
     type nonrec comparator_witness = comparator_witness
@@ -2484,6 +2503,7 @@ module Stable = struct
       open Option
       open Time_ns.Stable.Option.V1
       open Time_option_constants
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, stable_witness]
       type nonrec comparator_witness = comparator_witness
@@ -2513,8 +2533,9 @@ module Stable = struct
       open Span
       open Time_ns.Stable.Span.V1
       open Span_constants
+      module Diff = Diff
 
-      type nonrec t = t [@@deriving bin_io, hash, stable_witness]
+      type nonrec t = t [@@deriving bin_io, hash, sexp_grammar, stable_witness]
       type nonrec comparator_witness = comparator_witness
 
       let comparator = comparator
@@ -2555,6 +2576,7 @@ module Stable = struct
       open Span_constants
       module Map = Map
       module Set = Set
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, hash, sexp_grammar, stable_witness]
       type nonrec comparator_witness = comparator_witness
@@ -2589,6 +2611,7 @@ module Stable = struct
         open Span.Option
         open Time_ns.Stable.Span.Option.V1
         open Span_option_constants
+        module Diff = Diff
 
         type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
@@ -2614,6 +2637,7 @@ module Stable = struct
         open Span.Option
         open Time_ns.Stable.Span.Option.V2
         open Span_option_constants
+        module Diff = Diff
 
         type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness
@@ -2642,6 +2666,7 @@ module Stable = struct
       open Ofday
       open Time_ns.Stable.Ofday.V1
       open Ofday_constants
+      module Diff = Diff
 
       type nonrec t = t [@@deriving bin_io, sexp_grammar, stable_witness]
       type nonrec comparator_witness = comparator_witness
@@ -2697,6 +2722,7 @@ module Stable = struct
         open Ofday.Option
         open Time_ns.Stable.Ofday.Option.V1
         open Ofday_option_constants
+        module Diff = Diff
 
         type nonrec t = t [@@deriving bin_io, stable_witness]
         type nonrec comparator_witness = comparator_witness

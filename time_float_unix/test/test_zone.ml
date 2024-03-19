@@ -183,7 +183,8 @@ let%expect_test "roundtrip conversion" =
     America/New_York
     Asia/Hong_Kong
     Asia/Tokyo
-    Europe/London |}]
+    Europe/London
+    |}]
 ;;
 
 let%expect_test "random test against Unix.localtime" =

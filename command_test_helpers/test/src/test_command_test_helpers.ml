@@ -47,18 +47,14 @@ let%expect_test "interface" =
       [-help], -?                . print this help text and exit
 
     (command.ml.Exit_called (status 0))
-  |}]
+    |}]
 ;;
 
 let%expect_test "printing parsed inputs" =
   commander [ "-foo"; "ABC" ];
-  [%expect {|
-    ABC
-  |}];
+  [%expect {| ABC |}];
   commander [ "-bar"; "DEF" ];
-  [%expect {|
-    DEF
-  |}];
+  [%expect {| DEF |}];
   ()
 ;;
 
@@ -75,7 +71,7 @@ let%expect_test "bad command lines" =
       COMMANDER -help
 
     (raised (command.ml.Exit_called (status 1)))
-  |}];
+    |}];
   show_raise (fun () -> commander [ "-foo"; "ABC"; "-bar"; "DEF" ]);
   [%expect
     {|
@@ -90,7 +86,7 @@ let%expect_test "bad command lines" =
       COMMANDER -help
 
     (raised (command.ml.Exit_called (status 1)))
-  |}];
+    |}];
   ()
 ;;
 

@@ -72,7 +72,8 @@ let%expect_test "t" =
   print_s [%message (date : Date.t) (ofday : Time.Ofday.t)];
   [%expect {|
     ((date  2005-05-25)
-     (ofday 12:46:15.232000)) |}];
+     (ofday 12:46:15.232000))
+    |}];
   require_equal
     [%here]
     (module Time.Ofday)

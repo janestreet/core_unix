@@ -476,7 +476,8 @@ let%expect_test "[In_channel.fold_lines_raw]" =
   [%expect {|
     ((buf a) (i 0))
     ((buf bc) (i 1))
-    ((buf def) (i 2)) |}]
+    ((buf def) (i 2))
+    |}]
 ;;
 
 let correct_answer_for_benchmark =

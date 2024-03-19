@@ -47,3 +47,27 @@ let%test_unit _ =
           (num_threads, num_iterations, pause_for, exn)
           [%sexp_of: int * int * float * exn])
 ;;
+
+let%test_unit "does not allocate while lock/unlocking while another thread holds the lock"
+  =
+  let t = create () in
+  let thread_started = Thread_safe_ivar.create () in
+  let terminate_thread = Thread_safe_ivar.create () in
+  let thread =
+    Thread.create
+      ~on_uncaught_exn:`Kill_whole_process
+      (fun () ->
+        lock_exn t;
+        Thread_safe_ivar.fill thread_started ();
+        Core_unix.sleep 10;
+        unlock_exn t;
+        Thread_safe_ivar.read terminate_thread)
+      ()
+  in
+  Thread_safe_ivar.read thread_started;
+  Gc.For_testing.assert_no_allocation [%here] (fun () ->
+    lock_exn t;
+    unlock_exn t);
+  Thread_safe_ivar.fill terminate_thread ();
+  Thread.join thread
+;;

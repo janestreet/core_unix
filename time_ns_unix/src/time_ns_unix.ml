@@ -224,7 +224,7 @@ module Ofday = struct
 
   module Option = struct
     type ofday = t [@@deriving sexp, compare]
-    type t = Span.Option.t [@@deriving bin_io, compare, hash, typerep]
+    type t = Span.Option.t [@@deriving bin_io, compare, equal, hash, typerep]
 
     let none = Span.Option.none
     let some t = Span.Option.some (to_span_since_start_of_day t)
@@ -297,7 +297,7 @@ module Ofday = struct
     module Stable = struct
       module V1 = struct
         module T = struct
-          type nonrec t = t [@@deriving compare, bin_io]
+          type nonrec t = t [@@deriving compare, equal, bin_io]
 
           let stable_witness : t Stable_witness.t = Stable_witness.assert_stable
           let sexp_of_t t = [%sexp_of: Time_ns.Stable.Ofday.V1.t option] (to_option t)
@@ -308,6 +308,10 @@ module Ofday = struct
 
         include T
         include Comparator.Stable.V1.Make (T)
+
+        include Diffable.Atomic.Make (struct
+          type nonrec t = t [@@deriving sexp, bin_io, equal]
+        end)
       end
     end
 
@@ -325,6 +329,10 @@ module Ofday = struct
     end)
 
     include (Span.Option : Core.Comparisons.S with type t := t)
+
+    include Diffable.Atomic.Make (struct
+      type nonrec t = t [@@deriving sexp, bin_io, equal]
+    end)
   end
 end
 
@@ -377,6 +385,10 @@ let to_ofday_zoned t ~zone =
   Ofday.Zoned.create ofday zone
 ;;
 
+include Diffable.Atomic.Make (struct
+  type nonrec t = t [@@deriving bin_io, equal, sexp]
+end)
+
 module Stable0 = struct
   module V1 = struct
     module T0 = struct
@@ -397,6 +409,7 @@ module Stable0 = struct
 
     include T
     include Comparable.Stable.V1.With_stable_witness.Make (T)
+    include Diffable.Atomic.Make (T)
   end
 end
 
@@ -416,6 +429,12 @@ module Option = struct
 
       include T
       include Comparator.Stable.V1.Make (T)
+
+      include Diffable.Atomic.Make (struct
+        include T
+
+        let equal = [%compare.equal: t]
+      end)
     end
   end
 
@@ -434,6 +453,10 @@ module Option = struct
 
   (* bring back the efficient implementation of comparison operators *)
   include (Time_ns.Option : Core.Comparisons.S with type t := t)
+
+  include Diffable.Atomic.Make (struct
+    type nonrec t = t [@@deriving bin_io, equal, sexp]
+  end)
 end
 
 (* Note: This is FIX standard millisecond precision. You should use

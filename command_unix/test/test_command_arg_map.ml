@@ -26,7 +26,8 @@ let%expect_test "raising in arg types" =
 
       CMD -help
 
-    (command.ml.Exit_called (status 1)) |}];
+    (command.ml.Exit_called (status 1))
+    |}];
   (* raises in map function *)
   require_does_raise [%here] (fun () -> test [ "false" ]);
   [%expect
@@ -40,5 +41,6 @@ let%expect_test "raising in arg types" =
 
       CMD -help
 
-    (command.ml.Exit_called (status 1)) |}]
+    (command.ml.Exit_called (status 1))
+    |}]
 ;;

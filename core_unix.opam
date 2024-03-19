@@ -20,6 +20,7 @@ depends: [
   "ppx_optcomp"
   "sexplib"
   "timezone"
+  "uopt"
   "base-threads"
   "dune"                     {>= "2.0.0"}
   "spawn"                    {>= "v0.15"}

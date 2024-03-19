@@ -74,7 +74,7 @@ let%test_module "Core.Time_ns.Utc.to_date_and_span_since_start_of_day" =
             (kernel_date, kernel_ofday)
             (core_date, core_ofday)
         | W32 -> ());
-      [%expect {||}]
+      [%expect {| |}]
     ;;
   end)
 ;;
@@ -159,7 +159,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         12345d12h1m30.789012345s
         -1d1m1.001ms
         23h59m59s
-        105ns |}]
+        105ns
+        |}]
     ;;
 
     let%expect_test "of_string" =
@@ -182,7 +183,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         1ns
         1ns
         0s
-        0s |}]
+        0s
+        |}]
     ;;
 
     let%expect_test "round-trip" =
@@ -197,7 +199,7 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         ~sexp_of:Time_ns.Span.sexp_of_t
         ~examples:span_examples
         ~f:test;
-      [%expect {||}]
+      [%expect {| |}]
     ;;
 
     let%expect_test ("of_string: no allocation" [@tags "64-bits-only"]) =
@@ -217,7 +219,7 @@ let%test_module "Time_ns.Span.to_string,of_string" =
           ; "1.234567891234us"
           ; "1.234567891234ns"
           ];
-      [%expect {||}]
+      [%expect {| |}]
     ;;
 
     let%expect_test "of_string: round to nearest ns" =
@@ -237,7 +239,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         123123123ns
         123123123ns
         123123124ns
-        123123124ns |}];
+        123123124ns
+        |}];
       print_nanos "-0.1231231234s";
       print_nanos "-0.123123123499s";
       print_nanos "-0.1231231235s";
@@ -247,7 +250,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         -123123123ns
         -123123123ns
         -123123123ns
-        -123123124ns |}];
+        -123123124ns
+        |}];
       (* 0.3333333333333...m and 0.33333333335m are 1 ns apart.
          The midpoint point between them is 0.333333333341666....
          which is the boundary at which we should start getting 20 billion or
@@ -263,7 +267,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         20000000000ns
         20000000000ns
         20000000001ns
-        20000000001ns |}];
+        20000000001ns
+        |}];
       print_nanos "-0.3333333333333333333333333333333334m";
       print_nanos "-0.3333333333416666666666666666666666m";
       print_nanos "-0.333333333341666666666666666666666659m";
@@ -275,7 +280,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         -20000000000ns
         -20000000000ns
         -20000000001ns
-        -20000000001ns |}];
+        -20000000001ns
+        |}];
       (* 0.6666666666666...m and 0.66666666668333...m are 1 ns apart.
          The midpoint point between them is 0.666666666675m.
          which is the boundary at which we should start getting 40 billion or
@@ -291,7 +297,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         40000000000ns
         40000000001ns
         40000000001ns
-        40000000001ns |}];
+        40000000001ns
+        |}];
       print_nanos "-0.666666666674m";
       print_nanos "-0.6666666666749m";
       print_nanos "-0.666666666675m";
@@ -303,7 +310,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         -40000000000ns
         -40000000000ns
         -40000000000ns
-        -40000000001ns |}]
+        -40000000001ns
+        |}]
     ;;
 
     let%expect_test "of_string: weird cases of underscore" =
@@ -319,7 +327,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         2000000000ns
         2000000000ns
         123246369ns
-        1086400000000000ns |}]
+        1086400000000000ns
+        |}]
     ;;
 
     (* Test a bunch of random floats and make sure span parsing code rounds the same
@@ -526,7 +535,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
           (reason "span would be outside of int63 range"))
         ("Time_ns.Span.of_string: invalid string"
           (string -123456789012345678901234567890.1234567890d)
-          (reason "span would be outside of int63 range")) |}]
+          (reason "span would be outside of int63 range"))
+        |}]
     ;;
 
     let%expect_test "precise overflow boundary testing" =
@@ -585,7 +595,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string 4611686018427387904ns)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       test min "ns";
       test min_wont_round_x100 ~decimals:2 "ns";
       test min_will_round_x100 ~decimals:2 "ns";
@@ -610,7 +621,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string -4611686018427387905ns)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       (* Microsecond overflow boundary ----------------------------------------- *)
       test max_x100 ~decimals:5 "us";
       test max_wont_round_x100 ~decimals:5 "us";
@@ -636,7 +648,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string 4611686018427387.90400us)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       test min_x100 ~decimals:5 "us";
       test min_wont_round_x100 ~decimals:5 "us";
       test min_will_round_x100 ~decimals:5 "us";
@@ -661,7 +674,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string -4611686018427387.90500us)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       (* Millisecond overflow boundary ----------------------------------------- *)
       test max_x100 ~decimals:8 "ms";
       test max_wont_round_x100 ~decimals:8 "ms";
@@ -687,7 +701,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string 4611686018427.38790400ms)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       test min_x100 ~decimals:8 "ms";
       test min_wont_round_x100 ~decimals:8 "ms";
       test min_will_round_x100 ~decimals:8 "ms";
@@ -712,7 +727,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string -4611686018427.38790500ms)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       (* Second overflow boundary ----------------------------------------- *)
       test max_x100 ~decimals:11 "s";
       test max_wont_round_x100 ~decimals:11 "s";
@@ -738,7 +754,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string 4611686018.42738790400s)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       test min_x100 ~decimals:11 "s";
       test min_wont_round_x100 ~decimals:11 "s";
       test min_will_round_x100 ~decimals:11 "s";
@@ -763,7 +780,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string -4611686018.42738790500s)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       (* Minute overflow boundary ----------------------------------------- *)
       (* Round towards zero vs round away from zero *)
       let minuteify_rtz x = x * Bigint.of_int 100 / Bigint.of_int 60 in
@@ -796,7 +814,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string 76861433.6404564650667m)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       test (minuteify_rtz min_x100) ~decimals:13 "m";
       test (minuteify_rtz min_wont_round_x100) ~decimals:13 "m";
       test (minuteify_raz min_will_round_x100) ~decimals:13 "m";
@@ -821,7 +840,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string -76861433.6404564650834m)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       (* Hour overflow boundary ----------------------------------------- *)
       (* Round towards zero vs round away from zero *)
       let hourify_rtz x = x * Bigint.of_int 10000 / Bigint.of_int 3600 in
@@ -854,7 +874,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string 1281023.894007607751112h)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       test (hourify_rtz min_x100) ~decimals:15 "h";
       test (hourify_rtz min_wont_round_x100) ~decimals:15 "h";
       test (hourify_raz min_will_round_x100) ~decimals:15 "h";
@@ -879,7 +900,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string -1281023.894007607751389h)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       (* Day overflow boundary ----------------------------------------- *)
       (* Round towards zero vs round away from zero *)
       let dayify_rtz x = x * Bigint.of_int 1000000 / Bigint.of_int 86400 in
@@ -912,7 +934,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string 53375.99558365032296297d)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       test (dayify_rtz min_x100) ~decimals:17 "d";
       test (dayify_rtz min_wont_round_x100) ~decimals:17 "d";
       test (dayify_raz min_will_round_x100) ~decimals:17 "d";
@@ -937,7 +960,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string -53375.99558365032297454d)
-          (reason "span would be outside of int63 range"))) |}]
+          (reason "span would be outside of int63 range")))
+        |}]
     ;;
 
     let%expect_test "additional-overflow-testing" =
@@ -950,7 +974,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         4611600000000000000ns
         "did not raise"
         -4611600000000000000ns
-        "did not raise" |}];
+        "did not raise"
+        |}];
       (* Should be overflow directly on the integer part *)
       test "53376d";
       test "-53376d";
@@ -963,7 +988,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string -53376d)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       (* Should be overflow directly on the integer part, upon the multiply by ten rather
          than upon adding the digit. *)
       test "53380d";
@@ -977,7 +1003,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string -53380d)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       (* Should be overflow upon adding the fractional part but not the integer part *)
       test "53375.999d";
       test "-53375.999d";
@@ -990,7 +1017,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string -53375.999d)
-          (reason "span would be outside of int63 range"))) |}];
+          (reason "span would be outside of int63 range")))
+        |}];
       (* Should be overflow on combining parts but not on individual parts *)
       test "30000d30000d";
       test "50000000m3000000000000000000ns";
@@ -1003,7 +1031,8 @@ let%test_module "Time_ns.Span.to_string,of_string" =
         (raised (
           "Time_ns.Span.of_string: invalid string"
           (string 50000000m3000000000000000000ns)
-          (reason "span would be outside of int63 range"))) |}]
+          (reason "span would be outside of int63 range")))
+        |}]
     ;;
   end)
 ;;
@@ -1098,7 +1127,8 @@ let%test_module "Time_ns.Span.Option.Stable.V2" =
          (int63  4611686018427387903))
         ((sexp ())
          (bin_io "\252\000\000\000\000\000\000\000\192")
-         (int63  -4611686018427387904)) |}]
+         (int63  -4611686018427387904))
+        |}]
     ;;
   end)
 ;;
@@ -1146,7 +1176,8 @@ let%expect_test "Time_ns.Span.Option.Stable.V1" =
      (int63  -4611686018427387904))
     ((sexp (1e-06ms))
      (bin_io "\001")
-     (int63  1)) |}];
+     (int63  1))
+    |}];
   (* stable checks for values that do not precisely round-trip *)
   print_and_check_stable_int63able_type
     [%here]
@@ -1163,7 +1194,8 @@ let%expect_test "Time_ns.Span.Option.Stable.V1" =
     ("sexp serialization failed to round-trip"
       (original       (11.2754s))
       (sexp           (11.2754s))
-      (sexp_roundtrip (11.2754s))) |}];
+      (sexp_roundtrip (11.2754s)))
+    |}];
   (* make sure [of_int63_exn] allows all values *)
   show_raise ~hide_positions:true (fun () -> V.of_int63_exn (Int63.succ Int63.min_value));
   [%expect {| "did not raise" |}]
@@ -1207,7 +1239,8 @@ let%expect_test "Time_ns.Stable.V1" =
      (int63  4110307199999999000))
     ((sexp (1969-12-31 19:00:00.000000001-05:00))
      (bin_io "\001")
-     (int63  1)) |}];
+     (int63  1))
+    |}];
   (* make sure [of_int63_exn] allows all values *)
   show_raise ~hide_positions:true (fun () -> V.of_int63_exn (Int63.succ Int63.min_value));
   [%expect {| "did not raise" |}]
@@ -1255,7 +1288,8 @@ let%expect_test "Time_ns.Option.Stable.V1" =
      (int63  -4611686018427387904))
     ((sexp ((1969-12-31 19:00:00.000000001-05:00)))
      (bin_io "\001")
-     (int63  1)) |}];
+     (int63  1))
+    |}];
   (* make sure [of_int63_exn] allows all values *)
   show_raise ~hide_positions:true (fun () -> V.of_int63_exn (Int63.succ Int63.min_value));
   [%expect {| "did not raise" |}]
@@ -1322,7 +1356,8 @@ let%test_module "Time_ns.Stable.Ofday.V1" =
          (int63  86399999999999))
         ((sexp   24:00:00.000000000)
          (bin_io "\252\000\000O\145\148N\000\000")
-         (int63  86400000000000)) |}];
+         (int63  86400000000000))
+        |}];
       (* make sure [of_int63_exn] checks range *)
       show_raise ~hide_positions:true (fun () ->
         V.of_int63_exn (Int63.succ Int63.min_value));
@@ -1330,14 +1365,16 @@ let%test_module "Time_ns.Stable.Ofday.V1" =
         {|
         (raised (
           "Time_ns.Ofday.of_span_since_start_of_day_exn: input out of bounds"
-          -53375d23h53m38.427387903s)) |}];
+          -53375d23h53m38.427387903s))
+        |}];
       show_raise ~hide_positions:true (fun () ->
         V.of_int63_exn (Int63.pred Int63.max_value));
       [%expect
         {|
         (raised (
           "Time_ns.Ofday.of_span_since_start_of_day_exn: input out of bounds"
-          53375d23h53m38.427387902s)) |}]
+          53375d23h53m38.427387902s))
+        |}]
     ;;
 
     let%expect_test "roundtrip quickcheck" =
@@ -1420,7 +1457,8 @@ let%test_module "Time_ns.Ofday.Option.Stable.V1" =
          (int63  86400000000000))
         ((sexp ())
          (bin_io "\252\000\000\000\000\000\000\000\192")
-         (int63  -4611686018427387904)) |}];
+         (int63  -4611686018427387904))
+        |}];
       (* make sure [of_int63_exn] allows all values *)
       show_raise ~hide_positions:true (fun () ->
         V.of_int63_exn (Int63.succ Int63.min_value));
@@ -1482,7 +1520,8 @@ let%test_module "Time_ns.Span" =
         ("Span.t exceeds limits"
           (t                          -51240d)
           (min_value_for_1us_rounding -49275d)
-          (max_value_for_1us_rounding 49275d)) |}]
+          (max_value_for_1us_rounding 49275d))
+        |}]
     ;;
 
     let%expect_test "of_span_float_round_nearest_microsecond +/-140y raises" =
@@ -1497,7 +1536,8 @@ let%test_module "Time_ns.Span" =
          lib/core/src/span_ns.ml:LINE:COL)
         ("Time_ns.Span does not support this span"
          -51240d
-         lib/core/src/span_ns.ml:LINE:COL) |}]
+         lib/core/src/span_ns.ml:LINE:COL)
+        |}]
     ;;
 
     let%expect_test "Span.to_string_hum" =
@@ -1652,7 +1692,7 @@ let%test_module "Time_ns.Span" =
                   (span : Time.Span.t)
                   (round_trip : Core.Time_ns.Span.t)
                   (precision : Core.Time_ns.Span.t)]));
-      [%expect {||}]
+      [%expect {| |}]
     ;;
 
     let%expect_test _ =
@@ -1674,9 +1714,10 @@ let%test_module "Time_ns.Span.Option" =
         some (Time_ns.Span.of_int63_ns (Time_ns.Span.Option.Stable.V1.to_int63 none)));
       [%expect
         {|
-          (lib/core/src/span_ns.ml:LINE:COL
-           "Span.Option.some value not representable"
-           (span -53375d23h53m38.427387904s)) |}]
+        (lib/core/src/span_ns.ml:LINE:COL
+         "Span.Option.some value not representable"
+         (span -53375d23h53m38.427387904s))
+        |}]
     ;;
   end)
 ;;
@@ -2028,7 +2069,8 @@ let%test_module "Time_ns" =
         2016-11-06 00:59:59.999999999 1478408399999999999 0
         2016-11-06 01:00:00.000000000 1478408400000000000 3600000000000
         2016-11-06 01:00:00.000000000 1478412000000000000 0
-        2016-11-06 01:00:00.000000001 1478412000000000001 0 |}]
+        2016-11-06 01:00:00.000000001 1478412000000000001 0
+        |}]
     ;;
 
     let%expect_test "in tests, [to_string] uses NYC's time zone" =
@@ -2117,7 +2159,8 @@ module _ = struct
       ((sexp (23:59:59.999999999 America/New_York))
        (bin_io "\252\255\255N\145\148N\000\000\016America/New_York"))
       ((sexp (24:00:00.000000000 America/New_York))
-       (bin_io "\252\000\000O\145\148N\000\000\016America/New_York")) |}]
+       (bin_io "\252\000\000O\145\148N\000\000\016America/New_York"))
+      |}]
   ;;
 end
 
@@ -2145,7 +2188,7 @@ let%expect_test "end-of-day constants" =
   test "2013-10-07";
   test "2099-12-31";
   test "2101-04-01";
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%test_module "Time_ns.Option" =
@@ -2171,9 +2214,7 @@ let%test_module "Time_ns.Option" =
 
     let%expect_test "value_exn none" =
       require_does_raise [%here] ~hide_positions:true (fun () -> value_exn none);
-      [%expect
-        {|
-        (lib/core/src/time_ns.ml:LINE:COL "Time_ns.Option.value_exn none") |}]
+      [%expect {| (lib/core/src/time_ns.ml:LINE:COL "Time_ns.Option.value_exn none") |}]
     ;;
   end)
 ;;
@@ -2209,7 +2250,8 @@ let%test_module "Time_ns.Ofday.Option" =
       [%expect
         {|
         (lib/time_ns_unix/src/time_ns_unix.ml:LINE:COL
-         "Time_ns_unix.Ofday.Option.value_exn none") |}]
+         "Time_ns_unix.Ofday.Option.value_exn none")
+        |}]
     ;;
 
     let%expect_test "of_span_since_start_of_day" =
@@ -2220,12 +2262,14 @@ let%test_module "Time_ns.Ofday.Option" =
       convert_and_print Time_ns.Span.min_value_for_1us_rounding;
       [%expect {|
         ()
-        () |}];
+        ()
+        |}];
       convert_and_print Time_ns.Span.max_value_representable;
       convert_and_print Time_ns.Span.max_value_for_1us_rounding;
       [%expect {|
         ()
-        () |}];
+        ()
+        |}];
       convert_and_print Time_ns.Span.zero;
       convert_and_print Time_ns.Span.(day / 2.0);
       convert_and_print Time_ns.Span.day;
@@ -2233,7 +2277,8 @@ let%test_module "Time_ns.Ofday.Option" =
         {|
         (00:00:00.000000000)
         (12:00:00.000000000)
-        (24:00:00.000000000) |}]
+        (24:00:00.000000000)
+        |}]
     ;;
   end)
 ;;
@@ -2268,7 +2313,8 @@ let%expect_test _ =
       ((1955-11-12 21:38:00.000000000-05:00) 1)
       ((1969-12-31 19:00:00.000000000-05:00) 0)
       ((1985-10-27 01:00:00.000000000-04:00) 2)
-      ((2015-10-21 23:28:00.000000000-04:00) 3))) |}]
+      ((2015-10-21 23:28:00.000000000-04:00) 3)))
+    |}]
 ;;
 
 let%expect_test _ =
@@ -2306,7 +2352,8 @@ let%expect_test _ =
       (((1955-11-12 21:38:00.000000000-05:00)) 2)
       (((1969-12-31 19:00:00.000000000-05:00)) 1)
       (((1985-10-27 01:00:00.000000000-04:00)) 3)
-      (((2015-10-21 23:28:00.000000000-04:00)) 4))) |}]
+      (((2015-10-21 23:28:00.000000000-04:00)) 4)))
+    |}]
 ;;
 
 let%expect_test _ =
@@ -2331,7 +2378,8 @@ let%expect_test _ =
       (0s      0)
       (101.5ms 1)
       (3.125s  2)
-      (252d    3))) |}]
+      (252d    3)))
+    |}]
 ;;
 
 let%expect_test _ =
@@ -2369,7 +2417,8 @@ let%expect_test _ =
       ((0s)      1)
       ((101.5ms) 2)
       ((3.125s)  3)
-      ((252d)    4))) |}]
+      ((252d)    4)))
+    |}]
 ;;
 
 let%expect_test _ =
@@ -2396,7 +2445,8 @@ let%expect_test _ =
       (00:00:00.000000000 0)
       (18:38:00.000000000 1)
       (19:28:00.000000000 3)
-      (21:00:00.000000000 2))) |}]
+      (21:00:00.000000000 2)))
+    |}]
 ;;
 
 let%expect_test _ =
@@ -2434,7 +2484,8 @@ let%expect_test _ =
       ((00:00:00.000000000) 1)
       ((18:38:00.000000000) 2)
       ((19:28:00.000000000) 4)
-      ((21:00:00.000000000) 3))) |}]
+      ((21:00:00.000000000) 3)))
+    |}]
 ;;
 
 let%expect_test "Span.randomize" =
@@ -2525,7 +2576,8 @@ let%expect_test "Span.to_short_string" =
      (10h36m                10h)
      (-10h36m               -10h)
      (10d14h24m             10d)
-     (-10d14h24m            -10d)) |}]
+     (-10d14h24m            -10d))
+    |}]
 ;;
 
 let%expect_test "times with implicit zones" =
@@ -2533,15 +2585,18 @@ let%expect_test "times with implicit zones" =
   test (fun () -> Time_ns.Stable.V1.t_of_sexp (Sexp.Atom "2013-10-07 09:30:00"));
   [%expect {|
     2013-10-07 09:30:00.000000000-04:00
-    "did not raise" |}];
+    "did not raise"
+    |}];
   test (fun () -> Time_ns.t_of_sexp (Sexp.Atom "2013-10-07 09:30:00"));
   [%expect {|
     2013-10-07 09:30:00.000000000-04:00
-    "did not raise" |}];
+    "did not raise"
+    |}];
   test (fun () -> Time_ns.of_string "2013-10-07 09:30:00");
   [%expect {|
     2013-10-07 09:30:00.000000000-04:00
-    "did not raise" |}]
+    "did not raise"
+    |}]
 ;;
 
 let%test_unit "ofday_zoned conversion consistency" =
@@ -2594,7 +2649,8 @@ let%expect_test "[Time_ns_unix.t_sexp_grammar]" =
     (Union
      (String
       (List (Cons String (Cons String Empty)))
-      (List (Cons String (Cons String (Cons String Empty)))))) |}]
+      (List (Cons String (Cons String (Cons String Empty))))))
+    |}]
 ;;
 
 let%test_module "format" =
@@ -2620,7 +2676,8 @@ let%test_module "format" =
         2015-01-01 10:00:00.000000000Z
         2015-01-01 18:00:00 -- Asia/Hong_Kong
         2015-01-01 10:00:00 -- Europe/London
-        2015-01-01 05:00:00 -- America/New_York |}]
+        2015-01-01 05:00:00 -- America/New_York
+        |}]
     ;;
 
     let%expect_test _ =
@@ -2630,7 +2687,8 @@ let%test_module "format" =
         2015-06-06 09:00:00.000000000Z
         2015-06-06 17:00:00 -- Asia/Hong_Kong
         2015-06-06 10:00:00 -- Europe/London
-        2015-06-06 05:00:00 -- America/New_York |}]
+        2015-06-06 05:00:00 -- America/New_York
+        |}]
     ;;
 
     let list_of_transition = function
@@ -2708,7 +2766,8 @@ let%test_module "format" =
         2015-03-29 01:02:00.000000000Z
         2015-03-29 09:02:00 -- Asia/Hong_Kong
         2015-03-29 02:02:00 -- Europe/London
-        2015-03-28 21:02:00 -- America/New_York |}]
+        2015-03-28 21:02:00 -- America/New_York
+        |}]
     ;;
 
     let%expect_test _ =
@@ -2755,7 +2814,8 @@ let%test_module "format" =
         2015-03-08 07:02:00.000000000Z
         2015-03-08 15:02:00 -- Asia/Hong_Kong
         2015-03-08 07:02:00 -- Europe/London
-        2015-03-08 03:02:00 -- America/New_York |}]
+        2015-03-08 03:02:00 -- America/New_York
+        |}]
     ;;
   end)
 ;;

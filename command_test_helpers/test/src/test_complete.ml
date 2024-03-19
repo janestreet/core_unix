@@ -14,11 +14,13 @@ let%expect_test "simple" =
   [%expect {|
     false
     true
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   Command_test_helpers.complete param ~args:[ "t" ];
   [%expect {|
     true
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   Command_test_helpers.complete param ~args:[ "t"; "-" ];
   [%expect
     {|
@@ -28,32 +30,37 @@ let%expect_test "simple" =
     -foo
     -help
     -version
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   Command_test_helpers.complete param ~args:[ "t"; "-f" ];
   [%expect {|
     -foo
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   Command_test_helpers.complete param ~args:[ "t"; "-f" ] ~which_arg:0;
   [%expect {|
     true
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   Command_test_helpers.complete param ~args:[ "t"; "-b" ];
   [%expect {|
     -bar
     -build-info
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   Command_test_helpers.complete param ~args:[ "t"; "-bar" ];
   [%expect {|
     -bar
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   Command_test_helpers.complete param ~args:[ "t"; "-bar"; "" ];
   [%expect {|
     false
     true
-    (command.ml.Exit_called (status 0)) |}];
+    (command.ml.Exit_called (status 0))
+    |}];
   Command_test_helpers.complete param ~args:[ "t"; "--"; "" ];
-  [%expect {|
-    (command.ml.Exit_called (status 0)) |}];
+  [%expect {| (command.ml.Exit_called (status 0)) |}];
   Command_test_helpers.complete param ~args:[ "-" ];
   [%expect
     {|
@@ -63,7 +70,8 @@ let%expect_test "simple" =
     -foo
     -help
     -version
-    (command.ml.Exit_called (status 0)) |}]
+    (command.ml.Exit_called (status 0))
+    |}]
 ;;
 
 (* A previous implementation of [test_complete] undid changes to environment variables.

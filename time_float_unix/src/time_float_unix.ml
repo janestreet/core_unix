@@ -14,6 +14,7 @@ include (
    [@ocaml.warning "-3"]))
 
 module T = Time_functor.Make (Time) (Time)
+include Diffable.Atomic.Make (T)
 
 (* Previous versions rendered hash-based containers using float serialization rather than
    time serialization, so when reading hash-based containers in we accept either
@@ -63,6 +64,7 @@ module Stable = struct
        For a complicated "stable" story like this, we rely on comprehensive tests
        of stability; see [lib/core/test/src/test_time.ml]. *)
     include T
+    include Diffable.Atomic.Make (T)
 
     let stable_witness : t Stable_witness.t = Stable_witness.assert_stable
 

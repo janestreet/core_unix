@@ -17,7 +17,7 @@ let equal (t : t) t' = phys_equal t t'
 
 let critical_section l ~f =
   lock l;
-  Exn.protect ~f ~finally:(fun () -> unlock l)
+  Exn.protect ~f ~finally:(fun () -> unlock l) [@nontail]
 ;;
 
 let synchronize f =

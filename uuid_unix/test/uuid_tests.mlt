@@ -12,6 +12,4 @@ Error (alert deprecated): Uuid.t_of_sexp
 
 type v = { uuid : Unstable.t } [@@deriving sexp]
 
-[%%expect
-  {|
-|}]
+[%%expect {| |}]

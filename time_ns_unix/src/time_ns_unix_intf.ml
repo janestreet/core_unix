@@ -75,9 +75,13 @@ module type Ofday = sig
   module Option : sig
     include Option with type value := t
     include Quickcheck.S with type t := t
+    include Diffable.S_atomic with type t := t
 
     module Stable : sig
-      module V1 : Stable_int63able_with_witness with type t = t
+      module V1 : sig
+        include Stable_int63able_with_witness with type t = t
+        include Diffable.S_atomic with type t := t
+      end
     end
 
     (** Returns [some] if the given span is a valid time since start of day, and [none]
@@ -129,9 +133,13 @@ module type Time_ns_unix = sig
   module Option : sig
     include Option with type t = Time_ns.Option.t with type value := t
     include Quickcheck.S with type t := t
+    include Diffable.S_atomic with type t := t
 
     module Stable : sig
-      module V1 : Stable_int63able_with_witness with type t = t
+      module V1 : sig
+        include Stable_int63able_with_witness with type t = t
+        include Diffable.S_atomic with type t := t
+      end
     end
   end
 
@@ -146,6 +154,8 @@ module type Time_ns_unix = sig
       Sexps and strings display the date, ofday, and UTC offset of [t] relative to the
       appropriate time zone. *)
   include Identifiable with type t := t
+
+  include Diffable.S_atomic with type t := t
 
   include sig
       type t [@@deriving sexp_grammar]
@@ -259,23 +269,32 @@ module type Time_ns_unix = sig
         Comparable.Stable.V1.With_stable_witness.S
           with type comparable := t
           with type comparator_witness := comparator_witness
+
+      include Diffable.S_atomic with type t := t
     end
 
     (** Provides a sexp representation that is independent of the time zone of the machine
         writing it. *)
     module Alternate_sexp : sig
-      module V1 : Stable_without_comparator with type t = t
+      module V1 : sig
+        include Stable_without_comparator with type t = t
+        include Diffable.S_atomic with type t := t
+      end
     end
 
     module Option : sig
-      module V1 : Stable_int63able_with_witness with type t = Option.t
+      module V1 : sig
+        include Stable_int63able_with_witness with type t = Option.t
+        include Diffable.S_atomic with type t := t
+      end
     end
 
     module Span : sig
       module V1 : sig
-        type t = Span.t [@@deriving hash, equal]
+        type t = Span.t [@@deriving hash, equal, sexp_grammar]
 
         include Stable_int63able_with_witness with type t := t
+        include Diffable.S_atomic with type t := t
       end
 
       module V2 : sig
@@ -293,11 +312,19 @@ module type Time_ns_unix = sig
             with type comparator_witness := comparator_witness
 
         include Stringable.S with type t := t
+        include Diffable.S_atomic with type t := t
       end
 
       module Option : sig
-        module V1 : Stable_int63able_with_witness with type t = Span.Option.t
-        module V2 : Stable_int63able_with_witness with type t = Span.Option.t
+        module V1 : sig
+          include Stable_int63able_with_witness with type t = Span.Option.t
+          include Diffable.S_atomic with type t := t
+        end
+
+        module V2 : sig
+          include Stable_int63able_with_witness with type t = Span.Option.t
+          include Diffable.S_atomic with type t := t
+        end
       end
     end
 
@@ -309,6 +336,8 @@ module type Time_ns_unix = sig
           Stable_int63able_with_witness
             with type t := Ofday.t
              and type comparator_witness = Time_ns.Stable.Ofday.V1.comparator_witness
+
+        include Diffable.S_atomic with type t := t
       end
 
       module Zoned : sig
@@ -320,7 +349,10 @@ module type Time_ns_unix = sig
       end
 
       module Option : sig
-        module V1 : Stable_int63able_with_witness with type t = Ofday.Option.t
+        module V1 : sig
+          include Stable_int63able_with_witness with type t = Ofday.Option.t
+          include Diffable.S_atomic with type t := t
+        end
       end
     end
 

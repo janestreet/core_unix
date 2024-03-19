@@ -89,7 +89,7 @@ end
 type t =
   { mutable id_of_thread_holding_lock : Thread_id_option.t
   ; mutable num_using_blocker : int
-  ; mutable blocker : Blocker.t option
+  ; mutable blocker : Blocker.t Uopt.t
   }
 [@@deriving sexp_of]
 
@@ -102,7 +102,7 @@ let invariant t =
        [Some].  It could, but doing so is not necessary for the correctness of of
        [with_blocker], which only relies on test-and-set of [t.blocker] to make sure
        there is an agreed-upon winner in the race to create a blocker. *)
-    if t.num_using_blocker = 0 then assert (Option.is_none t.blocker)
+    if t.num_using_blocker = 0 then assert (Uopt.is_none t.blocker)
   with
   | exn -> failwiths ~here:[%here] "invariant failed" (exn, t) [%sexp_of: exn * t]
 ;;
@@ -112,7 +112,7 @@ let equal (t : t) t' = phys_equal t t'
 let create () =
   { id_of_thread_holding_lock = Thread_id_option.none
   ; num_using_blocker = 0
-  ; blocker = None
+  ; blocker = Uopt.none
   }
 ;;
 
@@ -151,21 +151,17 @@ let try_lock t =
 
 let try_lock_exn t = ok_exn (try_lock t)
 
-(* Marked with attributes so the allocation of [new_blocker_opt] at the call site cannot
-   be sunk down into the atomic section (there exists no barrier in OCaml right now to
+(* Marked with attributes so the allocation of [new_blocker] at the call site cannot be
+   sunk down into the atomic section (there exists no barrier in OCaml right now to
    prevent this) *)
 
-let[@inline never] [@specialise never] [@local never] with_blocker0
-  t
-  ~new_blocker_opt
-  ~new_blocker
-  =
+let[@inline never] [@specialise never] [@local never] with_blocker0 t ~new_blocker =
   (* BEGIN ATOMIC *)
-  match t.blocker with
-  | Some blocker -> blocker
-  | None ->
-    t.blocker <- new_blocker_opt;
-    new_blocker
+  if Uopt.is_some t.blocker
+  then Uopt.unsafe_value t.blocker
+  else (
+    t.blocker <- Uopt.some new_blocker;
+    new_blocker)
 ;;
 
 (* END ATOMIC *)
@@ -175,24 +171,23 @@ let[@inline never] [@specialise never] [@local never] with_blocker0
 let with_blocker t f =
   t.num_using_blocker <- t.num_using_blocker + 1;
   let blocker =
-    match t.blocker with
+    match%optional.Uopt t.blocker with
     | Some blocker -> blocker
     | None ->
-      let new_blocker = Blocker.create () in
-      (* We allocate [new_blocker_opt] here because one cannot allocate inside an atomic
+      (* We allocate [new_blocker] here because one cannot allocate inside an atomic
          region. *)
-      let new_blocker_opt = Some new_blocker in
+      let new_blocker = Blocker.create () in
       let blocker =
         (* We need the following test-and-set to be atomic so that there is a definitive
            winner in a race between multiple calls to [with_blocker], so that everybody
            agrees what the underlying [blocker] is. *)
-        with_blocker0 t ~new_blocker_opt ~new_blocker
+        with_blocker0 t ~new_blocker
       in
       if not (phys_equal blocker new_blocker) then Blocker.save_unused new_blocker;
       blocker
   in
   protect
-    ~f:(fun () -> Blocker.critical_section blocker ~f:(fun () -> f blocker))
+    ~f:(fun () -> Blocker.critical_section blocker ~f:(fun () -> f blocker) [@nontail])
     ~finally:(fun () ->
       (* We need the following decrement-test-and-set to be atomic so that we're sure that
          the last user of blocker clears it. *)
@@ -200,9 +195,9 @@ let with_blocker t f =
       t.num_using_blocker <- t.num_using_blocker - 1;
       if t.num_using_blocker = 0
       then (
-        t.blocker <- None;
+        t.blocker <- Uopt.none;
         (* END ATOMIC *)
-        Blocker.save_unused blocker))
+        Blocker.save_unused blocker)) [@nontail]
 ;;
 
 let rec lock t =
@@ -283,7 +278,7 @@ let unlock t =
     then (
       t.id_of_thread_holding_lock <- Thread_id_option.none;
       (* END ATOMIC *)
-      if Option.is_some t.blocker then with_blocker t Blocker.signal;
+      if Uopt.is_some t.blocker then with_blocker t Blocker.signal;
       Ok ())
     else error_attempt_to_unlock_mutex_held_by_another_thread t
   else error_attempt_to_unlock_an_unlocked_mutex t

@@ -12,7 +12,8 @@ let%expect_test "[File_descr.sexp_of_t]" =
      (0  0)
      (1  1)
      (2  2)
-     (3  _)) |}]
+     (3  _))
+    |}]
 ;;
 
 let%test_unit "[Error]" =
@@ -150,7 +151,7 @@ let%expect_test "close-on-exec" =
   let r, w = pipe ~close_on_exec:true () in
   clear_close_on_exec r;
   require_equal [%here] (module Bool) false (get_close_on_exec r);
-  [%expect {||}];
+  [%expect {| |}];
   require_equal [%here] (module Bool) true (get_close_on_exec w);
   [%expect {| |}];
   close r;
@@ -265,7 +266,8 @@ let%expect_test "strptime trailing input" =
      (tm_year  112)
      (tm_wday  3)
      (tm_yday  143)
-     (tm_isdst false)) |}];
+     (tm_isdst false))
+    |}];
   require_does_raise [%here] (fun () -> strptime ~fmt:"%Y-%m-%d" "2012-05-23 10:14:23");
   [%expect {| (Failure "unix_strptime: did not consume entire input") |}]
 ;;
@@ -410,7 +412,8 @@ let%expect_test "[symlink] arguments are correct" =
     {|
     (readlink (target_of_link_name target))
     (raised (
-      Unix.Unix_error "No such file or directory" readlink "((filename target))")) |}]
+      Unix.Unix_error "No such file or directory" readlink "((filename target))"))
+    |}]
 ;;
 
 let%test_module "the search path passed to [create_process_env] has an effect" =
@@ -490,8 +493,7 @@ let%expect_test ("Clock.get_cpuclock_for" [@tags "64-bits-only"]) =
   (* This pid is too large to be real  *)
   let bad_pid = Pid.of_int 100_000_000 in
   require_does_raise [%here] (fun () -> get_cpuclock_for bad_pid);
-  [%expect {|
-    (Unix.Unix_error "No such process" clock_getcpuclockid "") |}];
+  [%expect {| (Unix.Unix_error "No such process" clock_getcpuclockid "") |}];
   let clock = get_cpuclock_for (Unix.getpid ()) in
   let cputime = gettime (Custom clock) in
   (* Testing cpu clocks are hard, but this doesn't crash, and we've definitely accrued cpu

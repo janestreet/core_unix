@@ -93,11 +93,12 @@ let%expect_test "[of_alist_exn] duplicate keys" =
   test [ "a"; "b"; "B"; "c"; "c" ] ~case_sensitive:false;
   [%expect
     {|
-      (raised (
-        Command.Spec.Arg_type.of_alist_exn (
-          duplicate_keys (
-            (b B)
-            (c c))))) |}]
+    (raised (
+      Command.Spec.Arg_type.of_alist_exn (
+        duplicate_keys (
+          (b B)
+          (c c)))))
+    |}]
 ;;
 
 module _ = struct
@@ -153,7 +154,8 @@ module _ = struct
         [-version]                 . print the version of this build and exit
         [-help], -?                . print this help text and exit
 
-      (command.ml.Exit_called (status 0)) |}]
+      (command.ml.Exit_called (status 0))
+      |}]
   ;;
 end
 
@@ -176,7 +178,8 @@ module _ = struct
     [%expect
       {|
       (Error (
-        Failure "valid arguments: {(A Bar),(A Baz),(A Foo),(B false),(B true),C}")) |}];
+        Failure "valid arguments: {(A Bar),(A Baz),(A Foo),(B false),(B true),C}"))
+      |}];
     parse "C";
     [%expect {| (Ok C) |}]
   ;;
@@ -204,7 +207,8 @@ module _ = struct
         [-version]                 . print the version of this build and exit
         [-help], -?                . print this help text and exit
 
-      (command.ml.Exit_called (status 0)) |}]
+      (command.ml.Exit_called (status 0))
+      |}]
   ;;
 end
 
@@ -244,17 +248,20 @@ module _ = struct
        (no_partials_allowed (
          Error (
            Failure
-           "valid arguments: {Non_unique_alpha,Non_unique_beta,Unique_prefix}")))) |}];
+           "valid arguments: {Non_unique_alpha,Non_unique_beta,Unique_prefix}"))))
+      |}];
     test "this isn't any kind of prefix";
     [%expect
       {|
       (Error (
-        Failure "valid arguments: {Non_unique_alpha,Non_unique_beta,Unique_prefix}")) |}];
+        Failure "valid arguments: {Non_unique_alpha,Non_unique_beta,Unique_prefix}"))
+      |}];
     test "Non_unique_";
     [%expect
       {|
       (Error (
-        Failure "valid arguments: {Non_unique_alpha,Non_unique_beta,Unique_prefix}")) |}];
+        Failure "valid arguments: {Non_unique_alpha,Non_unique_beta,Unique_prefix}"))
+      |}];
     test "Non_unique_a";
     [%expect
       {|
@@ -262,7 +269,8 @@ module _ = struct
        (no_partials_allowed (
          Error (
            Failure
-           "valid arguments: {Non_unique_alpha,Non_unique_beta,Unique_prefix}")))) |}];
+           "valid arguments: {Non_unique_alpha,Non_unique_beta,Unique_prefix}"))))
+      |}];
     test "Non_unique_beta";
     [%expect {| (Ok Non_unique_beta) |}]
   ;;

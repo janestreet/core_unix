@@ -25,5 +25,6 @@ let%expect_test _ =
   print_s [%sexp ([%equal: string array] (Sys.get_argv ()) old_sys_argv : bool)];
   [%expect {|
     (THIS IS A TEST)
-    true |}]
+    true
+    |}]
 ;;

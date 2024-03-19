@@ -1386,7 +1386,7 @@ module Group : sig
     ; gid : int
     ; mem : string array
     }
-  [@@deriving sexp_of]
+  [@@deriving fields ~getters, sexp_of]
 
   val getbyname : string -> t option
   val getbyname_exn : string -> t
