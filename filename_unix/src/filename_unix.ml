@@ -32,19 +32,22 @@ let arg_type = create_arg_type Fn.id
 
 external realpath : string -> string = "core_unix_realpath"
 
-let prng = Random.State.make_self_init ~allow_in_tests:true ()
+(* We want [random_letter ()] to be thread-safe.
 
-(* We want [random_bits ()] to be thread-safe.
-
-   We think it's currently safe because [Random.State.bits] does no allocation.
-   (note even [Random.State.t] is implemented as a [lazy], this lazy will always be
-   forced because [make_self_init] constructs it with [Lazy.from_val])
+   This is thread safe because [Stdlib.Random.State.int] is (the only updates to
+   the state are effected via [caml_lxm_next_unboxed] in the OCaml runtime, which
+   cannot be interrupted by an OCaml thread context switch).
 *)
-let random_bits () = Random.State.bits prng
+let random_letter =
+  let prng_key = Domain.DLS.new_key Stdlib.Random.State.make_self_init in
+  let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" in
+  fun () ->
+    let prng = Domain.DLS.get prng_key in
+    letters.[Stdlib.Random.State.int prng (String.length letters)]
+;;
 
-(* try up to 1000 times to not get a Sys_error when opening a temp
-   file / name: *)
-let retry ?(in_dir = temp_dir_name) ~f prefix suffix =
+let retry ~in_dir ~prefix ~suffix f =
+  let in_dir = Option.value in_dir ~default:temp_dir_name in
   let escape s =
     String.map s ~f:(function
       | '/' | '\'' | '\000' | '\n' | '-' -> '_'
@@ -52,51 +55,46 @@ let retry ?(in_dir = temp_dir_name) ~f prefix suffix =
   in
   let prefix = escape prefix in
   let suffix = escape suffix in
-  let rec try_name counter =
+  let rec try_name ~attempts =
     let name =
-      let rnd = random_bits () land 0xFF_FFFF in
-      Printf.sprintf "%s.tmp.%06x%s" prefix rnd suffix
+      let rnd = String.init 6 ~f:(fun _ -> random_letter ()) in
+      sprintf "%s.tmp.%s%s" prefix rnd suffix
     in
     let name = concat in_dir name in
     try f name with
-    | (Sys_error _ | Unix.Unix_error _) as e ->
-      if Int.(counter >= 1000) then raise e else try_name (counter + 1)
+    | Unix.Unix_error (EINTR, _, _) -> try_name ~attempts
+    | Unix.Unix_error (EEXIST, _, _) when Int.O.(attempts > 0) ->
+      try_name ~attempts:(attempts - 1)
   in
-  try_name 0
+  (* number of attempts taken from glibc:
+     https://elixir.bootlin.com/glibc/glibc-2.38/source/sysdeps/posix/tempname.c#L34
+  *)
+  try_name ~attempts:238328
 ;;
 
-(* these functions are the same as the ones in the std lib but you
-   can override the temporary directory you are working in.  They also try the
-   exact filename specified by the user before reverting to the "try with"
-   machinery.
-   Another difference is that we allocate the [prng] eagerly at program startup
-   instead of using [lazy].
-*)
-
 let temp_dir ?(perm = 0o700) ?in_dir prefix suffix =
-  retry ?in_dir prefix suffix ~f:(fun name ->
-    Unix.mkdir name perm;
+  retry ~in_dir ~prefix ~suffix (fun name ->
+    UnixLabels.mkdir name ~perm;
     name)
 ;;
 
-let open_temp_file ?(perm = 0o600) ?in_dir prefix suffix =
-  retry ?in_dir prefix suffix ~f:(fun name ->
-    name, Out_channel.create ~perm ~fail_if_exists:true name)
-;;
-
 let open_temp_file_fd ?(close_on_exec = false) ?(perm = 0o600) ?in_dir prefix suffix =
-  retry ?in_dir prefix suffix ~f:(fun name ->
-    ( name
-    , UnixLabels.openfile
-        ~perm
-        ~mode:
-          ((if close_on_exec then [ Unix.O_CLOEXEC ] else [])
-           @ [ O_EXCL; O_CREAT; O_RDWR ])
-        name ))
+  let mode : Unix.open_flag list = [ O_EXCL; O_CREAT; O_RDWR ] in
+  let mode : Unix.open_flag list = if close_on_exec then O_CLOEXEC :: mode else mode in
+  retry ~in_dir ~prefix ~suffix (fun name -> name, UnixLabels.openfile ~perm ~mode name)
 ;;
 
-let temp_file ?perm ?in_dir prefix suffix =
-  let name, oc = open_temp_file ?perm ?in_dir prefix suffix in
-  Out_channel.close oc;
-  name
+let temp_file ?(perm = 0o600) ?in_dir prefix suffix =
+  retry ~in_dir ~prefix ~suffix (fun name ->
+    let fd = UnixLabels.openfile ~perm ~mode:[ O_CLOEXEC; O_EXCL; O_CREAT ] name in
+    (* On Linux and many other Unix implementations, the file descriptor is guaranteed to be
+       closed after calling [close]. *)
+    match Unix.close fd with
+    | () | (exception (_ : exn)) -> name)
+;;
+
+let open_temp_file ?(close_on_exec = true) ?perm ?in_dir prefix suffix =
+  let name, fd = open_temp_file_fd ~close_on_exec ?perm ?in_dir prefix suffix in
+  let out = Unix.out_channel_of_descr fd in
+  name, out
 ;;
