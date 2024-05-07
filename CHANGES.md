@@ -1,3 +1,21 @@
+## Release v0.17.0
+
+* Add `add_validate_parsing_flag` parameter to `Command.run`, enabling a `-validate-parsing` flag in all subcommands. The command immediately exits with a return code of 0 if argument parsing is successful.
+
+* Add `Sexp_grammar` support to `Interval`.
+
+* In `Linux_ext`:
+  - Reorganize and improve `Epoll` implementation.
+  - Support `memfd_create` syscall.
+  - Add `?follow_symlinks:bool` parameter to `Extended_file_attributes.getxattr` and `Extended_file_attributes.setxattr` functions.
+
+* Add `Diffable` support to `Time_float_unix` and `Time_ns_unix`.
+
+* Enrich stable modules in `Time_float_unix` and `Time_ns_unix`.
+
+* Documentation and automated formatting.
+
+
 ## Release v0.16.0
 
 Changes to `Bigstring_unix`:
