@@ -8,7 +8,7 @@
 
 #include "ocaml_utils.h"
 
-static int log_open_options[] = {
+static const int log_open_options[] = {
   /* THESE MUST STAY IN THE SAME ORDER AS IN syslog.ml!!! */
   LOG_PID, LOG_CONS, LOG_ODELAY, LOG_NDELAY, LOG_NOWAIT, LOG_PERROR
 };
@@ -17,7 +17,7 @@ CAMLprim value core_syslog_open_option_to_int(value v_open_option) {
   return Val_int(log_open_options[Int_val(v_open_option)]);
 }
 
-static int log_facilities[] = {
+static const int log_facilities[] = {
   /* THESE MUST STAY IN THE SAME ORDER AS IN syslog.ml!!! */
   LOG_KERN, LOG_USER, LOG_MAIL, LOG_DAEMON, LOG_AUTH, LOG_SYSLOG, LOG_LPR, LOG_NEWS,
   LOG_UUCP, LOG_CRON, LOG_AUTHPRIV, LOG_FTP,
@@ -35,7 +35,7 @@ CAMLprim value core_syslog_facility_to_int(value v_facility) {
   return Val_int(log_facilities[Int_val(v_facility)]);
 }
 
-static int log_levels[] = {
+static const int log_levels[] = {
   /* THESE MUST STAY IN THE SAME ORDER AS IN syslog.ml!!! */
   LOG_EMERG, LOG_ALERT, LOG_CRIT, LOG_ERR, LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG
 };
