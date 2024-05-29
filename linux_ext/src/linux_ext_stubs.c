@@ -236,7 +236,8 @@ CAMLprim value core_linux_sendmsg_nonblocking_no_sigpipe_stub(value v_fd,
   int count = Int_val(v_count);
   ssize_t ret;
   struct iovec *iovecs = caml_stat_alloc(sizeof(struct iovec) * count);
-  struct msghdr msghdr = {NULL, 0, NULL, 0, NULL, 0, 0};
+  struct msghdr msghdr;
+  memset(&msghdr, 0, sizeof(msghdr));
   msghdr.msg_iov = iovecs;
   msghdr.msg_iovlen = count;
   for (--count; count >= 0; --count) {
