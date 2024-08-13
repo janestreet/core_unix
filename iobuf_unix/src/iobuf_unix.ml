@@ -109,7 +109,7 @@ external unsafe_recvmmsg_assume_fd_is_nonblocking
   -> Recvmmsg_context.ctx
   -> Unix.Syscall_result.Int.t
   = "iobuf_recvmmsg_assume_fd_is_nonblocking_stub"
-  [@@noalloc]
+[@@noalloc]
 
 let recvmmsg_assume_fd_is_nonblocking fd { Recvmmsg_context.iobufs; ctx; _ } =
   unsafe_recvmmsg_assume_fd_is_nonblocking fd iobufs ctx
@@ -229,7 +229,7 @@ module Expert = struct
     -> (float[@unboxed])
     -> int
     = "iobuf_unsafe_pokef_double_bytecode" "iobuf_unsafe_pokef_double"
-    [@@noalloc]
+  [@@noalloc]
 
   let fillf_float t ~c_format value =
     let limit = length t in

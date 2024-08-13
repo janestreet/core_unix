@@ -95,6 +95,6 @@ let%expect_test "parsing values" =
   print_s [%sexp (a : string)];
   [%expect {| XYZ |}];
   let b = commander_arg [ "-bar"; "XYZ" ] in
-  require_equal [%here] (module String) a b;
+  require_equal (module String) a b;
   ()
 ;;

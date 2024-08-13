@@ -156,7 +156,7 @@ module type Gen_set = sig
 end
 
 module type S = sig
-  type t [@@deriving bin_io, sexp, compare, hash]
+  type t [@@deriving bin_io, sexp, compare, equal, hash]
   type bound
 
   include Gen with type 'a t := t with type 'a bound := bound (** @inline *)
@@ -172,37 +172,37 @@ module type S = sig
   type 'a poly_set
 
   module Set : sig
-    type t [@@deriving bin_io, sexp]
+      type t [@@deriving bin_io, sexp]
 
-    include Gen_set with type 'a t := t with type 'a bound := bound (** @inline *)
+      include Gen_set with type 'a t := t with type 'a bound := bound (** @inline *)
 
-    val to_poly : t -> bound poly_set
+      val to_poly : t -> bound poly_set
 
-    (** [to_list] will return a list of non-overlapping intervals defining the set, in
+      (** [to_list] will return a list of non-overlapping intervals defining the set, in
         ascending order.  *)
-    val to_list : t -> bound interval list
-  end
-  with type 'a interval := t
+      val to_list : t -> bound interval list
+    end
+    with type 'a interval := t
 end
 
 module type S1 = sig
   (** This type [t] supports bin-io and sexp conversion by way of the
       [[@@deriving bin_io, sexp]] extensions, which inline the relevant function
       signatures (like [bin_read_t] and [t_of_sexp]). *)
-  type 'a t [@@deriving bin_io, sexp, compare, hash]
+  type 'a t [@@deriving bin_io, sexp, compare, equal, hash]
 
   include Gen with type 'a t := 'a t with type 'a bound := 'a (** @inline *)
 
   module Set : sig
-    type 'a t [@@deriving bin_io, sexp]
+      type 'a t [@@deriving bin_io, sexp]
 
-    include Gen_set with type 'a t := 'a t with type 'a bound := 'a (** @inline *)
-  end
-  with type 'a interval := 'a t
+      include Gen_set with type 'a t := 'a t with type 'a bound := 'a (** @inline *)
+    end
+    with type 'a interval := 'a t
 end
 
 module type S_stable = sig
-  type t [@@deriving sexp_grammar]
+  type t [@@deriving equal, hash, sexp_grammar]
 
   include Stable_with_witness with type t := t
 end
@@ -302,7 +302,7 @@ module type Interval = sig
       {[
         module Percent = struct
           module T = struct
-            type t = float [@@deriving bin_io, compare, sexp]
+            type t = float [@@deriving bin_io, compare, equal, hash, sexp]
           end
           include T
           include Comparable.Make_binable(T)
@@ -310,10 +310,10 @@ module type Interval = sig
       ]}
   *)
   module Make (Bound : sig
-    type t [@@deriving bin_io, sexp, hash]
+      type t [@@deriving bin_io, compare, equal, hash, sexp]
 
-    include Comparable.S with type t := t
-  end) : S with type bound = Bound.t and type t = Bound.t t
+      include Comparable.S with type t := t
+    end) : S with type bound = Bound.t and type t = Bound.t t
 
   (**
      [Stable] is used to build stable protocols. It ensures backwards compatibility by
@@ -323,7 +323,7 @@ module type Interval = sig
   module Stable : sig
     module V1 : sig
       type nonrec 'a t = 'a t
-      [@@deriving bin_io, compare, hash, sexp, sexp_grammar, stable_witness]
+      [@@deriving bin_io, compare, equal, hash, sexp, sexp_grammar, stable_witness]
 
       module Float : S_stable with type t = Float.t
       module Int : S_stable with type t = Int.t
@@ -343,7 +343,7 @@ module type Interval = sig
         type 'a t =
           | Interval of 'a * 'a
           | Empty
-        [@@deriving compare, variants]
+        [@@deriving compare, equal, hash, variants]
 
         val to_float : float t -> Float.t
         val to_int : int t -> Int.t
@@ -363,9 +363,9 @@ module type Interval = sig
     https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     module Make (Bound : sig
-      type t [@@deriving bin_io, sexp, hash]
+        type t [@@deriving bin_io, sexp, hash]
 
-      include Comparable.S with type t := t
-    end) : S with type bound = Bound.t and type t = Bound.t t
+        include Comparable.S with type t := t
+      end) : S with type bound = Bound.t and type t = Bound.t t
   end
 end

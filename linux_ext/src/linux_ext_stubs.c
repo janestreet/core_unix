@@ -111,27 +111,24 @@ enum option_type {
 /* unix_getsockopt_aux and unix_setsockopt_aux come from C stubs distributed
    with the OCaml compiler.  At the time of writing they live in
    otherlibs/unix/sockopt.c. */
-extern value caml_unix_getsockopt_aux(char *name, enum option_type ty,
-                                      int level, int option, value v_socket);
-extern value caml_unix_setsockopt_aux(char *name, enum option_type ty,
-                                      int level, int option, value v_socket,
-                                      value v_status);
+extern value caml_unix_getsockopt_aux(char *name, enum option_type ty, int level,
+                                      int option, value v_socket);
+extern value caml_unix_setsockopt_aux(char *name, enum option_type ty, int level,
+                                      int option, value v_socket, value v_status);
 
 CAMLprim value core_linux_gettcpopt_bool_stub(value v_socket, value v_option) {
   int option = linux_tcpopt_bool[Int_val(v_option)];
-  return caml_unix_getsockopt_aux("getsockopt", TYPE_BOOL, SOL_TCP, option,
-                                  v_socket);
+  return caml_unix_getsockopt_aux("getsockopt", TYPE_BOOL, SOL_TCP, option, v_socket);
 }
 
 CAMLprim value core_linux_settcpopt_bool_stub(value v_socket, value v_option,
                                               value v_status) {
   int option = linux_tcpopt_bool[Int_val(v_option)];
-  return caml_unix_setsockopt_aux("setsockopt", TYPE_BOOL, SOL_TCP, option,
-                                  v_socket, v_status);
+  return caml_unix_setsockopt_aux("setsockopt", TYPE_BOOL, SOL_TCP, option, v_socket,
+                                  v_status);
 }
 
-CAMLprim value core_linux_gettcpopt_string_stub(value v_socket,
-                                                value v_optname) {
+CAMLprim value core_linux_gettcpopt_string_stub(value v_socket, value v_optname) {
   CAMLparam2(v_socket, v_optname);
 
   int optname = linux_tcpopt_string[Int_val(v_optname)];
@@ -209,20 +206,17 @@ CAMLprim value core_linux_settcpopt_string_stub(value v_socket, value v_optname,
 
 static int nonblocking_no_sigpipe_flag = MSG_DONTWAIT | MSG_NOSIGNAL;
 
-CAMLprim value core_linux_send_nonblocking_no_sigpipe_stub(value v_fd,
-                                                           value v_pos,
-                                                           value v_len,
-                                                           value v_buf) {
+CAMLprim value core_linux_send_nonblocking_no_sigpipe_stub(value v_fd, value v_pos,
+                                                           value v_len, value v_buf) {
   unsigned char *buf = Bytes_val(v_buf) + Long_val(v_pos);
-  ssize_t ret =
-      send(Int_val(v_fd), buf, Long_val(v_len), nonblocking_no_sigpipe_flag);
+  ssize_t ret = send(Int_val(v_fd), buf, Long_val(v_len), nonblocking_no_sigpipe_flag);
   if (ret == -1 && errno != EAGAIN && errno != EWOULDBLOCK)
     uerror("send_nonblocking_no_sigpipe", Nothing);
   return Val_long(ret);
 }
 
-CAMLprim value core_linux_send_no_sigpipe_stub(value v_fd, value v_pos,
-                                               value v_len, value v_buf) {
+CAMLprim value core_linux_send_no_sigpipe_stub(value v_fd, value v_pos, value v_len,
+                                               value v_buf) {
   unsigned char *buf = Bytes_val(v_buf) + Long_val(v_pos);
   ssize_t ret = send(Int_val(v_fd), buf, Long_val(v_len), MSG_NOSIGNAL);
   if (ret == -1)
@@ -230,8 +224,7 @@ CAMLprim value core_linux_send_no_sigpipe_stub(value v_fd, value v_pos,
   return Val_long(ret);
 }
 
-CAMLprim value core_linux_sendmsg_nonblocking_no_sigpipe_stub(value v_fd,
-                                                              value v_iovecs,
+CAMLprim value core_linux_sendmsg_nonblocking_no_sigpipe_stub(value v_fd, value v_iovecs,
                                                               value v_count) {
   int count = Int_val(v_count);
   ssize_t ret;
@@ -402,8 +395,7 @@ CAMLprim value core_linux_get_mac_address(value v_interface) {
     error = "core_linux_get_mac_address: couldn't allocate socket";
   else {
     if (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0)
-      error =
-          "core_linux_get_mac_address: ioctl(fd, SIOCGIFHWADDR, ...) failed";
+      error = "core_linux_get_mac_address: ioctl(fd, SIOCGIFHWADDR, ...) failed";
 
     (void)core_unix_close_durably(fd);
   }
@@ -417,9 +409,8 @@ CAMLprim value core_linux_get_mac_address(value v_interface) {
        the canonical representation of mac addresses.  It drops leading zeros
        and does not zero pad. */
     snprintf(buf, 18, "%02x:%02x:%02x:%02x:%02x:%02x", ea->ether_addr_octet[0],
-             ea->ether_addr_octet[1], ea->ether_addr_octet[2],
-             ea->ether_addr_octet[3], ea->ether_addr_octet[4],
-             ea->ether_addr_octet[5]);
+             ea->ether_addr_octet[1], ea->ether_addr_octet[2], ea->ether_addr_octet[3],
+             ea->ether_addr_octet[4], ea->ether_addr_octet[5]);
     CAMLreturn(caml_copy_string(buf));
   }
 
@@ -499,8 +490,7 @@ CAMLprim value core_linux_peer_credentials(value v_fd) {
 
 /** Core epoll methods **/
 
-#define EPOLL_FLAG(FLAG)                                                       \
-  DEFINE_INT63_CONSTANT(core_linux_epoll_##FLAG##_flag, FLAG)
+#define EPOLL_FLAG(FLAG) DEFINE_INT63_CONSTANT(core_linux_epoll_##FLAG##_flag, FLAG)
 
 EPOLL_FLAG(EPOLLIN)
 EPOLL_FLAG(EPOLLOUT)
@@ -525,8 +515,7 @@ CAMLprim value core_linux_epoll_create(value __unused v_unit) {
   return Val_long(retcode);
 }
 
-static value linux_epoll_ctl(value v_epfd, value v_fd, value v_flags,
-                             int operation) {
+static value linux_epoll_ctl(value v_epfd, value v_fd, value v_flags, int operation) {
   struct epoll_event evt;
 
   evt.data.ptr = NULL;
@@ -544,13 +533,11 @@ static value linux_epoll_ctl(value v_epfd, value v_fd, value v_flags,
  * adding an fd to a set a second time to change the event flags. Use
  * mod()...
  */
-CAMLprim value core_linux_epoll_ctl_add(value v_epfd, value v_fd,
-                                        value v_flags) {
+CAMLprim value core_linux_epoll_ctl_add(value v_epfd, value v_fd, value v_flags) {
   return linux_epoll_ctl(v_epfd, v_fd, v_flags, EPOLL_CTL_ADD);
 }
 
-CAMLprim value core_linux_epoll_ctl_mod(value v_epfd, value v_fd,
-                                        value v_flags) {
+CAMLprim value core_linux_epoll_ctl_mod(value v_epfd, value v_fd, value v_flags) {
   return linux_epoll_ctl(v_epfd, v_fd, v_flags, EPOLL_CTL_MOD);
 }
 
@@ -566,8 +553,7 @@ CAMLprim value core_linux_epoll_ctl_del(value v_epfd, value v_fd) {
   return Val_unit;
 }
 
-CAMLprim value core_linux_epoll_wait(value v_epfd, value v_array,
-                                     value v_timeout) {
+CAMLprim value core_linux_epoll_wait(value v_epfd, value v_array, value v_timeout) {
   struct epoll_event *evt;
   int retcode, maxevents;
   int timeout = Long_val(v_timeout);
@@ -625,9 +611,9 @@ CAMLprim value core_linux_epoll_offsetof_readyflags(value __unused v_unit) {
 #define TFD_CLOEXEC 02000000
 #endif
 
-#define TIMERFD_INT63(X)                                                       \
-  CAMLprim value core_linux_timerfd_##X(value __unused v_unit) {               \
-    return caml_alloc_int63(X);                                                \
+#define TIMERFD_INT63(X)                                                                 \
+  CAMLprim value core_linux_timerfd_##X(value __unused v_unit) {                         \
+    return caml_alloc_int63(X);                                                          \
   }
 
 TIMERFD_INT63(TFD_NONBLOCK)
@@ -654,21 +640,21 @@ static inline void set_timespec(struct timespec *ts, value v) {
   ts->tv_nsec = (long)(d - (ts->tv_sec * NANOS_PER_SECOND));
 }
 
-CAMLprim value core_linux_timerfd_settime(value v_fd, value v_absolute,
-                                          value v_initial, value v_interval) {
+CAMLprim value core_linux_timerfd_settime(value v_fd, value v_absolute, value v_initial,
+                                          value v_interval) {
   int retcode;
   struct itimerspec old, new;
 
   set_timespec(&new.it_value, v_initial);
   set_timespec(&new.it_interval, v_interval);
 
-  retcode = timerfd_settime(
-      Int_val(v_fd), Bool_val(v_absolute) ? TFD_TIMER_ABSTIME : 0, &new, &old);
+  retcode = timerfd_settime(Int_val(v_fd), Bool_val(v_absolute) ? TFD_TIMER_ABSTIME : 0,
+                            &new, &old);
 
   return retcode < 0 ? Val_int(-errno) : Val_unit;
 }
 
-#define Int63_ns_of_timespec(ts)                                               \
+#define Int63_ns_of_timespec(ts)                                                         \
   caml_alloc_int63((uint64_t)ts.tv_sec *NANOS_PER_SECOND + (uint64_t)ts.tv_nsec)
 
 static value alloc_spec(struct itimerspec *spec) {
@@ -715,9 +701,9 @@ CAMLprim value core_linux_timerfd_gettime(value v_fd) {
 #define MFD_HUGE_1GB (30U << 26)
 #endif
 
-#define MEMFD_INT63(X)                                                         \
-  CAMLprim value core_linux_memfd_##X(value __unused v_unit) {                 \
-    return caml_alloc_int63(X);                                                \
+#define MEMFD_INT63(X)                                                                   \
+  CAMLprim value core_linux_memfd_##X(value __unused v_unit) {                           \
+    return caml_alloc_int63(X);                                                          \
   }
 
 MEMFD_INT63(MFD_CLOEXEC)
@@ -805,14 +791,12 @@ CAMLprim value core_linux_eventfd_write(value v_fd, value v_val) {
   CAMLreturn(Val_unit);
 }
 
-#define XATTR_FLAG(FLAG)                                                       \
-  DEFINE_INT63_CONSTANT(core_linux_xattr_##FLAG##_flag, FLAG)
+#define XATTR_FLAG(FLAG) DEFINE_INT63_CONSTANT(core_linux_xattr_##FLAG##_flag, FLAG)
 
 XATTR_FLAG(XATTR_CREATE)
 XATTR_FLAG(XATTR_REPLACE)
 
-CAMLprim value core_linux_getxattr(value v_follow_symlinks, value v_path,
-                                   value v_name) {
+CAMLprim value core_linux_getxattr(value v_follow_symlinks, value v_path, value v_name) {
   CAMLparam3(v_follow_symlinks, v_path, v_name);
   CAMLlocal1(res);
 
@@ -862,8 +846,8 @@ CAMLprim value core_linux_getxattr(value v_follow_symlinks, value v_path,
   CAMLreturn(res);
 }
 
-CAMLprim value core_linux_setxattr(value v_follow_symlinks, value v_path,
-                                   value v_name, value v_value, value v_flags) {
+CAMLprim value core_linux_setxattr(value v_follow_symlinks, value v_path, value v_name,
+                                   value v_value, value v_flags) {
   CAMLparam5(v_follow_symlinks, v_path, v_name, v_value, v_flags);
   CAMLlocal1(res);
 
@@ -929,7 +913,6 @@ CAMLprim value core_linux_setxattr(value v_follow_symlinks, value v_path,
 
 #else
 
-void avoid_empty_translation_unit_compilation_error_in_core_unix_linux_ext(
-    void) {}
+void avoid_empty_translation_unit_compilation_error_in_core_unix_linux_ext(void) {}
 
 #endif /* JSC_LINUX_EXT */

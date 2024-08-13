@@ -12,7 +12,7 @@ module Open_option : sig
   type t =
     | PID (** Include PID with each message *)
     | CONS
-        (** Write directly to system console if there is an error
+    (** Write directly to system console if there is an error
                   while sending to system logger *)
     | ODELAY (** Delay opening of the connection until syslog is called *)
     | NDELAY (** No delay opening connection to syslog daemon *)

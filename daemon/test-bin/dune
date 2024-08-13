@@ -7,6 +7,6 @@
 (executables
  (modes byte exe)
  (names daemonize_test)
- (libraries core_unix daemon)
+ (libraries core core_unix daemon unix)
  (preprocess
   (pps ppx_jane)))

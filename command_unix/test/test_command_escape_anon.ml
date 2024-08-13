@@ -33,7 +33,7 @@ let%expect_test "execution" =
 ;;
 
 let%expect_test "anon after [anon_escape]" =
-  require_does_raise [%here] (fun () ->
+  require_does_raise (fun () ->
     Command.basic
       ~summary:"this won't validate"
       (let%map_open.Command () = return ()
@@ -49,7 +49,8 @@ let%expect_test "anon after [anon_escape]" =
 
 let%expect_test "completion" =
   Command_test_helpers.complete param ~args:[ "" ];
-  [%expect {|
+  [%expect
+    {|
     Bar
     Foo
     (command.ml.Exit_called (status 0))

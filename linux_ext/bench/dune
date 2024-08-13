@@ -1,5 +1,5 @@
 (library
  (name bench_linux_ext)
- (libraries linux_ext)
+ (libraries core linux_ext)
  (preprocess
   (pps ppx_jane)))

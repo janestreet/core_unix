@@ -6,8 +6,8 @@ CAMLprim value executing_bytecode(value *_vals, int *_nvals) {
   return Val_true;
 }
 
-CAMLprim value not_executing_bytecode(value _v1, value _v2, value _v3,
-                                      value _v4, value _v5, value _v6) {
+CAMLprim value not_executing_bytecode(value _v1, value _v2, value _v3, value _v4,
+                                      value _v5, value _v6) {
   ((void)_v1);
   ((void)_v2);
   ((void)_v3);

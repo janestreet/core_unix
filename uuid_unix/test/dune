@@ -1,5 +1,6 @@
 (library
  (name uuid_unix_test)
- (libraries core core_thread expect_test_helpers_core uuid_unix)
+ (libraries core core_thread expect_test_helpers_core core_kernel.uuid
+   uuid_unix)
  (preprocess
   (pps ppx_jane)))

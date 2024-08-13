@@ -74,15 +74,15 @@ CAMLprim value caml_clock_getcpuclockid(value v_pid) {
 value caml_clock_getres(value clock_type) {
   struct timespec tp;
   clock_getres(clockid_t_of_val(clock_type), &tp);
-  return (caml_alloc_int63(((int64_t)tp.tv_sec * 1000 * 1000 * 1000) +
-                           (int64_t)tp.tv_nsec));
+  return (
+      caml_alloc_int63(((int64_t)tp.tv_sec * 1000 * 1000 * 1000) + (int64_t)tp.tv_nsec));
 }
 
 value caml_clock_gettime(value clock_type) {
   struct timespec tp;
   clock_gettime(clockid_t_of_val(clock_type), &tp);
-  return (caml_alloc_int63(((int64_t)tp.tv_sec * 1000 * 1000 * 1000) +
-                           (int64_t)tp.tv_nsec));
+  return (
+      caml_alloc_int63(((int64_t)tp.tv_sec * 1000 * 1000 * 1000) + (int64_t)tp.tv_nsec));
 }
 
 #endif /* JSC_POSIX_TIMERS */
@@ -160,8 +160,7 @@ CAMLprim value core_time_ns_nanosleep(value v_seconds) {
     else
       uerror("nanosleep", Nothing);
   } else
-    caml_failwith(
-        "core_time_ns_nanosleep: impossible return value from nanosleep(2)");
+    caml_failwith("core_time_ns_nanosleep: impossible return value from nanosleep(2)");
 }
 
 /*
@@ -169,16 +168,16 @@ CAMLprim value core_time_ns_nanosleep(value v_seconds) {
  * {localtime,gmtime}_r instead of {localtime,gmtime} to avoid setting the
  * global tzname (instead setting the tm_store value that we discard).
  */
-#define WRAP_TIME_FUN(NAME, ERROR)                                             \
-  CAMLprim value core_##NAME(value t) {                                        \
-    time_t clock;                                                              \
-    struct tm *tm;                                                             \
-    struct tm tm_store;                                                        \
-    clock = (time_t)Double_val(t);                                             \
-    tm = NAME##_r(&clock, &tm_store);                                          \
-    if (tm == NULL)                                                            \
-      caml_failwith(ERROR);                                                    \
-    return alloc_tm(tm);                                                       \
+#define WRAP_TIME_FUN(NAME, ERROR)                                                       \
+  CAMLprim value core_##NAME(value t) {                                                  \
+    time_t clock;                                                                        \
+    struct tm *tm;                                                                       \
+    struct tm tm_store;                                                                  \
+    clock = (time_t)Double_val(t);                                                       \
+    tm = NAME##_r(&clock, &tm_store);                                                    \
+    if (tm == NULL)                                                                      \
+      caml_failwith(ERROR);                                                              \
+    return alloc_tm(tm);                                                                 \
   }
 
 WRAP_TIME_FUN(localtime, "localtime")

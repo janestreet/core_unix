@@ -200,7 +200,7 @@ val really_send_no_sigpipe
      -> ?len:int (** default = [length bstr - pos] *)
      -> t
      -> unit)
-    Or_error.t
+      Or_error.t
 
 (** [send_nonblocking_no_sigpipe sock ?pos ?len bstr] tries to send [len] bytes in
     bigstring [bstr] starting at position [pos] to socket [sock]. Returns [bytes_written].
@@ -212,7 +212,7 @@ val send_nonblocking_no_sigpipe
      -> ?len:int (** default = [length bstr - pos] *)
      -> t
      -> Unix.Syscall_result.Int.t)
-    Or_error.t
+      Or_error.t
 
 (** [sendto_nonblocking_no_sigpipe sock ?pos ?len bstr sockaddr] tries to send [len] bytes
     in bigstring [bstr] starting at position [pos] to socket [sock] using address
@@ -226,7 +226,7 @@ val sendto_nonblocking_no_sigpipe
      -> t
      -> Unix.sockaddr
      -> Unix.Syscall_result.Int.t)
-    Or_error.t
+      Or_error.t
 
 (** [write fd ?pos ?len bstr] writes [len] bytes in bigstring [bstr] starting at position
     [pos] to file descriptor [fd].  Returns the number of bytes actually written.
@@ -320,7 +320,7 @@ val recvmmsg_assume_fd_is_nonblocking
      -> t Unix.IOVec.t array
      -> lens:int array
      -> int)
-    Or_error.t
+      Or_error.t
 
 val unsafe_recvmmsg_assume_fd_is_nonblocking
   : (Unix.File_descr.t
@@ -329,7 +329,7 @@ val unsafe_recvmmsg_assume_fd_is_nonblocking
      -> Unix.sockaddr array option
      -> int array
      -> int)
-    Or_error.t
+      Or_error.t
 
 (** [sendmsg_nonblocking_no_sigpipe sock ?count iovecs] sends [count] [iovecs] of
     bigstrings to socket [sock]. Returns [Some bytes_written], or [None] if the operation
@@ -343,7 +343,7 @@ val sendmsg_nonblocking_no_sigpipe
      -> ?count:int (** default = [Array.length iovecs] *)
      -> t Unix.IOVec.t array
      -> int option)
-    Or_error.t
+      Or_error.t
 
 (** [output ?min_len oc ?pos ?len bstr] tries to output [len] bytes (guarantees to write
     at least [min_len] bytes, which must be [>= 0]), if possible, before returning, from

@@ -13,7 +13,7 @@ let get_output_or_error command args ~f =
    | Ok () -> ()
    | Error error -> print_s [%sexp (error : Error.t)]
    | exception exn -> print_s [%sexp "Raised", (exn : exn)]);
-  expect_test_output [%here]
+  expect_test_output ()
 ;;
 
 (* Opam cannot distinguish between dependencies of the implementation and dependencies of

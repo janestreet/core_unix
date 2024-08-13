@@ -1,5 +1,5 @@
 (library
  (name nano_mutex_test)
- (libraries core core_unix nano_mutex async_unix.thread_safe_ivar)
+ (libraries core core_thread core_unix nano_mutex async_unix.thread_safe_ivar)
  (preprocess
   (pps ppx_jane)))

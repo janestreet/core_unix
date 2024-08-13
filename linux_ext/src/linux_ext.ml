@@ -256,11 +256,11 @@ module Null : Linux_ext_intf.S = struct
       let semaphore = Int63.of_int 0o1
 
       include Flags.Make (struct
-        let allow_intersecting = true
-        let should_print_error = true
-        let remove_zero_flags = false
-        let known = [ nonblock, "nonblock"; cloexec, "cloexec"; semaphore, "semaphore" ]
-      end)
+          let allow_intersecting = true
+          let should_print_error = true
+          let remove_zero_flags = false
+          let known = [ nonblock, "nonblock"; cloexec, "cloexec"; semaphore, "semaphore" ]
+        end)
     end
 
     let create = Or_error.unimplemented "Linux_ext.Eventfd.create"
@@ -282,11 +282,11 @@ module Null : Linux_ext_intf.S = struct
       let cloexec = Int63.of_int 0o2000000
 
       include Flags.Make (struct
-        let allow_intersecting = false
-        let should_print_error = true
-        let remove_zero_flags = false
-        let known = List.rev [ nonblock, "nonblock"; cloexec, "cloexec" ]
-      end)
+          let allow_intersecting = false
+          let should_print_error = true
+          let remove_zero_flags = false
+          let known = List.rev [ nonblock, "nonblock"; cloexec, "cloexec" ]
+        end)
     end
 
     type t = File_descr.t [@@deriving compare, sexp_of]
@@ -326,21 +326,21 @@ module Null : Linux_ext_intf.S = struct
       let huge_1gb = i63 (30 lsl hugetlb_flag_encode_shift)
 
       include Flags.Make (struct
-        let allow_intersecting = true (* huge_* flags intersect *)
-        let should_print_error = true
-        let remove_zero_flags = false
+          let allow_intersecting = true (* huge_* flags intersect *)
+          let should_print_error = true
+          let remove_zero_flags = false
 
-        let known =
-          [ cloexec, "cloexec"
-          ; allow_sealing, "allow_sealing"
-          ; hugetlb, "hugetlb"
-          ; noexec_seal, "noexec_seal"
-          ; exec, "exec"
-          ; huge_2mb, "huge_2mb"
-          ; huge_1gb, "huge_1gb"
-          ]
-        ;;
-      end)
+          let known =
+            [ cloexec, "cloexec"
+            ; allow_sealing, "allow_sealing"
+            ; hugetlb, "hugetlb"
+            ; noexec_seal, "noexec_seal"
+            ; exec, "exec"
+            ; huge_2mb, "huge_2mb"
+            ; huge_1gb, "huge_1gb"
+            ]
+          ;;
+        end)
     end
 
     type t = File_descr.t [@@deriving sexp_of]
@@ -457,11 +457,11 @@ module Timerfd = struct
     let cloexec = cloexec ()
 
     include Flags.Make (struct
-      let allow_intersecting = false
-      let should_print_error = true
-      let remove_zero_flags = false
-      let known = List.rev [ nonblock, "nonblock"; cloexec, "cloexec" ]
-    end)
+        let allow_intersecting = false
+        let should_print_error = true
+        let remove_zero_flags = false
+        let known = List.rev [ nonblock, "nonblock"; cloexec, "cloexec" ]
+      end)
   end
 
   type t = File_descr.t [@@deriving compare, sexp_of]
@@ -500,7 +500,7 @@ module Timerfd = struct
     -> interval:Int63.t
     -> Syscall_result.Unit.t
     = "core_linux_timerfd_settime"
-    [@@noalloc]
+  [@@noalloc]
 
   let timerfd_settime t ~absolute ~initial ~interval =
     (* We could accept [interval < 0] or [initial < 0 when absolute], but then the
@@ -631,21 +631,21 @@ module Memfd = struct
     let huge_1gb = huge_1gb ()
 
     include Flags.Make (struct
-      let allow_intersecting = true (* huge_* flags intersect *)
-      let should_print_error = true
-      let remove_zero_flags = false
+        let allow_intersecting = true (* huge_* flags intersect *)
+        let should_print_error = true
+        let remove_zero_flags = false
 
-      let known =
-        [ cloexec, "cloexec"
-        ; allow_sealing, "allow_sealing"
-        ; hugetlb, "hugetlb"
-        ; noexec_seal, "noexec_seal"
-        ; exec, "exec"
-        ; huge_2mb, "huge_2mb"
-        ; huge_1gb, "huge_1gb"
-        ]
-      ;;
-    end)
+        let known =
+          [ cloexec, "cloexec"
+          ; allow_sealing, "allow_sealing"
+          ; hugetlb, "hugetlb"
+          ; noexec_seal, "noexec_seal"
+          ; exec, "exec"
+          ; huge_2mb, "huge_2mb"
+          ; huge_1gb, "huge_1gb"
+          ]
+        ;;
+      end)
   end
 
   type t = File_descr.t [@@deriving compare, sexp_of]
@@ -688,11 +688,11 @@ module Eventfd = struct
     let known = [ cloexec, "cloexec"; nonblock, "nonblock"; semaphore, "semaphore" ]
 
     include Flags.Make (struct
-      let allow_intersecting = true
-      let should_print_error = true
-      let known = known
-      let remove_zero_flags = false
-    end)
+        let allow_intersecting = true
+        let should_print_error = true
+        let known = known
+        let remove_zero_flags = false
+      end)
   end
 
   type t = File_descr.t [@@deriving compare, sexp_of]

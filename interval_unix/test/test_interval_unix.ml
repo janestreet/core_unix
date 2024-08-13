@@ -9,7 +9,7 @@ let%test_module "Interval.V1.Time" =
       include Interval_unix.Stable.V1.Time
 
       let equal = [%compare.equal: t]
-      let zone = force Jane_timezone.nyc
+      let zone = force Timezone.nyc
 
       let tests =
         let t1 =

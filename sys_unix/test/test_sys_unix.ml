@@ -23,7 +23,8 @@ let%expect_test _ =
   print_s [%sexp (Sys.get_argv () : string array)];
   Sys_unix.override_argv old_sys_argv;
   print_s [%sexp ([%equal: string array] (Sys.get_argv ()) old_sys_argv : bool)];
-  [%expect {|
+  [%expect
+    {|
     (THIS IS A TEST)
     true
     |}]

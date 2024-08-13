@@ -4,6 +4,6 @@
   (names signal_unix_stubs))
  (name signal_unix)
  (public_name core_unix.signal_unix)
- (libraries core_kernel.caml_unix core)
+ (libraries core_kernel.caml_unix core unix)
  (preprocess
   (pps ppx_jane)))

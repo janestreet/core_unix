@@ -1,6 +1,7 @@
 (library
  (name linux_ext_test)
- (libraries bigstring_unix core_kernel.caml_threads expect_test_helpers_core
-   filename_unix linux_ext)
+ (libraries bigstring_unix core_kernel.caml_threads core core_thread
+   core_unix expect_test_helpers_core.expect_test_helpers_base
+   expect_test_helpers_core filename_unix linux_ext)
  (preprocess
   (pps ppx_jane)))

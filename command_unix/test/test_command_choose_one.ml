@@ -25,7 +25,7 @@ let%expect_test "basic" =
   [%expect {| (data ((AB 1 123))) |}];
   test [];
   [%expect {| (data ()) |}];
-  require_does_raise [%here] (fun () -> test [ "-a"; "1" ]);
+  require_does_raise (fun () -> test [ "-a"; "1" ]);
   [%expect
     {|
     Error parsing command line:
@@ -38,7 +38,7 @@ let%expect_test "basic" =
 
     (command.ml.Exit_called (status 1))
     |}];
-  require_does_raise [%here] (fun () -> test [ "-a"; "not-an-int" ]);
+  require_does_raise (fun () -> test [ "-a"; "not-an-int" ]);
   [%expect
     {|
     Error parsing command line:
@@ -92,7 +92,7 @@ let%expect_test "interaction with no_arg" =
   [%expect {| (data ((1 false 100))) |}];
   test [];
   [%expect {| (data ()) |}];
-  require_does_raise [%here] (fun () -> test [ "-a"; "10" ]);
+  require_does_raise (fun () -> test [ "-a"; "10" ]);
   [%expect
     {|
     Error parsing command line:
@@ -105,7 +105,7 @@ let%expect_test "interaction with no_arg" =
 
     (command.ml.Exit_called (status 1))
     |}];
-  require_does_raise [%here] (fun () -> test [ "-b" ]);
+  require_does_raise (fun () -> test [ "-b" ]);
   [%expect
     {|
     Error parsing command line:
@@ -165,7 +165,7 @@ let%expect_test "with choose one" =
   [%expect {| (data (CD 3 world)) |}];
   test [ "-e"; "hello"; "-f"; "456"; "-g"; "world" ];
   [%expect {| (data (EFG hello 456 world)) |}];
-  require_does_raise [%here] (fun () -> test [ "-a"; "1" ]);
+  require_does_raise (fun () -> test [ "-a"; "1" ]);
   [%expect
     {|
     Error parsing command line:
@@ -178,7 +178,7 @@ let%expect_test "with choose one" =
 
     (command.ml.Exit_called (status 1))
     |}];
-  require_does_raise [%here] (fun () -> test [ "-g"; "abcde" ]);
+  require_does_raise (fun () -> test [ "-g"; "abcde" ]);
   [%expect
     {|
     Error parsing command line:
@@ -191,7 +191,7 @@ let%expect_test "with choose one" =
 
     (command.ml.Exit_called (status 1))
     |}];
-  require_does_raise [%here] (fun () -> test []);
+  require_does_raise (fun () -> test []);
   [%expect
     {|
     Error parsing command line:
@@ -207,8 +207,7 @@ let%expect_test "with choose one" =
 
     (command.ml.Exit_called (status 1))
     |}];
-  require_does_raise [%here] (fun () ->
-    test [ "-a"; "1"; "-b"; "123"; "-c"; "3"; "-d"; "world" ]);
+  require_does_raise (fun () -> test [ "-a"; "1"; "-b"; "123"; "-c"; "3"; "-d"; "world" ]);
   [%expect
     {|
     Error parsing command line:
@@ -223,7 +222,7 @@ let%expect_test "with choose one" =
 
     (command.ml.Exit_called (status 1))
     |}];
-  require_does_raise [%here] (fun () -> test [ "-a"; "1"; "-b"; "123"; "-c"; "3" ]);
+  require_does_raise (fun () -> test [ "-a"; "1"; "-b"; "123"; "-c"; "3" ]);
   [%expect
     {|
     Error parsing command line:
@@ -238,7 +237,7 @@ let%expect_test "with choose one" =
 
     (command.ml.Exit_called (status 1))
     |}];
-  require_does_raise [%here] (fun () -> test [ "-a"; "1"; "-b"; "123"; "-g"; "abcde" ]);
+  require_does_raise (fun () -> test [ "-a"; "1"; "-b"; "123"; "-g"; "abcde" ]);
   [%expect
     {|
     Error parsing command line:
@@ -253,7 +252,7 @@ let%expect_test "with choose one" =
 
     (command.ml.Exit_called (status 1))
     |}];
-  require_does_raise [%here] (fun () -> test [ "-a"; "1"; "-c"; "3" ]);
+  require_does_raise (fun () -> test [ "-a"; "1"; "-c"; "3" ]);
   [%expect
     {|
     Error parsing command line:
@@ -269,7 +268,7 @@ let%expect_test "with choose one" =
 
     (command.ml.Exit_called (status 1))
     |}];
-  require_does_raise [%here] (fun () -> test [ "-a"; "1"; "-g"; "3" ]);
+  require_does_raise (fun () -> test [ "-a"; "1"; "-g"; "3" ]);
   [%expect
     {|
     Error parsing command line:
@@ -345,7 +344,7 @@ let%expect_test "listed flag" =
 ;;
 
 let%expect_test "[return] is disallowed as a standalone item given to choose_one" =
-  require_does_raise [%here] (fun () ->
+  require_does_raise (fun () ->
     Command.Param.choose_one_non_optional
       ~if_nothing_chosen:Raise
       [ Command.Param.return 8 ]);
@@ -371,7 +370,7 @@ let%expect_test "listed flag as a standalone item given to choose_one" =
   let on_success data = print_s [%message (data : int list)] in
   let test = (Command_test_helpers.parse_command_line param |> unstage) ~on_success in
   test [ "-help" ];
-  require_does_raise [%here] (fun () -> test [ "-a"; "1"; "-a"; "2"; "-b"; "3" ]);
+  require_does_raise (fun () -> test [ "-a"; "1"; "-a"; "2"; "-b"; "3" ]);
   [%expect
     {|
     CMD SUMMARY
@@ -403,7 +402,7 @@ let%expect_test "listed flag as a standalone item given to choose_one" =
   [%expect {| (data (1)) |}];
   test [ "-b"; "1" ];
   [%expect "(data (1))"];
-  require_does_raise [%here] (fun () -> test []);
+  require_does_raise (fun () -> test []);
   [%expect
     {|
     Error parsing command line:
@@ -466,7 +465,7 @@ let%expect_test "nested" =
 
     (command.ml.Exit_called (status 0))
     |}];
-  require_does_raise [%here] (fun () -> test [ "-a"; "1"; "-b"; "2"; "-yes"; "-no" ]);
+  require_does_raise (fun () -> test [ "-a"; "1"; "-b"; "2"; "-yes"; "-no" ]);
   [%expect
     {|
     Error parsing command line:
@@ -481,7 +480,7 @@ let%expect_test "nested" =
 
     (command.ml.Exit_called (status 1))
     |}];
-  require_does_raise [%here] (fun () -> test [ "-a"; "1"; "-b"; "2" ]);
+  require_does_raise (fun () -> test [ "-a"; "1"; "-b"; "2" ]);
   [%expect
     {|
     Error parsing command line:
@@ -583,7 +582,7 @@ let%expect_test "with regular flags" =
 
     (command.ml.Exit_called (status 0))
     |}];
-  require_does_raise [%here] (fun () -> test []);
+  require_does_raise (fun () -> test []);
   [%expect
     {|
     Error parsing command line:
@@ -674,7 +673,7 @@ let%expect_test "with anon" =
   in
   let on_success data = print_s [%message (data : bool * int)] in
   let test = (Command_test_helpers.parse_command_line param |> unstage) ~on_success in
-  require_does_raise [%here] (fun () -> test [ "-search-in-errors" ]);
+  require_does_raise (fun () -> test [ "-search-in-errors" ]);
   [%expect
     {|
     Error parsing command line:
@@ -710,7 +709,7 @@ let%expect_test "no_arg_required" =
   [%expect {| (data ((() false))) |}];
   test [];
   [%expect {| (data ()) |}];
-  require_does_raise [%here] (fun () -> test [ "-optional-flag" ]);
+  require_does_raise (fun () -> test [ "-optional-flag" ]);
   [%expect
     {|
     Error parsing command line:
@@ -779,7 +778,7 @@ let%expect_test "choose_one with an optional that can be set from an environment
   [%expect {| (data value) |}];
   (* If the environment_variable is set AND "the other option" is set, we expect
      choose_one to fail. *)
-  require_does_raise [%here] (fun () ->
+  require_does_raise (fun () ->
     test_choose_one (Some "value") [ "-some-other-option"; "value" ]);
   [%expect
     {|
@@ -836,7 +835,7 @@ let%expect_test "choose_one with an optional that can be suppressed from an \
     [ "-suppressed-via-env-var"; "value"; "-other-option"; "other-value" ];
   [%expect {| (data other-value) |}];
   (* We expect [choose_one] to say there's nothing to choose from. *)
-  require_does_raise [%here] (fun () ->
+  require_does_raise (fun () ->
     test_choose_one true [ "-suppressed-via-env-var"; "value" ]);
   [%expect
     {|

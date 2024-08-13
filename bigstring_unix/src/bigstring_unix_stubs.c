@@ -1,3 +1,5 @@
+#undef Hide_upstream_size_macros
+
 #include "config.h"
 
 #define _FILE_OFFSET_BITS 64
@@ -84,8 +86,7 @@ static inline void raise_io_error(value v_n_good, value v_exc) {
   raise_with_two_args(*bigstring_exc_IOError, v_n_good, v_exc);
 }
 
-static inline value mk_unix_error_exn(int errcode, char *cmdname,
-                                      value cmdarg) {
+static inline value mk_unix_error_exn(int errcode, char *cmdname, value cmdarg) {
   CAMLparam0();
   CAMLlocal3(name, err, arg);
   value res;
@@ -104,8 +105,7 @@ static inline value mk_uerror_exn(char *cmdname, value cmdarg) {
   return mk_unix_error_exn(errno, cmdname, cmdarg);
 }
 
-static inline void raise_unix_io_error(value v_n_good, char *cmdname,
-                                       value cmdarg) {
+static inline void raise_unix_io_error(value v_n_good, char *cmdname, value cmdarg) {
   value v_uerror = mk_uerror_exn(cmdname, cmdarg);
   raise_io_error(v_n_good, v_uerror);
 }
@@ -117,8 +117,8 @@ static inline void raise_eof_io_error(value v_n_good) {
 
 /* Input of bigstrings from file descriptors */
 
-CAMLprim value bigstring_read_stub(value v_min_len, value v_fd, value v_pos,
-                                   value v_len, value v_bstr) {
+CAMLprim value bigstring_read_stub(value v_min_len, value v_fd, value v_pos, value v_len,
+                                   value v_bstr) {
   CAMLparam1(v_bstr);
   size_t min_len = Long_val(v_min_len);
   int fd = Int_val(v_fd);
@@ -152,10 +152,8 @@ CAMLprim value bigstring_read_stub(value v_min_len, value v_fd, value v_pos,
   CAMLreturn(Val_long(bstr - bstr_start));
 }
 
-CAMLprim value bigstring_read_assume_fd_is_nonblocking_stub(value v_fd,
-                                                            value v_pos,
-                                                            value v_len,
-                                                            value v_bstr) {
+CAMLprim value bigstring_read_assume_fd_is_nonblocking_stub(value v_fd, value v_pos,
+                                                            value v_len, value v_bstr) {
   struct caml_ba_array *ba = Caml_ba_array_val(v_bstr);
   char *bstr = (char *)ba->data + Long_val(v_pos);
   size_t len = Long_val(v_len);
@@ -202,6 +200,7 @@ CAMLprim value bigstring_pread_stub(value v_min_len, value v_fd, value v_offset,
         raise_unix_io_error(v_n_good, "pread", Nothing);
     } else {
       bstr += n_read;
+      offset += n_read;
       len -= n_read;
     }
   } while (bstr < bstr_min);
@@ -211,12 +210,12 @@ CAMLprim value bigstring_pread_stub(value v_min_len, value v_fd, value v_offset,
 
 CAMLprim value bigstring_pread_bytecode(value *argv, int argn) {
   assert(argn == 6);
-  return bigstring_pread_stub(argv[0], argv[1], argv[2], argv[3], argv[4],
-                              argv[5]);
+  return bigstring_pread_stub(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
 }
 
-CAMLprim value bigstring_pread_assume_fd_is_nonblocking_stub(
-    value v_fd, value v_offset, value v_pos, value v_len, value v_bstr) {
+CAMLprim value bigstring_pread_assume_fd_is_nonblocking_stub(value v_fd, value v_offset,
+                                                             value v_pos, value v_len,
+                                                             value v_bstr) {
   char *bstr = get_bstr(v_bstr, v_pos);
   size_t len = Long_val(v_len);
   ssize_t n_read;
@@ -230,8 +229,7 @@ CAMLprim value bigstring_pread_assume_fd_is_nonblocking_stub(
 /* Input of bigstrings from sockets */
 
 CAMLprim value bigstring_recv_peek_assume_fd_is_nonblocking_stub(value v_sock,
-                                                                 value v_pos,
-                                                                 value v_len,
+                                                                 value v_pos, value v_len,
                                                                  value v_bstr) {
   CAMLparam4(v_sock, v_pos, v_len, v_bstr);
   size_t len = Long_val(v_len);
@@ -248,8 +246,8 @@ CAMLprim value bigstring_recv_peek_assume_fd_is_nonblocking_stub(value v_sock,
   }
 }
 
-CAMLprim value bigstring_really_recv_stub(value v_sock, value v_pos,
-                                          value v_len, value v_bstr) {
+CAMLprim value bigstring_really_recv_stub(value v_sock, value v_pos, value v_len,
+                                          value v_bstr) {
   size_t len = Long_val(v_len);
   if (len == 0)
     return Val_long(0);
@@ -282,8 +280,7 @@ CAMLprim value bigstring_really_recv_stub(value v_sock, value v_pos,
   }
 }
 
-CAMLprim value bigstring_recvfrom_assume_fd_is_nonblocking_stub(value v_sock,
-                                                                value v_pos,
+CAMLprim value bigstring_recvfrom_assume_fd_is_nonblocking_stub(value v_sock, value v_pos,
                                                                 value v_len,
                                                                 value v_bstr) {
   CAMLparam1(v_bstr);
@@ -501,33 +498,33 @@ CAMLprim value bigstring_output_stub(value v_min_len, value v_chan, value v_pos,
 
 /* Output macros and functions */
 
-#define MakeReallyOutputFun(NAME, CALL_WRITE)                                  \
-  CAMLprim value bigstring_really_##NAME##_stub(value v_fd, value v_pos,       \
-                                                value v_len, value v_bstr) {   \
-    CAMLparam1(v_bstr);                                                        \
-    int fd = Int_val(v_fd);                                                    \
-    size_t len = Long_val(v_len);                                              \
-    ssize_t written;                                                           \
-    char *bstr_start = get_bstr(v_bstr, v_pos);                                \
-    char *bstr = bstr_start;                                                   \
-    char *bstr_max = bstr + len;                                               \
-    caml_enter_blocking_section();                                             \
-    do {                                                                       \
-      CALL_WRITE;                                                              \
-      if (written == -1) {                                                     \
-        if (errno == EINTR)                                                    \
-          continue;                                                            \
-        {                                                                      \
-          value v_n_good = Val_long(bstr - bstr_start);                        \
-          caml_leave_blocking_section();                                       \
-          raise_unix_io_error(v_n_good, STR(really_##NAME), Nothing);          \
-        }                                                                      \
-      };                                                                       \
-      len -= written;                                                          \
-      bstr += written;                                                         \
-    } while (bstr < bstr_max);                                                 \
-    caml_leave_blocking_section();                                             \
-    CAMLreturn(Val_unit);                                                      \
+#define MakeReallyOutputFun(NAME, CALL_WRITE)                                            \
+  CAMLprim value bigstring_really_##NAME##_stub(value v_fd, value v_pos, value v_len,    \
+                                                value v_bstr) {                          \
+    CAMLparam1(v_bstr);                                                                  \
+    int fd = Int_val(v_fd);                                                              \
+    size_t len = Long_val(v_len);                                                        \
+    ssize_t written;                                                                     \
+    char *bstr_start = get_bstr(v_bstr, v_pos);                                          \
+    char *bstr = bstr_start;                                                             \
+    char *bstr_max = bstr + len;                                                         \
+    caml_enter_blocking_section();                                                       \
+    do {                                                                                 \
+      CALL_WRITE;                                                                        \
+      if (written == -1) {                                                               \
+        if (errno == EINTR)                                                              \
+          continue;                                                                      \
+        {                                                                                \
+          value v_n_good = Val_long(bstr - bstr_start);                                  \
+          caml_leave_blocking_section();                                                 \
+          raise_unix_io_error(v_n_good, STR(really_##NAME), Nothing);                    \
+        }                                                                                \
+      };                                                                                 \
+      len -= written;                                                                    \
+      bstr += written;                                                                   \
+    } while (bstr < bstr_max);                                                           \
+    caml_leave_blocking_section();                                                       \
+    CAMLreturn(Val_unit);                                                                \
   }
 
 MakeReallyOutputFun(write, written = write(fd, bstr, len))
@@ -546,8 +543,9 @@ MakeReallyOutputFun(write, written = write(fd, bstr, len))
   CAMLreturn(Val_long(written));
 }
 
-CAMLprim value bigstring_pwrite_assume_fd_is_nonblocking_stub(
-    value v_fd, value v_offset, value v_pos, value v_len, value v_bstr) {
+CAMLprim value bigstring_pwrite_assume_fd_is_nonblocking_stub(value v_fd, value v_offset,
+                                                              value v_pos, value v_len,
+                                                              value v_bstr) {
   char *bstr = get_bstr(v_bstr, v_pos);
   size_t len = Long_val(v_len);
   ssize_t written;
@@ -558,10 +556,8 @@ CAMLprim value bigstring_pwrite_assume_fd_is_nonblocking_stub(
   return Val_long(written);
 }
 
-CAMLprim value bigstring_write_assume_fd_is_nonblocking_stub(value v_fd,
-                                                             value v_pos,
-                                                             value v_len,
-                                                             value v_bstr) {
+CAMLprim value bigstring_write_assume_fd_is_nonblocking_stub(value v_fd, value v_pos,
+                                                             value v_len, value v_bstr) {
   struct caml_ba_array *ba = Caml_ba_array_val(v_bstr);
   char *bstr = (char *)ba->data + Long_val(v_pos);
   size_t len = Long_val(v_len);
@@ -580,8 +576,7 @@ CAMLprim value bigstring_write_assume_fd_is_nonblocking_stub(value v_fd,
 }
 
 static inline ssize_t writev_in_blocking_section(value v_fd, value v_iovecs,
-                                                 struct iovec *iovecs,
-                                                 int count) {
+                                                 struct iovec *iovecs, int count) {
   ssize_t ret;
   CAMLparam1(v_iovecs); /* To protect bigstrings outside of OCaml lock */
   caml_enter_blocking_section();
@@ -591,8 +586,7 @@ static inline ssize_t writev_in_blocking_section(value v_fd, value v_iovecs,
   CAMLreturn(ret);
 }
 
-CAMLprim value bigstring_writev_stub(value v_fd, value v_iovecs,
-                                     value v_count) {
+CAMLprim value bigstring_writev_stub(value v_fd, value v_iovecs, value v_count) {
   int count = Int_val(v_count);
   size_t total_len = 0;
   struct iovec *iovecs = copy_iovecs(&total_len, v_iovecs, count);
@@ -612,8 +606,7 @@ __pure static inline int contains_mmapped(value v_iovecs, int n) {
   return 0;
 }
 
-CAMLprim value bigstring_writev_assume_fd_is_nonblocking_stub(value v_fd,
-                                                              value v_iovecs,
+CAMLprim value bigstring_writev_assume_fd_is_nonblocking_stub(value v_fd, value v_iovecs,
                                                               value v_count) {
   int count = Int_val(v_count);
   size_t total_len = 0;
@@ -688,8 +681,7 @@ CAMLprim value bigstring_recvmmsg_assume_fd_is_nonblocking_stub(
       iovecs[i].iov_len = Long_val(v_len);
     }
 
-    n_read =
-        recvmmsg_assume_fd_is_nonblocking(v_fd, iovecs, count, v_srcs, hdrs);
+    n_read = recvmmsg_assume_fd_is_nonblocking(v_fd, iovecs, count, v_srcs, hdrs);
 
     for (i = 0; (int)i < n_read; i++) {
       Field(v_lens, i) = Val_long(hdrs[i].msg_len);
@@ -704,45 +696,40 @@ CAMLprim value bigstring_recvmmsg_assume_fd_is_nonblocking_stub(
 #if defined(JSC_MSG_NOSIGNAL) || defined(JSC_SO_NOSIGPIPE)
 
 #if defined(JSC_MSG_NOSIGNAL)
-MakeReallyOutputFun(send_no_sigpipe,
-                    written = send(fd, bstr, len, MSG_NOSIGNAL))
+MakeReallyOutputFun(send_no_sigpipe, written = send(fd, bstr, len, MSG_NOSIGNAL))
 
     static int nonblocking_no_sigpipe_flag = MSG_DONTWAIT | MSG_NOSIGNAL;
 #elif defined(JSC_SO_NOSIGPIPE)
-MakeReallyOutputFun(send_no_sigpipe,
-                    written = send(fd, bstr, len, SO_NOSIGPIPE))
+MakeReallyOutputFun(send_no_sigpipe, written = send(fd, bstr, len, SO_NOSIGPIPE))
 
     static int nonblocking_no_sigpipe_flag = MSG_DONTWAIT | SO_NOSIGPIPE;
 #endif
 
-CAMLprim value bigstring_send_nonblocking_no_sigpipe_stub(value v_fd,
-                                                          value v_pos,
-                                                          value v_len,
-                                                          value v_bstr) {
+CAMLprim value bigstring_send_nonblocking_no_sigpipe_stub(value v_fd, value v_pos,
+                                                          value v_len, value v_bstr) {
   char *bstr = get_bstr(v_bstr, v_pos);
-  ssize_t ret =
-      send(Int_val(v_fd), bstr, Long_val(v_len), nonblocking_no_sigpipe_flag);
+  ssize_t ret = send(Int_val(v_fd), bstr, Long_val(v_len), nonblocking_no_sigpipe_flag);
   if (ret == -1)
     ret = -errno;
   return Val_long(ret);
 }
 
-CAMLprim value bigstring_sendto_nonblocking_no_sigpipe_stub(
-    value v_fd, value v_pos, value v_len, value v_bstr, value v_addr) {
+CAMLprim value bigstring_sendto_nonblocking_no_sigpipe_stub(value v_fd, value v_pos,
+                                                            value v_len, value v_bstr,
+                                                            value v_addr) {
   char *bstr = get_bstr(v_bstr, v_pos);
   union sock_addr_union addr;
   socklen_param_type addr_len = sizeof(addr);
   ssize_t ret;
   get_sockaddr(v_addr, &addr, &addr_len);
-  ret = sendto(Int_val(v_fd), bstr, Long_val(v_len),
-               nonblocking_no_sigpipe_flag, &addr.s_gen, addr_len);
+  ret = sendto(Int_val(v_fd), bstr, Long_val(v_len), nonblocking_no_sigpipe_flag,
+               &addr.s_gen, addr_len);
   if (ret == -1)
     ret = -errno;
   return Val_long(ret);
 }
 
-CAMLprim value bigstring_sendmsg_nonblocking_no_sigpipe_stub(value v_fd,
-                                                             value v_iovecs,
+CAMLprim value bigstring_sendmsg_nonblocking_no_sigpipe_stub(value v_fd, value v_iovecs,
                                                              value v_count) {
   int count = Int_val(v_count);
   size_t total_len = 0;
@@ -769,7 +756,7 @@ CAMLprim value bigstring_sendmsg_nonblocking_no_sigpipe_stub(value v_fd,
   return Val_long(ret);
 }
 #else
-#warning                                                                       \
+#warning                                                                                 \
     "Neither MSG_NOSIGNAL nor SO_NOSIGPIPE defined; bigstring_send{,msg}_noblocking_no_sigpipe not implemented"
 #warning "Platform not supported. Please report this."
 #endif /* JSC_MSG_NOSIGNAL || JSC_SO_NOSIGPIPE */

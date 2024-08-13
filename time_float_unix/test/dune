@@ -1,6 +1,6 @@
 (library
  (name time_unix_test)
- (libraries expect_test_helpers_core sexp_grammar_validation sys_unix
-   time_interface time_ns_unix)
+ (libraries core core_unix expect_test_helpers_core sexp_grammar_validation
+   sys_unix time_float_unix time_interface time_ns_unix)
  (preprocess
   (pps ppx_jane)))

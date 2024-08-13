@@ -1,5 +1,7 @@
 #define _GNU_SOURCE /* recvmmsg */
 
+#undef Hide_upstream_size_macros
+
 #include <stdio.h>
 #include <errno.h>
 #include <sys/socket.h>
@@ -12,9 +14,8 @@
 
 #ifdef JSC_RECVMMSG
 
-int recvmmsg_assume_fd_is_nonblocking(value v_fd, struct iovec *iovecs,
-                                      unsigned count, value v_srcs,
-                                      struct mmsghdr *hdrs) {
+int recvmmsg_assume_fd_is_nonblocking(value v_fd, struct iovec *iovecs, unsigned count,
+                                      value v_srcs, struct mmsghdr *hdrs) {
   CAMLparam2(v_fd, v_srcs);
   CAMLlocal1(v_sockaddrs);
   size_t total_len = 0;
@@ -24,8 +25,7 @@ int recvmmsg_assume_fd_is_nonblocking(value v_fd, struct iovec *iovecs,
   int fd;
 
   if ((int)count < 0) {
-    caml_failwith(
-        "recvmmsg_assume_fd_is_nonblocking: apparently negative count");
+    caml_failwith("recvmmsg_assume_fd_is_nonblocking: apparently negative count");
   }
 
   {
@@ -40,8 +40,7 @@ int recvmmsg_assume_fd_is_nonblocking(value v_fd, struct iovec *iovecs,
     }
     for (i = 0; i < count; i++) {
       hdrs[i].msg_hdr.msg_name = (save_source_addresses ? &addrs[i].s_gen : 0);
-      hdrs[i].msg_hdr.msg_namelen =
-          (save_source_addresses ? sizeof(addrs[i]) : 0);
+      hdrs[i].msg_hdr.msg_namelen = (save_source_addresses ? sizeof(addrs[i]) : 0);
 
 #if DEBUG
       fprintf(stderr, "i=%u, count=%u, save_source_addresses=%d\n", i, count,
@@ -92,8 +91,7 @@ int recvmmsg_assume_fd_is_nonblocking(value v_fd, struct iovec *iovecs,
         }
 
         for (i = 0; (int)i < n_read; i++) {
-          value addr =
-              alloc_sockaddr(&addrs[i], hdrs[i].msg_hdr.msg_namelen, -1);
+          value addr = alloc_sockaddr(&addrs[i], hdrs[i].msg_hdr.msg_namelen, -1);
           Store_field(v_sockaddrs, i, addr);
         }
       }

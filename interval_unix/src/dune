@@ -1,6 +1,6 @@
 (library
  (name interval_unix)
  (public_name core_unix.interval_unix)
- (libraries core interval_lib time_ns_unix)
+ (libraries core interval_lib time_float_unix time_ns_unix)
  (preprocess
   (pps ppx_jane)))

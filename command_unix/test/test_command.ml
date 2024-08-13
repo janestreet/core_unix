@@ -214,7 +214,8 @@ let%expect_test "basic_or_error works as expected" =
        main)
   in
   run (fun () -> error_s [%message "an error"]);
-  [%expect {|
+  [%expect
+    {|
     "an error"
     (raised (command.ml.Exit_called (status 1)))
     |}];
@@ -398,7 +399,7 @@ let%test_unit _ =
   ; "foo", "../bar", "foo/../bar"
   ]
   |> List.iter ~f:(fun (dir, path, expected) ->
-       [%test_eq: string] (abs_path ~dir path) expected)
+    [%test_eq: string] (abs_path ~dir path) expected)
 ;;
 
 let%expect_test "choose_one strings" =
@@ -512,7 +513,8 @@ let%expect_test "[?verbose_on_parse_error]" =
     (raised (command.ml.Exit_called (status 1)))
     |}];
   test ~verbose_on_parse_error:false ();
-  [%expect {|
+  [%expect
+    {|
     Fail!
     (raised (command.ml.Exit_called (status 1)))
     |}]
@@ -651,7 +653,7 @@ let%expect_test "[and_arg_name]" =
 let truncate_long_lines output =
   String.split output ~on:'\n'
   |> List.map ~f:(fun line ->
-       if String.length line > 80 then String.prefix line 80 ^ " ..." else line)
+    if String.length line > 80 then String.prefix line 80 ^ " ..." else line)
   |> String.concat ~sep:"\n"
 ;;
 
@@ -673,7 +675,7 @@ let%expect_test "double-dash built-in flags" =
     let output1 = run_test_command (args @ [ "-" ^ flag ]) in
     let output2 = run_test_command (args @ [ "--" ^ flag ]) in
     print_string (truncate_long_lines output1);
-    require_compare_equal [%here] (module String) output1 output2
+    require_compare_equal (module String) output1 output2
   in
   run_with_both_flags [] "help";
   [%expect
@@ -695,7 +697,8 @@ let%expect_test "double-dash built-in flags" =
     (command.ml.Exit_called (status 0))
     |}];
   run_with_both_flags [] "version";
-  [%expect {|
+  [%expect
+    {|
     NO_VERSION_UTIL
     (command.ml.Exit_called (status 0))
     |}];
@@ -753,7 +756,8 @@ let%expect_test "when_parsing_succeeds" =
       command
   in
   run [ "-input"; "test" ];
-  [%expect {|
+  [%expect
+    {|
     Parsing Succeeded
     test
     |}];
@@ -806,18 +810,18 @@ let%expect_test "global normalized path and args" =
   in
   let print_normalized_path_and_args () =
     let default = "<NO-VALUE>" in
-    let normalized_path =
-      Command.For_telemetry.normalized_path ()
-      |> Option.value_map ~f:(String.concat ~sep:" ") ~default
-    in
-    let normalized_args =
-      Command.For_telemetry.normalized_args ()
-      |> Option.value_map ~f:(String.concat ~sep:" ") ~default
+    let normalized_path, normalized_args =
+      match Command.For_telemetry.normalized_path_and_args () with
+      | `Ok (`Path path, `Args args) ->
+        let concat = String.concat ~sep:" " in
+        concat path, concat args
+      | `Not_initialized_through_command -> default, default
     in
     printf "Normalized path: %s\nNormalized args: %s\n" normalized_path normalized_args
   in
   print_normalized_path_and_args ();
-  [%expect {|
+  [%expect
+    {|
     Normalized path: __exe_name__
     Normalized args:
     |}];
@@ -854,7 +858,7 @@ let%expect_test "special cased help before group member" =
     |}];
   (* A corner case of parsing--make sure that we don't break horribly on this command
      line, though we do see it as unclear. *)
-  require_does_raise [%here] (fun () ->
+  require_does_raise (fun () ->
     Command_unix.run ~argv:[ "binary"; "-help"; "-help"; "group" ] Simple_group.command);
   [%expect
     {|
@@ -895,7 +899,8 @@ let%expect_test "lazy Arg_type" =
   [%expect {| |}];
   (* Completions should still work. *)
   Command_test_helpers.complete param ~args:[ "t" ];
-  [%expect {|
+  [%expect
+    {|
     true
     (command.ml.Exit_called (status 0))
     |}]

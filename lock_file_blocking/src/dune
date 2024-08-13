@@ -1,7 +1,8 @@
 (library
  (name lock_file_blocking)
  (public_name core_unix.lock_file_blocking)
- (libraries core filename_unix linux_ext sys_unix)
+ (libraries core_kernel.caml_unix core core_unix filename_unix signal_unix
+   sys_unix)
  (preprocessor_deps config.h)
  (preprocess
   (pps ppx_jane ppx_optcomp)))

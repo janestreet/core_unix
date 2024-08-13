@@ -152,7 +152,7 @@ let run (type zone ofday time) time_m title f examples =
 
 let test time_m f =
   let go title examples =
-    require_does_not_raise [%here] (fun () ->
+    require_does_not_raise (fun () ->
       run time_m title f examples;
       run time_m title f (examples |> List.rev))
   in
@@ -208,7 +208,6 @@ let%expect_test "Time.of_date_ofday" =
       match times with
       | `Once time | `Echo (time, _) | `Never (`Synthetic time) | `Twice (_, time) ->
         require_equal
-          [%here]
           ~message:title
           (module Time)
           (Time.of_date_ofday ~zone date ofday)
@@ -223,7 +222,6 @@ let%expect_test "Time_ns.of_date_ofday" =
       match times with
       | `Once time | `Echo (time, _) | `Never (`Synthetic time) | `Twice (_, time) ->
         require_equal
-          [%here]
           ~message:title
           (module Time_ns)
           (Time_ns.of_date_ofday ~zone date ofday)
@@ -236,7 +234,7 @@ let%expect_test "Time.to_date" =
     (module Time)
     (fun ~title ~zone ~date ~ofday:_ ~times ->
       let f time =
-        require_equal [%here] ~message:title (module Date) (Time.to_date ~zone time) date
+        require_equal ~message:title (module Date) (Time.to_date ~zone time) date
       in
       match times with
       | `Never (`Synthetic time) -> f time
@@ -253,12 +251,7 @@ let%expect_test "Time_ns.to_date" =
     (module Time_ns)
     (fun ~title ~zone ~date ~ofday:_ ~times ->
       let f time =
-        require_equal
-          [%here]
-          ~message:title
-          (module Date)
-          (Time_ns.to_date ~zone time)
-          date
+        require_equal ~message:title (module Date) (Time_ns.to_date ~zone time) date
       in
       match times with
       | `Never (`Synthetic time) -> f time
@@ -275,12 +268,7 @@ let%expect_test "Time.to_ofday" =
     (module Time)
     (fun ~title ~zone ~date:_ ~ofday ~times ->
       let f time =
-        require_equal
-          [%here]
-          ~message:title
-          (module Time.Ofday)
-          (Time.to_ofday ~zone time)
-          ofday
+        require_equal ~message:title (module Time.Ofday) (Time.to_ofday ~zone time) ofday
       in
       match times with
       | `Once time -> f time
@@ -291,7 +279,6 @@ let%expect_test "Time.to_ofday" =
       | `Never (`Synthetic synthetic_time) ->
         let synthetic_ofday = Time.to_ofday ~zone synthetic_time in
         require
-          [%here]
           (not (Time.Ofday.equal ofday synthetic_ofday))
           ~if_false_then_print_s:
             (lazy
@@ -308,7 +295,6 @@ let%expect_test "Time_ns.to_ofday" =
     (fun ~title ~zone ~date:_ ~ofday ~times ->
       let f time =
         require_equal
-          [%here]
           ~message:title
           (module Time_ns.Ofday)
           (Time_ns.to_ofday ~zone time)
@@ -323,7 +309,6 @@ let%expect_test "Time_ns.to_ofday" =
       | `Never (`Synthetic synthetic_time) ->
         let synthetic_ofday = Time_ns.to_ofday ~zone synthetic_time in
         require
-          [%here]
           (not (Time_ns.Ofday.equal ofday synthetic_ofday))
           ~if_false_then_print_s:
             (lazy
@@ -340,7 +325,6 @@ let%expect_test "Time.to_date_ofday" =
     (fun ~title ~zone ~date:_ ~ofday:_ ~times ->
       let f time =
         require_equal
-          [%here]
           ~message:title
           (module Date_and_ofday)
           (Time.to_date_ofday ~zone time)
@@ -362,7 +346,6 @@ let%expect_test "Time_ns.to_date_ofday" =
     (fun ~title ~zone ~date:_ ~ofday:_ ~times ->
       let f time =
         require_equal
-          [%here]
           ~message:title
           (module Date_and_ofday_ns)
           (Time_ns.to_date_ofday ~zone time)
@@ -383,7 +366,6 @@ let%expect_test "Time.of_date_ofday_precise" =
     (module Time)
     (fun ~title ~zone ~date ~ofday ~times ->
       require_equal
-        [%here]
         ~message:title
         (module Time_precise)
         (Time.of_date_ofday_precise ~zone date ofday)
@@ -404,34 +386,29 @@ let%expect_test "Time.to_date_ofday_precise" =
       match times with
       | `Once time ->
         require_equal
-          [%here]
           ~message:title
           (module Date_ofday_precise)
           (Time.to_date_ofday_precise ~zone time)
           (date, ofday, `Only)
       | `Echo (time, `Of other_ofday) ->
         require_equal
-          [%here]
           ~message:title
           (module Date_ofday_precise)
           (Time.to_date_ofday_precise ~zone time)
           (date, ofday, `Also_skipped (date, other_ofday))
       | `Never (`Synthetic time) ->
         require_equal
-          [%here]
           ~message:title
           (module Date_ofday_precise)
           (Time.to_date_ofday_precise ~zone time)
           (Time.to_date ~zone time, Time.to_ofday ~zone time, `Also_skipped (date, ofday))
       | `Twice (time1, time2) ->
         require_equal
-          [%here]
           ~message:title
           (module Date_ofday_precise)
           (Time.to_date_ofday_precise ~zone time1)
           (date, ofday, `Also_at time2);
         require_equal
-          [%here]
           ~message:title
           (module Date_ofday_precise)
           (Time.to_date_ofday_precise ~zone time2)

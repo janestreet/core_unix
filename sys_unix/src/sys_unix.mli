@@ -131,7 +131,7 @@ val execution_mode : unit -> [ `Bytecode | `Native ]
     files. Note that this can be different from [word_size] and [Nativeint.num_bits]. For
     example, Linux x86-64 should have [word_size = 64], but [c_int_size () = 32]. *)
 external c_int_size : unit -> int = "c_int_size"
-  [@@noalloc]
+[@@noalloc]
 
 (** Return the home directory, using the [HOME] environment variable if that is defined,
     and if not, using the effective user's information in the Unix password database. *)

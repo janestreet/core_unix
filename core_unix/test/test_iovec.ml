@@ -10,19 +10,22 @@ let print_of_string ?pos ?len str =
 
 let%expect_test "[IOVec.of_string] on empty string" =
   print_of_string "";
-  [%expect {|
+  [%expect
+    {|
     ((buf "")
      (pos 0)
      (len 0))
     |}];
   print_of_string "foo" ~len:0;
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 0)
      (len 0))
     |}];
   print_of_string "foo" ~pos:3;
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 3)
      (len 0))
@@ -32,13 +35,15 @@ let%expect_test "[IOVec.of_string] on empty string" =
 
 let%expect_test "[IOVec.of_string] on full string" =
   print_of_string "foo";
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 0)
      (len 3))
     |}];
   print_of_string "foo" ~len:3;
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 0)
      (len 3))
@@ -48,13 +53,15 @@ let%expect_test "[IOVec.of_string] on full string" =
 
 let%expect_test "[IOVec.of_string] on trailing end of string" =
   print_of_string "foo" ~pos:1;
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 1)
      (len 2))
     |}];
   print_of_string "foo" ~pos:1 ~len:2;
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 1)
      (len 2))
@@ -63,11 +70,11 @@ let%expect_test "[IOVec.of_string] on trailing end of string" =
 ;;
 
 let%expect_test "[IOVec.of_string] on string too short" =
-  require_does_raise [%here] (fun () -> print_of_string "foo" ~pos:4);
+  require_does_raise (fun () -> print_of_string "foo" ~pos:4);
   [%expect {| (Invalid_argument "IOVec.of_string: pos > length buf") |}];
-  require_does_raise [%here] (fun () -> print_of_string "foo" ~len:4);
+  require_does_raise (fun () -> print_of_string "foo" ~len:4);
   [%expect {| (Invalid_argument "IOVec.of_string: pos + len > length buf") |}];
-  require_does_raise [%here] (fun () -> print_of_string "foo" ~pos:1 ~len:3);
+  require_does_raise (fun () -> print_of_string "foo" ~pos:1 ~len:3);
   [%expect {| (Invalid_argument "IOVec.of_string: pos + len > length buf") |}];
   return ()
 ;;
@@ -79,19 +86,22 @@ let print_of_bigstring ?pos ?len str =
 
 let%expect_test "[IOVec.of_bigstring] on empty bigstring" =
   print_of_bigstring "";
-  [%expect {|
+  [%expect
+    {|
     ((buf "")
      (pos 0)
      (len 0))
     |}];
   print_of_bigstring "foo" ~len:0;
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 0)
      (len 0))
     |}];
   print_of_bigstring "foo" ~pos:3;
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 3)
      (len 0))
@@ -101,13 +111,15 @@ let%expect_test "[IOVec.of_bigstring] on empty bigstring" =
 
 let%expect_test "[IOVec.of_bigstring] on full bigstring" =
   print_of_bigstring "foo";
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 0)
      (len 3))
     |}];
   print_of_bigstring "foo" ~len:3;
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 0)
      (len 3))
@@ -117,13 +129,15 @@ let%expect_test "[IOVec.of_bigstring] on full bigstring" =
 
 let%expect_test "[IOVec.of_bigstring] on trailing end of bigstring" =
   print_of_bigstring "foo" ~pos:1;
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 1)
      (len 2))
     |}];
   print_of_bigstring "foo" ~pos:1 ~len:2;
-  [%expect {|
+  [%expect
+    {|
     ((buf foo)
      (pos 1)
      (len 2))
@@ -132,11 +146,11 @@ let%expect_test "[IOVec.of_bigstring] on trailing end of bigstring" =
 ;;
 
 let%expect_test "[IOVec.of_bigstring] on bigstring too short" =
-  require_does_raise [%here] (fun () -> print_of_bigstring "foo" ~pos:4);
+  require_does_raise (fun () -> print_of_bigstring "foo" ~pos:4);
   [%expect {| (Invalid_argument "IOVec.of_bigstring: pos > length buf") |}];
-  require_does_raise [%here] (fun () -> print_of_bigstring "foo" ~len:4);
+  require_does_raise (fun () -> print_of_bigstring "foo" ~len:4);
   [%expect {| (Invalid_argument "IOVec.of_bigstring: pos + len > length buf") |}];
-  require_does_raise [%here] (fun () -> print_of_bigstring "foo" ~pos:1 ~len:3);
+  require_does_raise (fun () -> print_of_bigstring "foo" ~pos:1 ~len:3);
   [%expect {| (Invalid_argument "IOVec.of_bigstring: pos + len > length buf") |}];
   return ()
 ;;

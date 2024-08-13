@@ -7,6 +7,6 @@
    ()))
  (name filename_unix)
  (public_name core_unix.filename_unix)
- (libraries unix core sys_unix)
+ (libraries unix core_kernel.caml_unix core sys_unix)
  (preprocess
   (pps ppx_jane)))

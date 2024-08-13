@@ -95,7 +95,7 @@ external executing_bytecode
   -> unit
   -> bool
   = "executing_bytecode" "not_executing_bytecode"
-  [@@noalloc]
+[@@noalloc]
 
 let execution_mode () =
   if executing_bytecode () () () () () () then `Bytecode else `Native

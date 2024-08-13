@@ -467,22 +467,22 @@ let%expect_test "our gmtime matches Unix.gmtime" =
     ~trials:100_000
     ~examples:[ 0.; 100.; -100.; 86_400.; -86_400.; 90_000.; -90_000. ]
     ~f:(fun sec_since_epoch ->
-    let time = Time.of_span_since_epoch (Time.Span.of_sec sec_since_epoch) in
-    let my_date, my_ofday = gmtime time in
-    let unix_date, unix_ofday = unix_date_ofday sec_since_epoch in
-    let results = (my_date, my_ofday), (unix_date, unix_ofday) in
-    if not
-         (Tuple.T2.equal
-            ~eq1:Date.equal
-            ~eq2:Time.Ofday.equal
-            (fst results)
-            (snd results))
-    then
-      raise_s
-        [%message
-          "our gmtime doesn't match Unix.gmtime"
-            (sec_since_epoch : float)
-            (results : (Date.t * Time.Ofday.t) * (Date.t * Time.Ofday.t))])
+      let time = Time.of_span_since_epoch (Time.Span.of_sec sec_since_epoch) in
+      let my_date, my_ofday = gmtime time in
+      let unix_date, unix_ofday = unix_date_ofday sec_since_epoch in
+      let results = (my_date, my_ofday), (unix_date, unix_ofday) in
+      if not
+           (Tuple.T2.equal
+              ~eq1:Date.equal
+              ~eq2:Time.Ofday.equal
+              (fst results)
+              (snd results))
+      then
+        raise_s
+          [%message
+            "our gmtime doesn't match Unix.gmtime"
+              (sec_since_epoch : float)
+              (results : (Date.t * Time.Ofday.t) * (Date.t * Time.Ofday.t))])
 ;;
 
 (* we expose the private type of Timish things to help the compiler optimize things
@@ -499,7 +499,6 @@ let%expect_test "end-of-day constants" =
   let zones = List.map !Time.Zone.likely_machine_zones ~f:Time.Zone.find_exn in
   let test_round_trip zone date ofday ~expect =
     require_equal
-      [%here]
       (module Date)
       (Time.of_date_ofday ~zone date ofday |> Time.to_date ~zone)
       expect
@@ -595,22 +594,22 @@ let%test_module "Time.Stable" =
     end
 
     let test_stability (module M : S) =
-      require_does_not_raise [%here] (fun () ->
+      require_does_not_raise (fun () ->
         (* For the pre-written examples, test round-tripping, and also print out the
            converted values so we will see if they change. *)
-        print_and_check_stable_type [%here] (module M) M.examples;
+        print_and_check_stable_type (module M) M.examples;
         (* Test lots more pseudo-randomly generated examples for round-tripping. Do not
            print them out, as we don't want to read thousands of examples, so we won't
            know if their representation changes, but at least we will know they
            round-trip. *)
-        quickcheck [%here] M.quickcheck_generator ~sexp_of:M.sexp_of_t ~f:(fun example ->
-          require_does_not_raise [%here] (fun () ->
+        quickcheck M.quickcheck_generator ~sexp_of:M.sexp_of_t ~f:(fun example ->
+          require_does_not_raise (fun () ->
             let sexp = M.sexp_of_t example in
             let sexp_round_trip = M.t_of_sexp sexp in
-            require_compare_equal [%here] (module M) example sexp_round_trip;
+            require_compare_equal (module M) example sexp_round_trip;
             let string = Binable.to_string (module M) example in
             let binio_round_trip = Binable.of_string (module M) string in
-            require_compare_equal [%here] (module M) example binio_round_trip)))
+            require_compare_equal (module M) example binio_round_trip)))
     ;;
 
     module For_time = struct
@@ -624,7 +623,7 @@ let%test_module "Time.Stable" =
         (* We generate in units of microseconds because our current sexp representation is
            no more precise than that. *)
         |> Quickcheck.Generator.map ~f:(fun int64 ->
-             Time.of_span_since_epoch (Span.of_us (Int64.to_float int64)))
+          Time.of_span_since_epoch (Span.of_us (Int64.to_float int64)))
       ;;
     end
 
@@ -658,9 +657,9 @@ let%test_module "Time.Stable" =
              For_time.quickcheck_generator
              Int.quickcheck_generator)
         |> Quickcheck.Generator.filter_map ~f:(fun alist ->
-             match Time.Map.of_alist alist with
-             | `Ok map -> Some map
-             | `Duplicate_key _ -> None)
+          match Time.Map.of_alist alist with
+          | `Ok map -> Some map
+          | `Duplicate_key _ -> None)
       ;;
     end
 
@@ -794,7 +793,7 @@ let%test_module "Time.Stable" =
         |}];
       (* test that t_of_sexp accepts sexps qualified with time zones in two formats *)
       let test string =
-        require_does_not_raise [%here] (fun () ->
+        require_does_not_raise (fun () ->
           print_s
             [%sexp (Time.Stable.V1.t_of_sexp (Sexp.of_string string) : Time.Stable.V1.t)])
       in
@@ -2504,7 +2503,7 @@ let%test_module "Time.Stable" =
         {|
         (raised (
           Of_sexp_error
-          "Time.t_of_sexp: (time.ml.Make.Time_of_string \"2000-01-01 00:00:00.000000\"\n  (time_functor.ml.Make.Time_string_not_absolute\n    \"2000-01-01 00:00:00.000000\"))"
+          "Time.t_of_sexp: (time.ml.Make.Time_of_string \"2000-01-01 00:00:00.000000\"\n  (time_float.ml.T.Time_string_not_absolute \"2000-01-01 00:00:00.000000\"))"
           (invalid_sexp (2000-01-01 00:00:00.000000))))
         |}]
     ;;
@@ -2528,8 +2527,7 @@ let%test_module "Time.Stable.Span" =
 
     let%expect_test "V1" =
       print_and_check_stable_type
-        [%here]
-        (* V1 round-trips imprecisely in some cases, so we document them and note that
+      (* V1 round-trips imprecisely in some cases, so we document them and note that
            they are still reasonably close. *)
         ~cr:Comment
         (module Time.Stable.Span.V1)
@@ -2569,7 +2567,7 @@ let%test_module "Time.Stable.Span" =
     ;;
 
     let%expect_test "V2" =
-      print_and_check_stable_type [%here] (module Time.Stable.Span.V2) examples;
+      print_and_check_stable_type (module Time.Stable.Span.V2) examples;
       [%expect
         {|
         (bin_shape_digest 1fd923acb2dd9c5d401ad5b08b1d40cd)
@@ -2618,8 +2616,7 @@ let%test_module "Time.Stable.Ofday" =
 
     let%expect_test "V1" =
       print_and_check_stable_type
-        [%here]
-        (* V1 round-trips imprecisely in some cases, so we document them and note that
+      (* V1 round-trips imprecisely in some cases, so we document them and note that
            they are still reasonably close. *)
         ~cr:Comment
         (module Time.Stable.Ofday.V1)
@@ -2681,8 +2678,7 @@ let%test_module "Time.Stable.Ofday" =
 
     let%expect_test "Zoned.V1" =
       print_and_check_stable_type
-        [%here]
-        (* V1 round-trips imprecisely in some cases, so we document them and note that
+      (* V1 round-trips imprecisely in some cases, so we document them and note that
            they are still reasonably close. *)
         ~cr:Comment
         (module Time.Stable.Ofday.Zoned.V1)
@@ -2775,7 +2771,7 @@ let%test_module "Time.Stable.Zone" =
     ;;
 
     let%expect_test "V1" =
-      print_and_check_stable_type [%here] (module Time.Stable.Zone.V1) examples;
+      print_and_check_stable_type (module Time.Stable.Zone.V1) examples;
       [%expect
         {|
         (bin_shape_digest d9a8da25d5656b016fb4dbdc2e4197fb)
@@ -2806,7 +2802,6 @@ let%expect_test "Span.randomize" =
       if Span.( < ) rand lower_bound || Span.( > ) rand upper_bound
       then
         print_cr
-          [%here]
           [%message
             "out of bounds"
               (percent : Percent.t)
@@ -2886,22 +2881,26 @@ let%expect_test "times with implicit zones" =
   let test f = show_raise (fun () -> print_endline (Time.to_string (f ()))) in
   test (fun () ->
     Time.Stable.With_utc_sexp.V2.t_of_sexp (Sexp.of_string "(2013-10-07 09:30)"));
-  [%expect {|
+  [%expect
+    {|
     2013-10-07 05:30:00.000000-04:00
     "did not raise"
     |}];
   test (fun () -> Time.Stable.V1.t_of_sexp (Sexp.of_string "(2013-10-07 09:30)"));
-  [%expect {|
+  [%expect
+    {|
     2013-10-07 09:30:00.000000-04:00
     "did not raise"
     |}];
   test (fun () -> Time.t_of_sexp (Sexp.Atom "2013-10-07 09:30"));
-  [%expect {|
+  [%expect
+    {|
     2013-10-07 09:30:00.000000-04:00
     "did not raise"
     |}];
   test (fun () -> Time.of_string "2013-10-07 09:30");
-  [%expect {|
+  [%expect
+    {|
     2013-10-07 09:30:00.000000-04:00
     "did not raise"
     |}]
@@ -2911,12 +2910,12 @@ let%test_unit "ofday_zoned conversion consistency" =
   let quickcheck_generator =
     Int64.gen_uniform_incl (-10_000_000_000_000_000L) 10_000_000_000_000_000L
     |> Quickcheck.Generator.map ~f:(fun int64 ->
-         Time.of_span_since_epoch (Span.of_us (Int64.to_float int64)))
+      Time.of_span_since_epoch (Span.of_us (Int64.to_float int64)))
   in
   let utc = Zone.utc in
   let nyc = Zone.find_exn "America/New_York" in
   let hkg = Zone.find_exn "Asia/Hong_Kong" in
-  require_does_not_raise [%here] (fun () ->
+  require_does_not_raise (fun () ->
     Quickcheck.test quickcheck_generator ~trials:100 ~f:(fun time ->
       let date_utc = Time.to_date time ~zone:utc in
       let date_nyc = Time.to_date time ~zone:nyc in
@@ -2951,7 +2950,7 @@ let%test_unit "ofday_zoned conversion consistency" =
 ;;
 
 let%expect_test "sexp grammar" =
-  require_ok [%here] (Sexp_grammar_validation.validate_grammar (module Time_float_unix));
+  require_ok (Sexp_grammar_validation.validate_grammar (module Time_float_unix));
   [%expect
     {|
     (Union

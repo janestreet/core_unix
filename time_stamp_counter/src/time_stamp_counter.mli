@@ -81,35 +81,35 @@ include Comparisons.S with type t := t
     argument, the internal instance is used when no calibrator is explicitly specified.
 *)
 module Calibrator : sig
-  type tsc
-  type t [@@deriving bin_io, sexp]
+    type tsc
+    type t [@@deriving bin_io, sexp]
 
-  (** [create ()] creates an uninitialized calibrator instance.  Creating a calibrator
+    (** [create ()] creates an uninitialized calibrator instance.  Creating a calibrator
       takes about 3ms.  One needs a recently calibrated [Calibrator.t] and the TSC value
       from the same machine to meaningfully convert the TSC value to a [Time.t]. *)
-  val create : unit -> t
+    val create : unit -> t
 
-  (** [calibrate t] updates [t] by measuring the current value of the TSC and
+    (** [calibrate t] updates [t] by measuring the current value of the TSC and
       [Time.now]. *)
-  val calibrate : t -> unit
+    val calibrate : t -> unit
 
-  (** Returns the estimated MHz of the CPU's time-stamp-counter based on the TSC and
+    (** Returns the estimated MHz of the CPU's time-stamp-counter based on the TSC and
       [Time.now ()].  This function is undefined on 32-bit machines. *)
-  val cpu_mhz : (t -> float) Or_error.t
+    val cpu_mhz : (t -> float) Or_error.t
 
-  (**/**)
+    (**/**)
 
-  (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+    (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
     https://opensource.janestreet.com/standards/#private-submodules *)
-  module Private : sig
-    val create_using : tsc:tsc -> time:float -> samples:(tsc * float) list -> t
-    val calibrate_using : t -> tsc:tsc -> time:float -> am_initializing:bool -> unit
-    val initialize : t -> (tsc * float) list -> unit
-    val nanos_per_cycle : t -> float
+    module Private : sig
+      val create_using : tsc:tsc -> time:float -> samples:(tsc * float) list -> t
+      val calibrate_using : t -> tsc:tsc -> time:float -> am_initializing:bool -> unit
+      val initialize : t -> (tsc * float) list -> unit
+      val nanos_per_cycle : t -> float
+    end
   end
-end
-with type tsc := t
+  with type tsc := t
 
 (** [Span] indicates some integer number of cycles. *)
 module Span : sig

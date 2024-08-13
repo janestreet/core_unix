@@ -66,8 +66,8 @@ let%test_module "recvmmsg smoke" =
       | Ok recvmmsg_assume_fd_is_nonblocking ->
         [%test_pred: (int, exn) Result.t]
           (function
-           | Ok i -> ok_pred i
-           | Error e -> error_pred e)
+            | Ok i -> ok_pred i
+            | Error e -> error_pred e)
           (Result.try_with (fun () ->
              recvmmsg_assume_fd_is_nonblocking fd iovecs ?count ?srcs ~lens))
     ;;

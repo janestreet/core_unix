@@ -14,16 +14,16 @@ let%test_unit _ =
   List.iter
     [ Iobuf.Expert.to_bigstring_shared; to_bigstring_shared_via_iovec ]
     ~f:(fun to_bstr ->
-    let iobuf = Iobuf.of_string "0123456789" in
-    let bstr0 = to_bstr iobuf in
-    [%test_result: Bigstring.t] bstr0 ~expect:(Bigstring.of_string "0123456789");
-    Iobuf.Poke.char iobuf ~pos:0 'X';
-    [%test_result: Bigstring.t] bstr0 ~expect:(Bigstring.of_string "X123456789");
-    let bstr1 = to_bstr iobuf ~pos:1 ~len:8 in
-    [%test_result: Bigstring.t] bstr1 ~expect:(Bigstring.of_string "12345678");
-    Iobuf.Poke.char iobuf ~pos:1 'X';
-    [%test_result: Bigstring.t] bstr1 ~expect:(Bigstring.of_string "X2345678");
-    [%test_result: Bigstring.t] bstr0 ~expect:(Bigstring.of_string "XX23456789"))
+      let iobuf = Iobuf.of_string "0123456789" in
+      let bstr0 = to_bstr iobuf in
+      [%test_result: Bigstring.t] bstr0 ~expect:(Bigstring.of_string "0123456789");
+      Iobuf.Poke.char iobuf ~pos:0 'X';
+      [%test_result: Bigstring.t] bstr0 ~expect:(Bigstring.of_string "X123456789");
+      let bstr1 = to_bstr iobuf ~pos:1 ~len:8 in
+      [%test_result: Bigstring.t] bstr1 ~expect:(Bigstring.of_string "12345678");
+      Iobuf.Poke.char iobuf ~pos:1 'X';
+      [%test_result: Bigstring.t] bstr1 ~expect:(Bigstring.of_string "X2345678");
+      [%test_result: Bigstring.t] bstr0 ~expect:(Bigstring.of_string "XX23456789"))
 ;;
 
 let%expect_test "fillf_float.Ok" =
@@ -50,19 +50,19 @@ type nonrec ok_or_eof = ok_or_eof =
 let iter_examples = Iobuf_test.Test_iobuf.iter_examples
 
 module Io_test (Ch : sig
-  type in_
+    type in_
 
-  val create_in : string -> in_
-  val close_in : in_ -> unit
-  val read : ([> write ], seek) Iobuf.t -> in_ -> ok_or_eof
+    val create_in : string -> in_
+    val close_in : in_ -> unit
+    val read : ([> write ], seek) Iobuf.t -> in_ -> ok_or_eof
 
-  type out_
+    type out_
 
-  val create_out : Unix.File_descr.t -> out_
-  val close_out : out_ -> unit
-  val write : ([> read ], seek) Iobuf.t -> out_ -> unit
-  val peek_write : ([> read ], _) Iobuf.t -> out_ -> int
-end) =
+    val create_out : Unix.File_descr.t -> out_
+    val close_out : out_ -> unit
+    val write : ([> read ], seek) Iobuf.t -> out_ -> unit
+    val peek_write : ([> read ], _) Iobuf.t -> out_ -> int
+  end) =
 struct
   let%test_unit "write + read" =
     iter_examples ~f:(fun t string ~pos ->
@@ -118,35 +118,35 @@ let output = output
 let input = input
 
 include Io_test (struct
-  type in_ = In_channel.t
+    type in_ = In_channel.t
 
-  let create_in file = In_channel.create file
-  let close_in = In_channel.close
+    let create_in file = In_channel.create file
+    let close_in = In_channel.close
 
-  type out_ = Out_channel.t
+    type out_ = Out_channel.t
 
-  let create_out = Unix.out_channel_of_descr
-  let close_out = Out_channel.close
-  let write = output
-  let peek_write = Peek.output
-  let read = input
-end)
+    let create_out = Unix.out_channel_of_descr
+    let close_out = Out_channel.close
+    let write = output
+    let peek_write = Peek.output
+    let read = input
+  end)
 
 let read = read
 let write = write
 
 include Io_test (struct
-  type in_ = Unix.File_descr.t
-  type out_ = in_
+    type in_ = Unix.File_descr.t
+    type out_ = in_
 
-  let create_in file = Unix.openfile ~mode:[ Unix.O_RDONLY ] file
-  let close_in fd = Unix.close fd
-  let create_out = Fn.id
-  let close_out = close_in
-  let read = read
-  let peek_write = Peek.write
-  let write = write
-end)
+    let create_in file = Unix.openfile ~mode:[ Unix.O_RDONLY ] file
+    let close_in fd = Unix.close fd
+    let create_out = Fn.id
+    let close_out = close_in
+    let read = read
+    let peek_write = Peek.write
+    let write = write
+  end)
 
 let read_assume_fd_is_nonblocking = read_assume_fd_is_nonblocking
 let write_assume_fd_is_nonblocking = write_assume_fd_is_nonblocking
@@ -428,7 +428,6 @@ let%expect_test "[In_channel.input_lines]" =
           let base = Option.try_with (fun () -> Array.get base i) in
           let fast = Option.try_with (fun () -> Array.get fast i) in
           Expect_test_helpers_core.require_equal
-            [%here]
             (module SO)
             base
             fast
@@ -473,7 +472,8 @@ let%expect_test "[In_channel.fold_lines_raw]" =
         i + 1
       in
       assert (3 = In_channel_optimized.fold_lines_raw ch ~init:0 ~f));
-  [%expect {|
+  [%expect
+    {|
     ((buf a) (i 0))
     ((buf bc) (i 1))
     ((buf def) (i 2))

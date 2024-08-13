@@ -26,10 +26,10 @@ let in_child () =
   |> Sexp.of_string
   |> [%of_sexp: t list]
   |> List.iter ~f:(function
-       | Write_stdout -> ignore (Unix.write_substring Unix.stdout ~buf : int)
-       | Write_stderr -> ignore (Unix.write_substring Unix.stderr ~buf : int)
-       | Close_stdout -> Unix.close Unix.stdout
-       | Close_stderr -> Unix.close Unix.stderr)
+    | Write_stdout -> ignore (Unix.write_substring Unix.stdout ~buf : int)
+    | Write_stderr -> ignore (Unix.write_substring Unix.stderr ~buf : int)
+    | Close_stdout -> Unix.close Unix.stdout
+    | Close_stderr -> Unix.close Unix.stderr)
 ;;
 
 let parent_cmd =

@@ -53,25 +53,25 @@ module _ = struct
 end
 
 let%expect_test "[Unstable.t_of_sexp] validates its input" =
-  require_does_raise [%here] (fun () -> [%of_sexp: Unstable.t] [%sexp "not a uuid"]);
+  require_does_raise (fun () -> [%of_sexp: Unstable.t] [%sexp "not a uuid"]);
   [%expect
     {| (Of_sexp_error "not a uuid: not a valid UUID" (invalid_sexp "not a uuid")) |}]
 ;;
 
 let%expect_test "[Stable.V1.t_of_sexp] does not validate its input" =
-  require_does_not_raise [%here] (fun () ->
+  require_does_not_raise (fun () ->
     ignore ([%of_sexp: Stable.V1.t] [%sexp "not a uuid"] : t));
   [%expect {| |}]
 ;;
 
 let%expect_test "[Unstable.t_of_sexp] on a valid input" =
-  require_does_not_raise [%here] (fun () ->
+  require_does_not_raise (fun () ->
     ignore ([%of_sexp: Unstable.t] [%sexp "1f7f8c2e-d297-11ea-aafd-aa0000ef6338"] : t));
   [%expect {| |}]
 ;;
 
 let%expect_test "[Stable.V1.t_of_sexp] on a valid input" =
-  require_does_not_raise [%here] (fun () ->
+  require_does_not_raise (fun () ->
     ignore ([%of_sexp: Stable.V1.t] [%sexp "1f7f8c2e-d297-11ea-aafd-aa0000ef6338"] : t));
   [%expect {| |}]
 ;;

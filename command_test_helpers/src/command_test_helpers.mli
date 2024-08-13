@@ -20,7 +20,7 @@ val parse_command_line
   -> ?readme:(unit -> string)
   -> 'a Command.Param.t
   -> (?on_error:(unit -> unit) -> ?on_success:('a -> unit) -> string list -> unit)
-     Staged.t
+       Staged.t
 
 val parse_command_line_or_error
   :  ?path:string list

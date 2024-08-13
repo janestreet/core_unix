@@ -11,7 +11,7 @@ let run_parent fdm fds =
     let _ = eprintf "%s%!" msg in
     let rlen = Unix.read Unix.stdin ~len:buflen ~buf in
     let s = if rlen < buflen then Bytes.subo buf ~len:rlen else buf in
-    let (_ : int) = Unix.write fdm ~buf:s in
+    let _ : int = Unix.write fdm ~buf:s in
     let rlen = Unix.read fdm ~len:buflen ~buf in
     let s =
       if rlen < buflen then Bytes.To_string.subo buf ~len:rlen else Bytes.to_string buf

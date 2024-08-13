@@ -1,6 +1,7 @@
 (library
  (name command_unix_test)
  (libraries textutils.ascii_table async command_test_helpers command_unix
-   expect_test_helpers_async expect_test_patterns)
+   core core_unix expect_test_helpers_async expect_test_helpers_core
+   expect_test_patterns sexp_pretty)
  (preprocess
   (pps ppx_jane)))

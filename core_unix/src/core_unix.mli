@@ -82,10 +82,10 @@ type error = Unix.error =
 [@@deprecated "[since 2016-10] use [Unix.Error.t] instead"]
 
 val sexp_of_error : Unix.error -> Sexp.t
-  [@@deprecated "[since 2016-10] use [Unix.Error.t] instead"]
+[@@deprecated "[since 2016-10] use [Unix.Error.t] instead"]
 
 val error_of_sexp : Sexp.t -> Unix.error
-  [@@deprecated "[since 2016-10] use [Unix.Error.t] instead"]
+[@@deprecated "[since 2016-10] use [Unix.Error.t] instead"]
 
 module Error : sig
   (** The type of error codes.  Errors defined in the POSIX standard and additional
@@ -189,7 +189,7 @@ module Syscall_result : module type of Syscall_result with type 'a t = 'a Syscal
 val unix_error : int -> string -> string -> _
 
 val error_message : Error.t -> string
-  [@@deprecated "[since 2016-10] use [Unix.Error.message] instead"]
+[@@deprecated "[since 2016-10] use [Unix.Error.message] instead"]
 
 (** [handle_unix_error f] runs [f ()] and returns the result.  If the exception
     [Unix_error] is raised, it prints a message describing the error and exits with code
@@ -688,6 +688,26 @@ val lstat : string -> stats
     descriptor. *)
 val fstat : File_descr.t -> stats
 
+module Statvfs : sig
+  type t =
+    { bsize : int (** file system block size *)
+    ; frsize : int (** fragment size *)
+    ; blocks : int (** size of fs in frsize units *)
+    ; bfree : int (** # free blocks *)
+    ; bavail : int (** # free blocks for non-root *)
+    ; files : int (** # inodes *)
+    ; ffree : int (** # free inodes *)
+    ; favail : int (** # free inodes for non-root *)
+    ; fsid : int (** file system ID *)
+    ; flag : int (** mount flags *)
+    ; namemax : int (** maximum filename length *)
+    }
+  [@@deriving sexp, bin_io]
+end
+
+(** Return the information for a mounted filesystem. *)
+val statvfs : string -> Statvfs.t
+
 (** This sub-module provides the normal OCaml Unix functions that deal with file size
     using native ints.  These are here because, in general, you should be using 64bit
     file operations so that large files aren't an issue.  If you have a real need to
@@ -935,7 +955,7 @@ val readdir_opt : dir_handle -> string option
 (** Same as [readdir_opt] except that it signals the end of the directory by raising
     [End_of_file]. *)
 val readdir : dir_handle -> string
-  [@@deprecated "[since 2016-08] use [readdir_opt] instead"]
+[@@deprecated "[since 2016-08] use [readdir_opt] instead"]
 
 (** Reposition the descriptor to the beginning of the directory *)
 val rewinddir : dir_handle -> unit
@@ -948,7 +968,7 @@ module Readdir_detailed : sig
     { name : string
     ; inode : Nativeint.t
     ; kind : file_kind option
-        (** Some OS/filesystems provide the file type of the directory entry, some don't, some
+    (** Some OS/filesystems provide the file type of the directory entry, some don't, some
         do based on mount options. Code should not require the file type to be present,
         merely use it as a way to increase speed or reduce race conditions. *)
     }
@@ -1291,11 +1311,11 @@ val utimes : string -> access:float -> modif:float -> unit
 (** The three kinds of interval timers. *)
 type interval_timer = Unix.interval_timer =
   | ITIMER_REAL
-      (** decrements in real time, and sends the signal [SIGALRM] when expired.*)
+  (** decrements in real time, and sends the signal [SIGALRM] when expired.*)
   | ITIMER_VIRTUAL
-      (**  decrements in process virtual time, and sends [SIGVTALRM] when expired. *)
+  (**  decrements in process virtual time, and sends [SIGVTALRM] when expired. *)
   | ITIMER_PROF
-      (** (for profiling) decrements both when the process
+  (** (for profiling) decrements both when the process
       is running and when the system is running on behalf of the
       process; it sends [SIGPROF] when expired. *)
 [@@deriving sexp]
@@ -1424,7 +1444,7 @@ module Inet_addr : sig
       want a sexp converter to do that.  As we transition away, one can use
       [Blocking_sexp], which has the old behavior. *)
   val t_of_sexp : Sexp.t -> t
-    [@@deprecated "[since 2015-10] Replace [t] by [Stable.V1.t] or by [Blocking_sexp.t]"]
+  [@@deprecated "[since 2015-10] Replace [t] by [Stable.V1.t] or by [Blocking_sexp.t]"]
 
   (** [Blocking_sexp] performs DNS lookup to resolve hostnames to IP addresses. *)
   module Blocking_sexp : sig
@@ -1477,8 +1497,8 @@ module Inet_addr : sig
 
       include
         Stable_with_witness
-          with type t := t
-           and type comparator_witness = comparator_witness
+        with type t := t
+         and type comparator_witness = comparator_witness
     end
   end
 end
@@ -1540,8 +1560,8 @@ module Cidr : sig
   module Stable : sig
     module V1 :
       Stable_comparable.With_stable_witness.V1
-        with type t = t
-        with type comparator_witness = comparator_witness
+      with type t = t
+      with type comparator_witness = comparator_witness
   end
 end
 
@@ -1573,7 +1593,7 @@ type sockaddr = Unix.sockaddr =
 [@@deriving bin_io, compare, sexp_of]
 
 val sockaddr_of_sexp : Sexp.t -> sockaddr
-  [@@deprecated "[since 2015-10] Replace [sockaddr] by [sockaddr_blocking_sexp]"]
+[@@deprecated "[since 2015-10] Replace [sockaddr] by [sockaddr_blocking_sexp]"]
 
 (** [sockaddr_blocking_sexp] is like [sockaddr], with [of_sexp] that performs DNS lookup
     to resolve [Inet_addr.t]. *)
@@ -1746,7 +1766,7 @@ type socket_int_option =
   | SO_SNDBUF (** Size of send buffer *)
   | SO_RCVBUF (** Size of received buffer *)
   | SO_ERROR [@alert deprecated "Use Unix.getsockopt_error instead."]
-      (** Report the error status and clear it *)
+  (** Report the error status and clear it *)
   | SO_TYPE (** Report the socket type *)
   | SO_RCVLOWAT (** Minimum number of bytes to process for input operations *)
   | SO_SNDLOWAT (** Minimum number of bytes to process for output operations *)
@@ -1757,7 +1777,7 @@ type socket_int_option =
     value of type [int option], with [None] meaning ``disabled''. *)
 type socket_optint_option =
   | SO_LINGER
-      (** Whether to linger on closed connections with sexp that have
+  (** Whether to linger on closed connections with sexp that have
       data present, and for how long (in seconds) *)
 
 (** The socket options that can be consulted with {!UnixLabels.getsockopt_float}
@@ -1987,7 +2007,7 @@ module Terminal_io : sig
     ; (*_ Local modes: *)
       mutable c_isig : bool (** Generate signal on INTR, QUIT, SUSP. *)
     ; mutable c_icanon : bool
-        (** Enable canonical processing (line buffering and editing) *)
+    (** Enable canonical processing (line buffering and editing) *)
     ; mutable c_noflsh : bool (** Disable flush after INTR, QUIT, SUSP. *)
     ; mutable c_echo : bool (** Echo input characters. *)
     ; mutable c_echoe : bool (** Echo ERASE (to erase previous character). *)
@@ -2001,7 +2021,7 @@ module Terminal_io : sig
     ; mutable c_veof : char (** End-of-file character (usually ctrl-D). *)
     ; mutable c_veol : char (** Alternate end-of-line char. (usually none). *)
     ; mutable c_vmin : int
-        (** Minimum number of characters to read before the read request is satisfied. *)
+    (** Minimum number of characters to read before the read request is satisfied. *)
     ; mutable c_vtime : int (** Maximum read wait (in 0.1s units). *)
     ; mutable c_vstart : char (** Start character (usually ctrl-Q). *)
     ; mutable c_vstop : char (** Stop character (usually ctrl-S). *)

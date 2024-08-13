@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
 
+#undef Hide_upstream_size_macros
+
 #include "config.h"
 #include "ocaml_utils.h"
 
@@ -24,13 +26,13 @@ CAMLprim value pthread_np_setaffinity_self(value cpuids)
   CPU_ZERO(&cpuset);
 
   length = Wosize_val(cpuids);
-  for (i = 0; i < length; i++) 
+  for (i = 0; i < length; i++)
   {
     CPU_SET(Int_val(Field(cpuids, i)), &cpuset);
   }
 
   result = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (result < 0) 
+  if (result < 0)
   {
     uerror("pthread_setaffinity_np", Nothing);
   }

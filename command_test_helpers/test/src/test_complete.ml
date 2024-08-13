@@ -11,13 +11,15 @@ let%expect_test "simple" =
     ()
   in
   Command_test_helpers.complete param ~args:[ "" ];
-  [%expect {|
+  [%expect
+    {|
     false
     true
     (command.ml.Exit_called (status 0))
     |}];
   Command_test_helpers.complete param ~args:[ "t" ];
-  [%expect {|
+  [%expect
+    {|
     true
     (command.ml.Exit_called (status 0))
     |}];
@@ -33,28 +35,33 @@ let%expect_test "simple" =
     (command.ml.Exit_called (status 0))
     |}];
   Command_test_helpers.complete param ~args:[ "t"; "-f" ];
-  [%expect {|
+  [%expect
+    {|
     -foo
     (command.ml.Exit_called (status 0))
     |}];
   Command_test_helpers.complete param ~args:[ "t"; "-f" ] ~which_arg:0;
-  [%expect {|
+  [%expect
+    {|
     true
     (command.ml.Exit_called (status 0))
     |}];
   Command_test_helpers.complete param ~args:[ "t"; "-b" ];
-  [%expect {|
+  [%expect
+    {|
     -bar
     -build-info
     (command.ml.Exit_called (status 0))
     |}];
   Command_test_helpers.complete param ~args:[ "t"; "-bar" ];
-  [%expect {|
+  [%expect
+    {|
     -bar
     (command.ml.Exit_called (status 0))
     |}];
   Command_test_helpers.complete param ~args:[ "t"; "-bar"; "" ];
-  [%expect {|
+  [%expect
+    {|
     false
     true
     (command.ml.Exit_called (status 0))
@@ -87,12 +94,12 @@ let%expect_test "side effects" =
   in
   let param =
     let%map_open.Command () = anon ("_" %: Arg_type.create ~complete (const ())) in
-    print_cr [%here] [%message "This shouldn't have run."];
+    print_cr [%message "This shouldn't have run."];
     state := "set by param";
     Unix.putenv ~key:var ~data:"set by param"
   in
   Command_test_helpers.complete param ~args:[ "" ];
-  require_compare_equal [%here] (module String) !state set_by_complete;
-  require_compare_equal [%here] (module String) (Sys.getenv_exn var) set_by_complete;
+  require_compare_equal (module String) !state set_by_complete;
+  require_compare_equal (module String) (Sys.getenv_exn var) set_by_complete;
   [%expect {| (command.ml.Exit_called (status 0)) |}]
 ;;

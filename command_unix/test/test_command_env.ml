@@ -19,7 +19,8 @@ let%expect_test "clear" =
 
 let%expect_test "set" =
   let%map () = run "set" in
-  [%expect {|
+  [%expect
+    {|
     TEST_VAR=TEST_VALUE
     DUMMY_VARIABLE=DUMMY
     |}]

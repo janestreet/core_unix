@@ -2,7 +2,7 @@
  (foreign_stubs
   (language c)
   (names ocaml_c_utils_stubs)
-  (flags :standard -D_LARGEFILE64_SOURCE))
+  (flags :standard -fPIC -D_LARGEFILE64_SOURCE))
  (name ocaml_c_utils)
  (public_name core_unix.ocaml_c_utils)
  (libraries jane-street-headers)

@@ -11,7 +11,7 @@ let zone = force Time.Zone.local
 
 let require_span_equal_ms_precision here s1 s2 =
   require_equal
-    here
+    ~here
     (module Int63)
     (Float.int63_round_nearest_exn (Time.Span.to_ms s1))
     (Float.int63_round_nearest_exn (Time.Span.to_ms s2))
@@ -29,7 +29,7 @@ let require_similar_time here time time' =
   let time' = Time.to_span_since_epoch time' |> Time.Span.to_sec in
   let delta = Float.abs (time -. time') in
   require
-    here
+    ~here
     (Float.( < ) delta 0.01)
     ~if_false_then_print_s:(lazy [%message (delta : float)])
 ;;
@@ -61,21 +61,21 @@ let%expect_test "t" =
     [%sexp
       (Float.iround_exn ~dir:`Nearest (Time.Span.to_us (Time.diff time4 time3)) : int)];
   [%expect {| 338 |}];
-  require [%here] (Time.( >= ) now2 now1);
+  require (Time.( >= ) now2 now1);
   let test_sexp_roundtrip time =
-    require_equal [%here] (module Time) (Time.t_of_sexp (Time.sexp_of_t time)) time
+    require_equal (module Time) (Time.t_of_sexp (Time.sexp_of_t time)) time
   in
   test_sexp_roundtrip time1;
   test_sexp_roundtrip time2;
   test_sexp_roundtrip time3;
   let date, ofday = Time.to_date_ofday time3 ~zone in
   print_s [%message (date : Date.t) (ofday : Time.Ofday.t)];
-  [%expect {|
+  [%expect
+    {|
     ((date  2005-05-25)
      (ofday 12:46:15.232000))
     |}];
   require_equal
-    [%here]
     (module Time.Ofday)
     (Time.Ofday.of_string "09:13")
     (Time.Ofday.of_string "0913");
@@ -197,7 +197,6 @@ let%test_module "compare with old implementation" =
           then loop (n + 1) (Date.add_days current_date 1)
           else
             print_cr
-              [%here]
               [%message
                 "Implementations do not match"
                   (n : int)
@@ -220,7 +219,6 @@ let%test_module "compare with old implementation" =
           then loop (n + 1) new_method
           else
             print_cr
-              [%here]
               [%message
                 "Implementations do not match"
                   (n : int)
@@ -306,7 +304,7 @@ let%expect_test "add_business_days_rounding_forward" =
     print_s
       [%sexp
         (Date.add_business_days_rounding_forward ~is_holiday (Date.of_string d1) n
-          : Date.t)]
+         : Date.t)]
   in
   test "2009-01-01" 1;
   [%expect {| 2009-01-05 |}];
@@ -335,7 +333,7 @@ let%expect_test "add_business_days_rounding_backward" =
     print_s
       [%sexp
         (Date.add_business_days_rounding_backward ~is_holiday (Date.of_string d1) n
-          : Date.t)]
+         : Date.t)]
   in
   test "2009-01-01" 1;
   [%expect {| 2009-01-02 |}];
@@ -377,13 +375,12 @@ let%expect_test "span_conv" =
     in
     let delta = Float.abs (of_span (to_span x) -. x) in
     require
-      [%here]
       (Float.( <= ) delta tolerance)
       ~if_false_then_print_s:(lazy [%message (delta : float)])
   in
   let test ?tolerance here of_span to_span =
     quickcheck_m
-      here
+      ~here
       (module struct
         type t = float [@@deriving quickcheck, sexp_of]
 
@@ -407,7 +404,7 @@ let%expect_test " date" =
   print_endline (Date.to_string d);
   [%expect {| 2004-04-15 |}];
   let test_alternative_string string =
-    require_equal [%here] (module Date) (Date.of_string string) d
+    require_equal (module Date) (Date.of_string string) d
   in
   test_alternative_string "2004-04-15";
   test_alternative_string "20040415";
@@ -427,7 +424,6 @@ let%expect_test "norollover" =
 
 let%expect_test "quickcheck tests of string roundtrip" =
   quickcheck_m
-    [%here]
     (module Time)
     ~f:(fun time ->
       require_similar_time [%here] time (Time.of_string (Time.to_string time));
@@ -441,7 +437,7 @@ let%expect_test "quickcheck tests of string roundtrip" =
 let%expect_test "to_string,of_string2" =
   let test_to_string_abs_roundtrip s =
     let t = Time.of_string s in
-    require_equal [%here] (module String) (Time.to_string_abs t ~zone) s
+    require_equal (module String) (Time.to_string_abs t ~zone) s
   in
   test_to_string_abs_roundtrip "2005-06-01 10:15:08.047123-04:00";
   test_to_string_abs_roundtrip "2006-06-16 04:37:07.082945-04:00"
@@ -449,7 +445,6 @@ let%expect_test "to_string,of_string2" =
 
 let%expect_test "of_string without colon, negative offset" =
   require_equal
-    [%here]
     (module Time)
     (Time.of_string_abs "2015-07-14 10:31:55.564871-04:00")
     (Time.of_string_abs "2015-07-14 10:31:55.564871-0400")
@@ -457,7 +452,6 @@ let%expect_test "of_string without colon, negative offset" =
 
 let%expect_test "of_string without colon, positive offset" =
   require_equal
-    [%here]
     (module Time)
     (Time.of_string_abs "2015-07-14 10:31:55.564871+04:00")
     (Time.of_string_abs "2015-07-14 10:31:55.564871+0400")
@@ -471,14 +465,14 @@ let%expect_test "of_string with leap second" =
       Time.Ofday.start_of_day
   in
   List.iter [ "2015-06-30 23:59:60Z"; "2015-06-30 23:59:60.500Z" ] ~f:(fun s ->
-    require_equal [%here] (module Time) (Time.of_string s) expected_time_at_leap_second)
+    require_equal (module Time) (Time.of_string s) expected_time_at_leap_second)
 ;;
 
 let%expect_test "to_filename_string,of_filename_string2" =
   let test s =
     let t = Time.of_filename_string s ~zone in
     let s_roundtrip = Time.to_filename_string t ~zone in
-    require_equal [%here] (module String) s s_roundtrip;
+    require_equal (module String) s s_roundtrip;
     print_s [%sexp (t : Time.t)]
   in
   test "2005-06-01_10-15-08.047983";
@@ -489,7 +483,7 @@ let%expect_test "daylight_saving_time" =
   let s = "2006-04-02 23:00:00.000000-04:00" in
   let time = Time.of_string s in
   let s_roundtrip = Time.to_string_abs ~zone time in
-  require_equal [%here] (module String) s s_roundtrip
+  require_equal (module String) s s_roundtrip
 ;;
 
 let%expect_test "weird_date_in_time" =
@@ -505,7 +499,7 @@ let%expect_test "weird_date_in_time" =
 
 let%expect_test "ofday_small_diff" =
   let require_same here x y =
-    require here (Float.( < ) (Float.abs (x -. y)) (sqrt Float.epsilon_float))
+    require ~here (Float.( < ) (Float.abs (x -. y)) (sqrt Float.epsilon_float))
   in
   let check (s1, s2, d) =
     let t1 = Time.Ofday.of_string s1 in
@@ -543,9 +537,9 @@ let%expect_test "occurrence_right_side" =
     List.map utimes ~f:(fun ut -> Time.occurrence `Last_before_or_at now ~zone ~ofday:ut)
   in
   List.iter after_times ~f:(fun t ->
-    require [%here] (Float.( >= ) (Time.Span.to_sec (Time.to_span_since_epoch t)) now_f));
+    require (Float.( >= ) (Time.Span.to_sec (Time.to_span_since_epoch t)) now_f));
   List.iter before_times ~f:(fun t ->
-    require [%here] (Float.( <= ) (Time.Span.to_sec (Time.to_span_since_epoch t)) now_f))
+    require (Float.( <= ) (Time.Span.to_sec (Time.to_span_since_epoch t)) now_f))
 ;;
 
 let%expect_test "occurrence_distance" =
@@ -570,12 +564,12 @@ let%expect_test "occurrence_distance" =
     let od = Time.Ofday.of_string od_s in
     let prediction = Time.of_string prediction_s in
     let real = Time.occurrence `First_after_or_at now ~zone ~ofday:od in
-    require_equal [%here] (module Float) (Time.Span.to_ms (Time.diff prediction real)) 0.);
+    require_equal (module Float) (Time.Span.to_ms (Time.diff prediction real)) 0.);
   List.iter before_times ~f:(fun (od_s, prediction_s) ->
     let od = Time.Ofday.of_string od_s in
     let prediction = Time.of_string prediction_s in
     let real = Time.occurrence `Last_before_or_at now ~zone ~ofday:od in
-    require_equal [%here] (module Float) (Time.Span.to_ms (Time.diff prediction real)) 0.)
+    require_equal (module Float) (Time.Span.to_ms (Time.diff prediction real)) 0.)
 ;;
 
 let%expect_test "diff" =
@@ -593,7 +587,7 @@ let roundtrip s =
   let t = Span.of_string s in
   (* we only test rountrip in one direction because the other direction does not hold!
      for example 1.34m comes back as 1m20.400000000000006s *)
-  require_equal [%here] (module Span) t (Time.Span.of_string (Time.Span.to_string t))
+  require_equal (module Span) t (Time.Span.of_string (Time.Span.to_string t))
 ;;
 
 let%expect_test "roundtrip span<->string" =
@@ -609,22 +603,18 @@ let%expect_test "roundtrip span<->string" =
 ;;
 
 let%expect_test "Span.of_string (nan)" =
-  require_does_raise [%here] (fun () -> Time.Span.of_string "nans");
+  require_does_raise (fun () -> Time.Span.of_string "nans");
   [%expect {| ("Time.Span.of_string: invalid span part magnitude" nans) |}]
 ;;
 
 let%expect_test "Span.of_string (inf)" =
-  require_does_raise [%here] (fun () -> Time.Span.of_string "infs");
+  require_does_raise (fun () -> Time.Span.of_string "infs");
   [%expect {| ("Time.Span.of_string: invalid span part magnitude" infs) |}]
 ;;
 
 let%expect_test "Span.of_string" =
   let test string secs =
-    require_equal
-      [%here]
-      (module Float)
-      (Time.Span.to_sec (Time.Span.of_string string))
-      secs
+    require_equal (module Float) (Time.Span.to_sec (Time.Span.of_string string)) secs
   in
   test "1ms" 0.001;
   test "95ms" 0.095;
@@ -637,7 +627,6 @@ let%expect_test "Span.of_string" =
 
 let%expect_test "Time.of_string_fix_proto" =
   require_equal
-    [%here]
     (module Time)
     (Time.of_string_fix_proto `Utc "20080603-13:55:35.577")
     (Time.of_span_since_epoch

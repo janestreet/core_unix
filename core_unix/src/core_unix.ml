@@ -1324,6 +1324,27 @@ let stat = unary_filename Unix.LargeFile.stat
 let lstat = unary_filename Unix.LargeFile.lstat
 let fstat = unary_fd Unix.LargeFile.fstat
 
+module Statvfs = struct
+  (* WARNING: do not add, remove, or reorder fields from this record without also changing
+     [core_unix_statvfs_stub]. *)
+  type t =
+    { bsize : int (* file system block size *)
+    ; frsize : int (* fragment size *)
+    ; blocks : int (* size of fs in frsize units *)
+    ; bfree : int (* # free blocks *)
+    ; bavail : int (* # free blocks for non-root *)
+    ; files : int (* # inodes *)
+    ; ffree : int (* # free inodes *)
+    ; favail : int (* # free inodes for non-root *)
+    ; fsid : int (* file system ID *)
+    ; flag : int (* mount flags *)
+    ; namemax : int (* maximum filename length *)
+    }
+  [@@deriving sexp, bin_io]
+end
+
+external statvfs : string -> Statvfs.t = "core_unix_statvfs_stub"
+
 let src_dst f ~src ~dst =
   improve (fun () -> f ~src ~dst) (fun () -> [ "src", atom src; "dst", atom dst ])
 ;;
@@ -1503,12 +1524,12 @@ module Open_flags = struct
   let access_modes = [ rdonly, "rdonly"; rdwr, "rdwr"; wronly, "wronly" ]
 
   include Flags.Make (struct
-    let allow_intersecting = true
-    let should_print_error = true
-    let known = known
-    let remove_zero_flags = true
-    (* remove non existing flags, like cloexec on centos5 *)
-  end)
+      let allow_intersecting = true
+      let should_print_error = true
+      let known = known
+      let remove_zero_flags = true
+      (* remove non existing flags, like cloexec on centos5 *)
+    end)
 
   (* The lower two bits of the open flags are used to specify the access mode:
      rdonly, wronly, rdwr.  So, we have some code to treat those two bits together rather
@@ -1790,8 +1811,8 @@ end = struct
       Sys.getenv "PATH"
       |> Option.value_map ~f:(String.split ~on:':') ~default:[ "/bin"; "/usr/bin" ]
       |> List.map ~f:(function
-           | "" -> "."
-           | x -> x)
+        | "" -> "."
+        | x -> x)
   ;;
 
   let candidate_paths ?prog_search_path prog =
@@ -2377,52 +2398,52 @@ module Inet_addr0 = struct
   include Stable.V1
 
   include Stable_unit_test.Make (struct
-    type nonrec t = t [@@deriving sexp, bin_io]
+      type nonrec t = t [@@deriving sexp, bin_io]
 
-    let equal = equal
+      let equal = equal
 
-    let tests =
-      (* IPv4 *)
-      [ of_string "0.0.0.0", "0.0.0.0", "\0070.0.0.0"
-      ; of_string "10.0.0.0", "10.0.0.0", "\00810.0.0.0"
-      ; of_string "127.0.0.1", "127.0.0.1", "\009127.0.0.1"
-      ; of_string "192.168.1.101", "192.168.1.101", "\013192.168.1.101"
-      ; of_string "255.255.255.255", "255.255.255.255", "\015255.255.255.255" (* IPv6 *)
-      ; ( of_string "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
-        , "2001:db8:85a3::8a2e:370:7334"
-        , "\0282001:db8:85a3::8a2e:370:7334" )
-      ; ( of_string "2001:db8:85a3:0:0:8a2e:370:7334"
-        , "2001:db8:85a3::8a2e:370:7334"
-        , "\0282001:db8:85a3::8a2e:370:7334" )
-      ; ( of_string "2001:db8:85a3::8a2e:370:7334"
-        , "2001:db8:85a3::8a2e:370:7334"
-        , "\0282001:db8:85a3::8a2e:370:7334" )
-      ; of_string "0:0:0:0:0:0:0:1", "::1", "\003::1"
-      ; of_string "::1", "::1", "\003::1"
-      ; of_string "0:0:0:0:0:0:0:0", "::", "\002::"
-      ; of_string "::", "::", "\002::"
-      ; of_string "::ffff:c000:0280", "::ffff:192.0.2.128", "\018::ffff:192.0.2.128"
-      ; of_string "::ffff:192.0.2.128", "::ffff:192.0.2.128", "\018::ffff:192.0.2.128"
-      ; of_string "2001:0db8::0001", "2001:db8::1", "\0112001:db8::1"
-      ; of_string "2001:db8::1", "2001:db8::1", "\0112001:db8::1"
-      ; of_string "2001:db8::2:1", "2001:db8::2:1", "\0132001:db8::2:1"
-      ; ( of_string "2001:db8:0000:1:1:1:1:1"
-        , "2001:db8:0:1:1:1:1:1"
-        , "\0202001:db8:0:1:1:1:1:1" )
-      ; ( of_string "2001:db8::1:1:1:1:1"
-        , "2001:db8:0:1:1:1:1:1"
-        , "\0202001:db8:0:1:1:1:1:1" )
-      ; ( of_string "2001:db8:0:1:1:1:1:1"
-        , "2001:db8:0:1:1:1:1:1"
-        , "\0202001:db8:0:1:1:1:1:1" )
-      ; of_string "2001:db8:0:0:1:0:0:1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
-      ; of_string "2001:db8:0:0:1::1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
-      ; of_string "2001:db8::1:0:0:1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
-      ; of_string "2001:DB8::1", "2001:db8::1", "\0112001:db8::1"
-      ; of_string "2001:db8::1", "2001:db8::1", "\0112001:db8::1"
-      ]
-    ;;
-  end)
+      let tests =
+        (* IPv4 *)
+        [ of_string "0.0.0.0", "0.0.0.0", "\0070.0.0.0"
+        ; of_string "10.0.0.0", "10.0.0.0", "\00810.0.0.0"
+        ; of_string "127.0.0.1", "127.0.0.1", "\009127.0.0.1"
+        ; of_string "192.168.1.101", "192.168.1.101", "\013192.168.1.101"
+        ; of_string "255.255.255.255", "255.255.255.255", "\015255.255.255.255" (* IPv6 *)
+        ; ( of_string "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+          , "2001:db8:85a3::8a2e:370:7334"
+          , "\0282001:db8:85a3::8a2e:370:7334" )
+        ; ( of_string "2001:db8:85a3:0:0:8a2e:370:7334"
+          , "2001:db8:85a3::8a2e:370:7334"
+          , "\0282001:db8:85a3::8a2e:370:7334" )
+        ; ( of_string "2001:db8:85a3::8a2e:370:7334"
+          , "2001:db8:85a3::8a2e:370:7334"
+          , "\0282001:db8:85a3::8a2e:370:7334" )
+        ; of_string "0:0:0:0:0:0:0:1", "::1", "\003::1"
+        ; of_string "::1", "::1", "\003::1"
+        ; of_string "0:0:0:0:0:0:0:0", "::", "\002::"
+        ; of_string "::", "::", "\002::"
+        ; of_string "::ffff:c000:0280", "::ffff:192.0.2.128", "\018::ffff:192.0.2.128"
+        ; of_string "::ffff:192.0.2.128", "::ffff:192.0.2.128", "\018::ffff:192.0.2.128"
+        ; of_string "2001:0db8::0001", "2001:db8::1", "\0112001:db8::1"
+        ; of_string "2001:db8::1", "2001:db8::1", "\0112001:db8::1"
+        ; of_string "2001:db8::2:1", "2001:db8::2:1", "\0132001:db8::2:1"
+        ; ( of_string "2001:db8:0000:1:1:1:1:1"
+          , "2001:db8:0:1:1:1:1:1"
+          , "\0202001:db8:0:1:1:1:1:1" )
+        ; ( of_string "2001:db8::1:1:1:1:1"
+          , "2001:db8:0:1:1:1:1:1"
+          , "\0202001:db8:0:1:1:1:1:1" )
+        ; ( of_string "2001:db8:0:1:1:1:1:1"
+          , "2001:db8:0:1:1:1:1:1"
+          , "\0202001:db8:0:1:1:1:1:1" )
+        ; of_string "2001:db8:0:0:1:0:0:1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
+        ; of_string "2001:db8:0:0:1::1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
+        ; of_string "2001:db8::1:0:0:1", "2001:db8::1:0:0:1", "\0172001:db8::1:0:0:1"
+        ; of_string "2001:DB8::1", "2001:db8::1", "\0112001:db8::1"
+        ; of_string "2001:db8::1", "2001:db8::1", "\0112001:db8::1"
+        ]
+      ;;
+    end)
 
   let arg_type = Core.Command.Arg_type.create of_string
 end
@@ -2561,15 +2582,15 @@ module Cidr = struct
       module T1 = Sexpable.Stable.Of_stringable.V1 (T0)
 
       module T2 = Comparator.Stable.V1.Make (struct
-        include T0
-        include T1
-      end)
+          include T0
+          include T1
+        end)
 
       module T3 = Comparable.Stable.V1.With_stable_witness.Make (struct
-        include T0
-        include T1
-        include T2
-      end)
+          include T0
+          include T1
+          include T2
+        end)
 
       include T0
       include T1
@@ -2619,12 +2640,12 @@ module Cidr = struct
   ;;
 
   include Identifiable.Make_using_comparator (struct
-    let module_name = "Core_unix.Cidr"
+      let module_name = "Core_unix.Cidr"
 
-    include Stable.V1.T0
-    include Stable.V1.T1
-    include Stable.V1.T2
-  end)
+      include Stable.V1.T0
+      include Stable.V1.T1
+      include Stable.V1.T2
+    end)
 
   let arg_type = Core.Command.Arg_type.create of_string
 end

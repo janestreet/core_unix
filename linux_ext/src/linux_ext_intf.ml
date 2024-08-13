@@ -50,7 +50,7 @@ module type S = sig
        -> fd:File_descr.t
        -> File_descr.t
        -> int)
-      Or_error.t
+        Or_error.t
 
   (** Type for status of SO_BINDTODEVICE socket option. The socket may either restrict the
       traffic to a given (by name, e.g. "eth0") interface, or do no restriction at all. *)
@@ -65,7 +65,7 @@ module type S = sig
 
   type tcp_bool_option =
     | TCP_CORK
-        (** (Since Linux 2.2) If set, don’t send out partial frames.  All queued partial
+    (** (Since Linux 2.2) If set, don’t send out partial frames.  All queued partial
         frames are sent when the option is cleared again.  This is useful for prepending
         headers before calling [sendfile(2)], or for throughput optimization.  As
         currently implemented, there is a 200ms ceiling on the time for which output is
@@ -74,7 +74,7 @@ module type S = sig
 
         This option should not be used in code intended to be portable. *)
     | TCP_QUICKACK
-        (** (Since Linux 2.4.4) Quick ack solves an unfortunate interaction between the
+    (** (Since Linux 2.4.4) Quick ack solves an unfortunate interaction between the
         delayed acks and the Nagle algorithm (TCP_NODELAY).  On fast LANs, the Linux TCP
         stack quickly reaches a CWND (congestion window) of 1 (Linux interprets this as "1
         unacknowledged packet", BSD/Windows and others consider it "1 unacknowledged
@@ -90,7 +90,7 @@ module type S = sig
 
   type tcp_string_option =
     | TCP_CONGESTION
-        (** (Since Linux 2.6.13) Get or set the congestion-control algorithm for this socket.
+    (** (Since Linux 2.6.13) Get or set the congestion-control algorithm for this socket.
 
         The algorithm "reno" is always permitted; other algorithms may be available,
         depending on kernel configuration and loaded modules (see
@@ -131,7 +131,7 @@ module type S = sig
        -> ?len:int (** default = [Bytes.length buf - pos] *)
        -> Bytes.t
        -> int option)
-      Or_error.t
+        Or_error.t
 
   (** [send_no_sigpipe sock ?pos ?len buf] tries to do a blocking send on socket [sock]
       given buffer [buf], offset [pos] and length [len]. Prevents [SIGPIPE], i.e., raises
@@ -145,7 +145,7 @@ module type S = sig
        -> ?len:int (** default = [Bytes.length buf - pos] *)
        -> Bytes.t
        -> int)
-      Or_error.t
+        Or_error.t
 
   (** [sendmsg_nonblocking_no_sigpipe sock ?count iovecs] tries to do a nonblocking send
       on socket [sock] using [count] I/O-vectors [iovecs].  Prevents [SIGPIPE],
@@ -562,7 +562,7 @@ module type S = sig
 
     val getxattr
       : (follow_symlinks:bool -> path:string -> name:string -> Get_attr_result.t)
-        Or_error.t
+          Or_error.t
 
     (** [setxattr] sets the value of the extended attribute identified by name and
         associated with the given path in the filesystem.
@@ -594,6 +594,6 @@ module type S = sig
          -> value:string
          -> unit
          -> Set_attr_result.t)
-        Or_error.t
+          Or_error.t
   end
 end

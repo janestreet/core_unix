@@ -6,8 +6,9 @@ let%expect_test "[File_descr.sexp_of_t]" =
   print_s
     [%sexp
       (List.map [ -1; 0; 1; 2; 3 ] ~f:(fun i -> i, i |> File_descr.of_int)
-        : (int * File_descr.t) list)];
-  [%expect {|
+       : (int * File_descr.t) list)];
+  [%expect
+    {|
     ((-1 -1)
      (0  0)
      (1  1)
@@ -33,7 +34,7 @@ let%expect_test "[mkdir_p ~perm name] sets the permissions on [name] and all oth
   let make_require_and_remove_dir lex dir =
     let dir_perms = (stat dir).st_perm in
     let lazy_sexp = lazy (Sexp.Atom (sprintf "%s has perms %o" dir dir_perms)) in
-    require ~if_false_then_print_s:lazy_sexp lex (perm = dir_perms);
+    require ~if_false_then_print_s:lazy_sexp ~here:lex (perm = dir_perms);
     remove dir
   in
   make_require_and_remove_dir [%here] dir;
@@ -53,7 +54,6 @@ let%expect_test "[mkdtemp] dir name contains [.tmp.]" =
   let dir = mkdtemp "foo" in
   rmdir dir;
   require
-    [%here]
     (String.is_substring (Filename.basename dir) ~substring:".tmp.")
     ~if_false_then_print_s:(lazy [%message (dir : string)]);
   [%expect {| |}]
@@ -64,7 +64,6 @@ let%expect_test "[mkstemp] file name contains [.tmp.]" =
   unlink file;
   close fd;
   require
-    [%here]
     (String.is_substring (Filename.basename file) ~substring:".tmp.")
     ~if_false_then_print_s:(lazy [%message (file : string)]);
   [%expect {| |}]
@@ -98,26 +97,26 @@ let%test_unit "fork_exec ~env last binding takes precedence" =
     ~finally:remove
     (Filename_unix.temp_file "test" "fork_exec.env.last-wins")
     ~f:(fun temp_file ->
-    let var_in_child env =
-      waitpid_exn
-        (fork_exec
-           ()
-           ~env
-           ~prog:"sh"
-           ~argv:[ "sh"; "-c"; "echo -n ${VAR-undefined} > " ^ temp_file ]);
-      In_channel.read_all temp_file
-    in
-    let env = [ "VAR", "first"; "VAR", "last" ] in
-    List.iter
-      [ `Replace_raw (List.map env ~f:(fun (v, s) -> v ^ "=" ^ s))
-      ; `Replace env
-      ; `Extend env
-      ; `Override (List.map env ~f:(fun (v, s) -> v, Some s))
-      ]
-      ~f:(fun env -> [%test_result: string] ~expect:"last" (var_in_child env));
-    Unix.putenv ~key:"VAR" ~data:"in-process";
-    let env = `Override [ "VAR", None ] in
-    [%test_result: string] ~expect:"undefined" (var_in_child env))
+      let var_in_child env =
+        waitpid_exn
+          (fork_exec
+             ()
+             ~env
+             ~prog:"sh"
+             ~argv:[ "sh"; "-c"; "echo -n ${VAR-undefined} > " ^ temp_file ]);
+        In_channel.read_all temp_file
+      in
+      let env = [ "VAR", "first"; "VAR", "last" ] in
+      List.iter
+        [ `Replace_raw (List.map env ~f:(fun (v, s) -> v ^ "=" ^ s))
+        ; `Replace env
+        ; `Extend env
+        ; `Override (List.map env ~f:(fun (v, s) -> v, Some s))
+        ]
+        ~f:(fun env -> [%test_result: string] ~expect:"last" (var_in_child env));
+      Unix.putenv ~key:"VAR" ~data:"in-process";
+      let env = `Override [ "VAR", None ] in
+      [%test_result: string] ~expect:"undefined" (var_in_child env))
 ;;
 
 let%test_module _ =
@@ -150,9 +149,9 @@ let%test_module _ =
 let%expect_test "close-on-exec" =
   let r, w = pipe ~close_on_exec:true () in
   clear_close_on_exec r;
-  require_equal [%here] (module Bool) false (get_close_on_exec r);
+  require_equal (module Bool) false (get_close_on_exec r);
   [%expect {| |}];
-  require_equal [%here] (module Bool) true (get_close_on_exec w);
+  require_equal (module Bool) true (get_close_on_exec w);
   [%expect {| |}];
   close r;
   close w
@@ -231,7 +230,6 @@ let%expect_test "strptime match" =
     { res with Unix.tm_wday; tm_yday }
   in
   require_equal
-    [%here]
     (module Unix_tm_for_testing)
     res
     { Unix.tm_sec = 23
@@ -247,7 +245,7 @@ let%expect_test "strptime match" =
 ;;
 
 let%expect_test "strptime match failed" =
-  require_does_raise [%here] (fun () -> strptime ~fmt:"%Y-%m-%d" "2012-05-");
+  require_does_raise (fun () -> strptime ~fmt:"%Y-%m-%d" "2012-05-");
   [%expect {| (Failure "unix_strptime: match failed") |}]
 ;;
 
@@ -255,7 +253,7 @@ let%expect_test "strptime trailing input" =
   print_s
     [%sexp
       (strptime ~allow_trailing_input:true ~fmt:"%Y-%m-%d" "2012-05-23 10:14:23"
-        : Unix_tm_for_testing.t)];
+       : Unix_tm_for_testing.t)];
   [%expect
     {|
     ((tm_sec   0)
@@ -268,7 +266,7 @@ let%expect_test "strptime trailing input" =
      (tm_yday  143)
      (tm_isdst false))
     |}];
-  require_does_raise [%here] (fun () -> strptime ~fmt:"%Y-%m-%d" "2012-05-23 10:14:23");
+  require_does_raise (fun () -> strptime ~fmt:"%Y-%m-%d" "2012-05-23 10:14:23");
   [%expect {| (Failure "unix_strptime: did not consume entire input") |}]
 ;;
 
@@ -421,11 +419,11 @@ let%test_module "the search path passed to [create_process_env] has an effect" =
     let call_ls = Unix.create_process_env ~prog:"ls" ~args:[] ~env:(`Extend [])
 
     let%expect_test "default search path" =
-      require_does_not_raise [%here] (fun () -> ignore (Sys.opaque_identity (call_ls ())))
+      require_does_not_raise (fun () -> ignore (Sys.opaque_identity (call_ls ())))
     ;;
 
     let%expect_test "empty search path" =
-      require_does_raise [%here] (fun () -> call_ls ~prog_search_path:[] ());
+      require_does_raise (fun () -> call_ls ~prog_search_path:[] ());
       [%expect
         {| (Invalid_argument "Core_unix.create_process: empty prog_search_path") |}]
     ;;
@@ -492,13 +490,13 @@ let%expect_test ("Clock.get_cpuclock_for" [@tags "64-bits-only"]) =
   let gettime = ok_exn Unix.Clock.gettime in
   (* This pid is too large to be real  *)
   let bad_pid = Pid.of_int 100_000_000 in
-  require_does_raise [%here] (fun () -> get_cpuclock_for bad_pid);
+  require_does_raise (fun () -> get_cpuclock_for bad_pid);
   [%expect {| (Unix.Unix_error "No such process" clock_getcpuclockid "") |}];
   let clock = get_cpuclock_for (Unix.getpid ()) in
   let cputime = gettime (Custom clock) in
   (* Testing cpu clocks are hard, but this doesn't crash, and we've definitely accrued cpu
      time. *)
-  require [%here] Int63.(cputime > zero);
+  require Int63.(cputime > zero);
   [%expect {| |}]
 ;;
 

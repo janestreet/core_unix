@@ -18,42 +18,49 @@ let test args = Command_test_helpers.complete param ~args
 
 let%expect_test "completion of anons" =
   test [ "" ];
-  [%expect {|
+  [%expect
+    {|
     false
     true
     (command.ml.Exit_called (status 0))
     |}];
   test [ "t" ];
-  [%expect {|
+  [%expect
+    {|
     true
     (command.ml.Exit_called (status 0))
     |}];
   test [ "f" ];
-  [%expect {|
+  [%expect
+    {|
     false
     (command.ml.Exit_called (status 0))
     |}];
   test [ "true"; "" ];
-  [%expect {|
+  [%expect
+    {|
     false
     true
     (command.ml.Exit_called (status 0))
     |}];
   test [ "true"; "t" ];
-  [%expect {|
+  [%expect
+    {|
     true
     (command.ml.Exit_called (status 0))
     |}];
   (* First argument is invalid, but we can still complete later arguments. *)
   test [ "bool"; "" ];
-  [%expect {|
+  [%expect
+    {|
     false
     true
     (command.ml.Exit_called (status 0))
     |}];
   (* The list passed into the escape completer is all the args after the escape flag. *)
   test [ "a"; "b"; "--"; "c"; "d" ];
-  [%expect {|
+  [%expect
+    {|
     c
     d
     (command.ml.Exit_called (status 0))
@@ -72,12 +79,14 @@ let%expect_test "completion after [-help]" =
     (command.ml.Exit_called (status 0))
     |}];
   test [ "-h" ];
-  [%expect {|
+  [%expect
+    {|
     -help
     (command.ml.Exit_called (status 0))
     |}];
   test [ "-help"; "" ];
-  [%expect {|
+  [%expect
+    {|
     false
     true
     (command.ml.Exit_called (status 0))
@@ -158,7 +167,8 @@ let%expect_test "demo [complete_subcommands]" =
     Command_test_helpers.complete_command command ?complete_subcommands ~args
   in
   test Simple_group.command ?complete_subcommands:None ~args:[ "g" ];
-  [%expect {|
+  [%expect
+    {|
     group
     (command.ml.Exit_called (status 0))
     |}];

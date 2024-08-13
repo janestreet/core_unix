@@ -6,7 +6,8 @@ let%expect_test "list_intersect" =
   let i = Interval.create in
   let x = Interval.list_intersect [ i 4 7; i 9 15 ] [ i 2 4; i 5 10; i 14 20 ] in
   print_s [%sexp (x : int Interval.t list)];
-  [%expect {|
+  [%expect
+    {|
     ((4  4)
      (5  7)
      (9  10)
@@ -36,20 +37,20 @@ let%test_module _ =
 
     let%test_module "Interval.V1.Float" =
       (module Stable_unit_test.Make (struct
-        include V1.Float
+          include V1.Float
 
-        let equal = [%compare.equal: t]
+          let equal = [%compare.equal: t]
 
-        let tests =
-          make_stable_unit_tests_v1
-            ~coerce:V1.Private.to_float
-            ~non_empty:
-              [ ( (1.5, 120.)
-                , "(1.5 120)"
-                , "\000\000\000\000\000\000\000\248?\000\000\000\000\000\000^@" )
-              ]
-        ;;
-      end))
+          let tests =
+            make_stable_unit_tests_v1
+              ~coerce:V1.Private.to_float
+              ~non_empty:
+                [ ( (1.5, 120.)
+                  , "(1.5 120)"
+                  , "\000\000\000\000\000\000\000\248?\000\000\000\000\000\000^@" )
+                ]
+          ;;
+        end))
     ;;
 
     let%expect_test "Interval.V1.Float.t_sexp_grammar" =
@@ -59,16 +60,16 @@ let%test_module _ =
 
     let%test_module "Interval.V1.Int" =
       (module Stable_unit_test.Make (struct
-        include V1.Int
+          include V1.Int
 
-        let equal = [%compare.equal: t]
+          let equal = [%compare.equal: t]
 
-        let tests =
-          make_stable_unit_tests_v1
-            ~coerce:V1.Private.to_int
-            ~non_empty:[ (-5, 789), "(-5 789)", "\000\255\251\254\021\003" ]
-        ;;
-      end))
+          let tests =
+            make_stable_unit_tests_v1
+              ~coerce:V1.Private.to_int
+              ~non_empty:[ (-5, 789), "(-5 789)", "\000\255\251\254\021\003" ]
+          ;;
+        end))
     ;;
 
     let%expect_test "Interval.V1.Int.t_sexp_grammar" =
@@ -78,22 +79,22 @@ let%test_module _ =
 
     let%test_module "Interval.V1.Ofday" =
       (module Stable_unit_test.Make (struct
-        include V1.Ofday
+          include V1.Ofday
 
-        let equal = [%compare.equal: t]
+          let equal = [%compare.equal: t]
 
-        let tests =
-          let t1 = Time_float.Ofday.create ~hr:7 ~min:30 ~sec:7 ~ms:12 ~us:5 () in
-          let t2 = Time_float.Ofday.create ~hr:9 ~min:45 ~sec:8 ~ms:0 ~us:1 () in
-          make_stable_unit_tests_v1
-            ~coerce:V1.Private.to_ofday
-            ~non_empty:
-              [ ( (t1, t2)
-                , "(07:30:07.012005 09:45:08.000001)"
-                , "\000\153\158\176\196\192_\218@\223\024\002\000\128$\225@" )
-              ]
-        ;;
-      end))
+          let tests =
+            let t1 = Time_float.Ofday.create ~hr:7 ~min:30 ~sec:7 ~ms:12 ~us:5 () in
+            let t2 = Time_float.Ofday.create ~hr:9 ~min:45 ~sec:8 ~ms:0 ~us:1 () in
+            make_stable_unit_tests_v1
+              ~coerce:V1.Private.to_ofday
+              ~non_empty:
+                [ ( (t1, t2)
+                  , "(07:30:07.012005 09:45:08.000001)"
+                  , "\000\153\158\176\196\192_\218@\223\024\002\000\128$\225@" )
+                ]
+          ;;
+        end))
     ;;
 
     let%expect_test "Interval.V1.Ofday.t_sexp_grammar" =
@@ -270,7 +271,9 @@ let%test_module "vs array" =
         interval_and_nearby_int
         ~sexp_of:[%sexp_of: t * int]
         ~f:(fun (t, i) ->
-        [%test_result: bool] ~expect:(Array.mem ~equal:Int.equal (to_array t) i) (mem t i))
+          [%test_result: bool]
+            ~expect:(Array.mem ~equal:Int.equal (to_array t) i)
+            (mem t i))
     ;;
 
     let%test_unit "binary_search" =
@@ -283,12 +286,18 @@ let%test_module "vs array" =
           [%test_result: int option]
             ~expect:
               (Array.binary_search array ~compare which i
+               |> [%globalize: int option]
                |> Option.map ~f:(Array.get array))
-            (binary_search t ~compare which i))
+            (binary_search t ~compare which i |> [%globalize: int option]))
     ;;
 
     let%expect_test "explicit binary_search" =
-      let pr x = print_endline @@ Sexp.to_string_hum @@ [%sexp_of: int option] x in
+      let pr x =
+        print_endline
+        @@ Sexp.to_string_hum
+        @@ [%sexp_of: int option]
+        @@ [%globalize: int option] x
+      in
       pr
       @@ binary_search (create 4 80) ~compare:Int.compare `First_strictly_greater_than 18;
       [%expect {| (19) |}];
@@ -360,7 +369,8 @@ let%test_module _ =
       test [ 1; 3; 4 ];
       [%expect {| ((1 3)) |}];
       test [ 5; 1; 10; 11; 1; 7; 9; 2; 5 ];
-      [%expect {|
+      [%expect
+        {|
         ((1 2)
          (5 7)
          (9 10))
@@ -417,7 +427,8 @@ let%test_module _ =
 
     let%expect_test "union demo" =
       print_s [%sexp (Set.union t1 t2 : int Set.t)];
-      [%expect {|
+      [%expect
+        {|
         ((1  12)
          (15 20))
         |}]
@@ -425,7 +436,8 @@ let%test_module _ =
 
     let%expect_test "intersect demo" =
       print_s [%sexp (Set.inter t1 t2 : int Set.t)];
-      [%expect {|
+      [%expect
+        {|
         ((3 5)
          (6 10))
         |}]
@@ -434,7 +446,8 @@ let%test_module _ =
     let%expect_test "union_list demo" =
       let ts = [ t1; t2; Set.create_exn [ 11, 13; 14, 15 ]; Set.create_exn [ 20, 22 ] ] in
       print_s [%sexp (Set.union_list ts : int Set.t)];
-      [%expect {|
+      [%expect
+        {|
         ((1  13)
          (14 22))
         |}]

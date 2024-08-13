@@ -1,6 +1,7 @@
 (library
  (name time_float_unix)
  (public_name core_unix.time_float_unix)
- (libraries core core_unix timezone)
+ (libraries core core_unix ppx_diff.diffable sexplib
+   ppx_stable_witness.stable_witness)
  (preprocess
   (pps ppx_jane)))

@@ -1,6 +1,6 @@
 (executables
  (modes byte exe)
  (names getgrgid_thread_safety)
- (libraries core_kernel.caml_threads core core_unix)
+ (libraries core_kernel.caml_threads core core_unix unix)
  (preprocess
   (pps ppx_jane)))

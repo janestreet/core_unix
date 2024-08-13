@@ -7,7 +7,6 @@ open Cidr
 let does_match ?(expected = true) cidr inet_addr =
   let matches = does_match cidr inet_addr in
   require
-    [%here]
     (Bool.equal expected matches)
     ~if_false_then_print_s:
       (lazy
@@ -30,11 +29,9 @@ let invariant ?(expected = Ok ()) string =
   | Ok _, Ok _ | Error _, Error _ -> ()
   | Ok _, Error _ ->
     print_cr
-      [%here]
       [%message "[of_string] + [invariant] succeeded unexpectedly" (string : string)]
   | Error error, Ok _ ->
     print_cr
-      [%here]
       [%message
         "[of_string] + [invariant] failed unexpectedly"
           (string : string)
@@ -46,7 +43,6 @@ let test_all_matching_addresses cidr_string expected_strings =
   let addresses = all_matching_addresses cidr |> Sequence.to_list in
   let expected = List.map expected_strings ~f:Inet_addr.of_string in
   require
-    [%here]
     (List.equal Inet_addr.equal addresses expected)
     ~if_false_then_print_s:
       (lazy
@@ -59,7 +55,6 @@ let test_all_matching_addresses cidr_string expected_strings =
 
 let same str1 str2 =
   require
-    [%here]
     (equal (of_string str1) (of_string str2))
     ~if_false_then_print_s:
       (lazy [%message "should be equal" (str1 : string) (str2 : string)])
@@ -67,7 +62,6 @@ let same str1 str2 =
 
 let diff str1 str2 =
   require
-    [%here]
     (not (equal (of_string str1) (of_string str2)))
     ~if_false_then_print_s:
       (lazy [%message "should NOT be equal" (str1 : string) (str2 : string)])
@@ -120,7 +114,6 @@ let%expect_test _ = match_strings "172.25.42.0/24" "172.26.42.208" ~expected:fal
 let is_subset_strings ?(expected = true) t ~of_ =
   let is_subset = is_subset (of_string t) ~of_:(of_string of_) in
   require
-    [%here]
     (Bool.equal expected is_subset)
     ~if_false_then_print_s:
       (lazy
@@ -209,7 +202,7 @@ let%expect_test "hash function consistency" =
   in
   List.iter t_list ~f:(fun t1 ->
     List.iter t_list ~f:(fun t2 ->
-      if Cidr.compare t1 t2 = 0 then require [%here] (hash t1 = hash t2)))
+      if Cidr.compare t1 t2 = 0 then require (hash t1 = hash t2)))
 ;;
 
 (* differentiate bit counts *)

@@ -1,6 +1,6 @@
 (executables
  (modes byte exe)
  (names test_lock_file_blocking)
- (libraries command_unix core_unix lock_file_blocking signal_unix)
+ (libraries command_unix core core_unix lock_file_blocking signal_unix)
  (preprocess
   (pps ppx_jane)))

@@ -3,53 +3,53 @@ open! Core
 include Epoll_intf
 
 module Epoll_flags (Flag_values : sig
-  (* We use [Int63] rather than [Int] because these flags use 32 bits. *)
-  val in_ : Int63.t
-  val out : Int63.t
+    (* We use [Int63] rather than [Int] because these flags use 32 bits. *)
+    val in_ : Int63.t
+    val out : Int63.t
 
-  (* val rdhup   : Int63.t *)
-  val pri : Int63.t
-  val err : Int63.t
-  val hup : Int63.t
-  val et : Int63.t
-  val oneshot : Int63.t
-end) =
+    (* val rdhup   : Int63.t *)
+    val pri : Int63.t
+    val err : Int63.t
+    val hup : Int63.t
+    val et : Int63.t
+    val oneshot : Int63.t
+  end) =
 struct
   let none = Int63.zero
 
   include Flag_values
 
   include Flags.Make (struct
-    let allow_intersecting = false
-    let should_print_error = true
-    let remove_zero_flags = false
+      let allow_intersecting = false
+      let should_print_error = true
+      let remove_zero_flags = false
 
-    let known =
-      [ in_, "in"
-      ; out, "out"
-      ; (* rdhup, "rdhup"; *)
-        pri, "pri"
-      ; err, "err"
-      ; hup, "hup"
-      ; et, "et"
-      ; oneshot, "oneshot"
-      ]
-    ;;
-  end)
+      let known =
+        [ in_, "in"
+        ; out, "out"
+        ; (* rdhup, "rdhup"; *)
+          pri, "pri"
+        ; err, "err"
+        ; hup, "hup"
+        ; et, "et"
+        ; oneshot, "oneshot"
+        ]
+      ;;
+    end)
 end
 
 module Null_impl : S = struct
   module Flags = Epoll_flags (struct
-    let in_ = Int63.of_int (1 lsl 0)
-    let out = Int63.of_int (1 lsl 1)
+      let in_ = Int63.of_int (1 lsl 0)
+      let out = Int63.of_int (1 lsl 1)
 
-    (* let rdhup   = Int63.of_int (1 lsl 2) *)
-    let pri = Int63.of_int (1 lsl 3)
-    let err = Int63.of_int (1 lsl 4)
-    let hup = Int63.of_int (1 lsl 5)
-    let et = Int63.of_int (1 lsl 6)
-    let oneshot = Int63.of_int (1 lsl 7)
-  end)
+      (* let rdhup   = Int63.of_int (1 lsl 2) *)
+      let pri = Int63.of_int (1 lsl 3)
+      let err = Int63.of_int (1 lsl 4)
+      let hup = Int63.of_int (1 lsl 5)
+      let et = Int63.of_int (1 lsl 6)
+      let oneshot = Int63.of_int (1 lsl 7)
+    end)
 
   type t = [ `Epoll_is_not_implemented ] [@@deriving sexp_of]
 
@@ -94,16 +94,16 @@ module Impl = struct
   external flag_epolloneshot : unit -> Int63.t = "core_linux_epoll_EPOLLONESHOT_flag"
 
   module Flags = Epoll_flags (struct
-    let in_ = flag_epollin ()
-    let out = flag_epollout ()
+      let in_ = flag_epollin ()
+      let out = flag_epollout ()
 
-    (* let rdhup   = flag_epollrdhup () *)
-    let pri = flag_epollpri ()
-    let err = flag_epollerr ()
-    let hup = flag_epollhup ()
-    let et = flag_epollet ()
-    let oneshot = flag_epolloneshot ()
-  end)
+      (* let rdhup   = flag_epollrdhup () *)
+      let pri = flag_epollpri ()
+      let err = flag_epollerr ()
+      let hup = flag_epollhup ()
+      let et = flag_epollet ()
+      let oneshot = flag_epolloneshot ()
+    end)
 
   external epoll_create : unit -> File_descr.t = "core_linux_epoll_create"
 
@@ -119,16 +119,16 @@ module Impl = struct
   type ready_events = Bigstring.t
 
   external epoll_sizeof_epoll_event : unit -> int = "core_linux_epoll_sizeof_epoll_event"
-    [@@noalloc]
+  [@@noalloc]
 
   external epoll_offsetof_readyfd : unit -> int = "core_linux_epoll_offsetof_readyfd"
-    [@@noalloc]
+  [@@noalloc]
 
   external epoll_offsetof_readyflags
     :  unit
     -> int
     = "core_linux_epoll_offsetof_readyflags"
-    [@@noalloc]
+  [@@noalloc]
 
   let sizeof_epoll_event = epoll_sizeof_epoll_event ()
   let offsetof_readyfd = epoll_offsetof_readyfd ()

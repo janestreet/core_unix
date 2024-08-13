@@ -41,11 +41,11 @@ let alloc n = ignore (List.init (exp2 n) ~f:(fun x -> x))
 let add_finaliser n =
   Gc.finalise
     (function
-     | None -> assert false
-     | Some n ->
-       Printf.printf "finalising %d\n%!" n;
-       alloc n;
-       ())
+      | None -> assert false
+      | Some n ->
+        Printf.printf "finalising %d\n%!" n;
+        alloc n;
+        ())
     (Some n)
 ;;
 
@@ -90,8 +90,8 @@ let () =
     List.concat
       (List.map
          (function
-          | None -> []
-          | Some x -> [ x ])
+           | None -> []
+           | Some x -> [ x ])
          all_groups)
   in
   let group_min, group_min_size = List.fold_left mn (0, 1000000) all_groups in

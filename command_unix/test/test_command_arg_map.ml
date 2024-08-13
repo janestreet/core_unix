@@ -11,10 +11,10 @@ let%expect_test "raising in arg types" =
     |> unstage
   in
   (* does not raise at all *)
-  require_does_not_raise [%here] (fun () -> test [ "true" ]);
+  require_does_not_raise (fun () -> test [ "true" ]);
   [%expect {| |}];
   (* raises in constructed arg type *)
-  require_does_raise [%here] (fun () -> test [ "not a boolean" ]);
+  require_does_raise (fun () -> test [ "not a boolean" ]);
   [%expect
     {|
     Error parsing command line:
@@ -29,7 +29,7 @@ let%expect_test "raising in arg types" =
     (command.ml.Exit_called (status 1))
     |}];
   (* raises in map function *)
-  require_does_raise [%here] (fun () -> test [ "false" ]);
+  require_does_raise (fun () -> test [ "false" ]);
   [%expect
     {|
     Error parsing command line:

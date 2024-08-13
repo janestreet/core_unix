@@ -9,7 +9,6 @@ let%test_module _ =
   (module struct
     let%expect_test _ =
       print_and_check_container_sexps
-        [%here]
         (module Time)
         [ Time.epoch
         ; Time.of_string "1955-11-12 18:38:00-08:00"
@@ -43,7 +42,6 @@ let%test_module _ =
 
     let%expect_test _ =
       print_and_check_container_sexps
-        [%here]
         (module Time.Ofday)
         [ Time.Ofday.start_of_day
         ; Time.Ofday.of_string "12:00:00"
@@ -66,7 +64,6 @@ let%test_module _ =
 
     let%expect_test _ =
       print_and_check_container_sexps
-        [%here]
         (module Time.Span)
         [ Time.Span.zero
         ; Time.Span.nanosecond
@@ -103,7 +100,7 @@ let%test_module _ =
     ;;
 
     let%expect_test _ =
-      print_and_check_container_sexps [%here] (module Month) Month.all;
+      print_and_check_container_sexps (module Month) Month.all;
       [%expect
         {|
         (Set (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec))

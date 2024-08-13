@@ -99,7 +99,6 @@ end
 
 let%expect_test "quickcheck string roundtrip" =
   quickcheck_m
-    [%here]
     (module struct
       type t =
         Time_string.t
@@ -126,18 +125,16 @@ let%expect_test "quickcheck string roundtrip" =
         base_string ^ suffix
       in
       require_equal
-        [%here]
         (module String)
         s_with_local_offset
         (Time.to_string_abs (Time.of_string s_with_local_offset) ~zone);
       let s2_time1 = Time.of_string s_with_random_offset in
       let s2_time2 = Time.of_string (Time.to_string_abs s2_time1 ~zone) in
-      require [%here] (Time.( =. ) s2_time1 s2_time2))
+      require (Time.( =. ) s2_time1 s2_time2))
 ;;
 
 let test_roundtrip_conversion (zone_name, zone) =
   quickcheck_m
-    [%here]
     (module Time)
     ~f:(fun time ->
       let time =
@@ -159,7 +156,6 @@ let test_roundtrip_conversion (zone_name, zone) =
         Time.of_date_ofday ~zone:(force Time.Zone.local) round_date round_ofday
       in
       require_equal
-        [%here]
         (module Time)
         time
         round_trip_time
@@ -191,7 +187,6 @@ let%expect_test "random test against Unix.localtime" =
   force load_some_other_time_zones;
   quickcheck_m
     ~config:{ Base_quickcheck.Test.default_config with test_count = 100 }
-    [%here]
     (module Tm)
     ~f:(fun tm ->
       (* Fill in [wday], [yday] fields *)
@@ -211,13 +206,8 @@ let%expect_test "random test against Unix.localtime" =
         let our_date, our_ofday =
           Time.to_date_ofday (Time.of_span_since_epoch (Time.Span.of_sec unix_time)) ~zone
         in
+        require_equal (module String) (Date.to_string our_date) localtime_date_string;
         require_equal
-          [%here]
-          (module String)
-          (Date.to_string our_date)
-          localtime_date_string;
-        require_equal
-          [%here]
           (module String)
           (Time.Ofday.to_string our_ofday)
           localtime_ofday_string))

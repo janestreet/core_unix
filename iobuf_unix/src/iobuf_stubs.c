@@ -1,3 +1,5 @@
+#undef Hide_upstream_size_macros
+
 #include "config.h"
 #include "iobuf.h"
 #include "unix_utils.h"

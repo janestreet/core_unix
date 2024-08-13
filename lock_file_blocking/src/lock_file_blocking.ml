@@ -3,6 +3,8 @@ module Unix = Core_unix
 
 [%%import "config.h"]
 
+open Shared
+
 (* We have reason to believe that lockf doesn't work properly on CIFS mounts.  The idea
    behind requiring both lockf and flock is to prevent programs taking locks on
    network filesystems where they may not be sound.
@@ -106,56 +108,6 @@ let create_exn ?message ?close_on_exec ?unlink_on_exit path =
       ()
 ;;
 
-let random = lazy (Random.State.make_self_init ())
-
-let default_max_retry_delay ~timeout =
-  let default_delay = Time_float.Span.of_int_ms 300 in
-  match timeout with
-  | None -> default_delay
-  | Some timeout -> Time_float.Span.min default_delay (Time_float.Span.( / ) timeout 3.)
-;;
-
-let wait_at_most max_delay random =
-  let delay = Random.State.float (Lazy.force random) (Time_float.Span.to_sec max_delay) in
-  ignore (Unix.nanosleep delay : float)
-;;
-
-(* no timeout specified = wait indefinitely *)
-let repeat_with_timeout ?max_retry_delay ?(random = random) ?timeout lockf path =
-  let max_retry_delay =
-    match max_retry_delay with
-    | Some delay -> delay
-    | None -> default_max_retry_delay ~timeout
-  in
-  match timeout with
-  | None ->
-    let rec loop () =
-      try lockf path with
-      | _ ->
-        wait_at_most max_retry_delay random;
-        loop ()
-    in
-    loop ()
-  | Some timeout ->
-    let start_time = Time_float.now () in
-    let rec loop () =
-      try lockf path with
-      | e ->
-        let since_start = Time_float.abs_diff start_time (Time_float.now ()) in
-        if Time_float.Span.(since_start > timeout)
-        then
-          failwithf
-            "Lock_file: '%s' timed out waiting for existing lock. Last error was %s"
-            path
-            (Exn.to_string e)
-            ()
-        else (
-          wait_at_most max_retry_delay random;
-          loop ())
-    in
-    loop ()
-;;
-
 (* default timeout is to wait indefinitely *)
 let blocking_create
   ?max_retry_delay
@@ -187,187 +139,12 @@ let is_locked path =
   | e -> raise e
 ;;
 
-let read_file_and_convert ~of_string path =
-  Option.try_with (fun () -> In_channel.read_all path |> String.strip |> of_string)
-;;
-
 let get_pid path =
   let of_string string = Int.of_string string |> Pid.of_int in
   read_file_and_convert ~of_string path
 ;;
 
-module Nfs = struct
-  let process_start_time pid =
-    (* Find the start time for a process, without requiring the [Procfs] library
-       -- start time is represented in USER_HZ units in /proc/<pid>/stat (confusingly
-       referred to as 'jiffies' in the man page); USER_HZ is almost certainly 100, for
-       mostly historical reasons, but just to be sure we'll ask sysconf.
-    *)
-    match Linux_ext.Sysinfo.sysinfo with
-    | Error _ -> None
-    | Ok sysinfo ->
-      let of_string stat =
-        (* [read_file_and_convert] will catch any exceptions raised here *)
-        let boot_time =
-          Time_float.sub (Time_float.now ()) (sysinfo ()).Linux_ext.Sysinfo.uptime
-        in
-        let jiffies =
-          let fields =
-            String.rsplit2_exn stat ~on:')' |> snd |> String.strip |> String.split ~on:' '
-          in
-          List.nth_exn fields 19 |> Float.of_string
-        in
-        let hz = Unix.sysconf Unix.CLK_TCK |> Option.value_exn |> Int64.to_float in
-        jiffies /. hz |> Time_float.Span.of_sec |> Time_float.add boot_time
-      in
-      read_file_and_convert (sprintf !"/proc/%{Pid}/stat" pid) ~of_string
-  ;;
-
-  module Info = struct
-    type t =
-      { host : string
-      ; pid : Pid.Stable.V1.t
-      ; message : string
-      ; start_time : Time_float.Stable.With_utc_sexp.V2.t option [@sexp.option]
-      }
-    [@@deriving sexp, fields ~getters]
-
-    let create ~message =
-      let pid = Unix.getpid () in
-      { host = Unix.gethostname (); pid; message; start_time = process_start_time pid }
-    ;;
-
-    let of_string string = Sexp.of_string string |> t_of_sexp
-    let of_file = read_file_and_convert ~of_string
-  end
-
-  let lock_path path = path ^ ".nfs_lock"
-
-  let get_hostname_and_pid path =
-    Option.map (Info.of_file path) ~f:(fun info -> Info.host info, Info.pid info)
-  ;;
-
-  let get_message path = Option.map (Info.of_file path) ~f:Info.message
-
-  let unlock_safely_exn ~unlock_myself path =
-    (* Make sure error messages contain a reference to "lock.nfs_lock", which is the
-       actually important file. *)
-    let lock_path = lock_path path in
-    let error s =
-      failwithf "Lock_file.Nfs.unlock_safely_exn: unable to unlock %s: %s" lock_path s ()
-    in
-    match Sys_unix.file_exists ~follow_symlinks:false lock_path with
-    | `Unknown -> error (sprintf "unable to read %s" lock_path)
-    | `No -> ()
-    | `Yes ->
-      (match Info.of_file lock_path with
-       | None -> error "unknown lock file format"
-       | Some info ->
-         let my_pid = Unix.getpid () in
-         let my_hostname = Unix.gethostname () in
-         let locking_hostname = Info.host info in
-         let locking_pid = Info.pid info in
-         if String.( <> ) my_hostname locking_hostname
-         then
-           error
-             (sprintf
-                "locked from %s, unlock attempted from %s"
-                locking_hostname
-                my_hostname)
-         else (
-           (* Check if the process is running: sends signal 0 to pid, which should work if
-              the process is running and is owned by the user running this code. If the
-              process is not owned by the user running this code we should fail to unlock
-              either earlier (unable to read the file) or later (unable to remove the
-              file). *)
-           let pid_start_matches_lock pid =
-             match Option.both (Info.start_time info) (process_start_time pid) with
-             | None -> true (* don't have both start times: fall back to old behaviour *)
-             | Some (lock_start, pid_start) ->
-               (* our method of calculating start time is open to some inaccuracy, so let's
-                  be generous and allow for up to 1s of difference (this would only allow
-                  for a collision if pids get reused within 1s, which seems unlikely) *)
-               let epsilon = Time_float.Span.of_sec 1. in
-               Time_float.Span.( < ) (Time_float.abs_diff lock_start pid_start) epsilon
-           in
-           let is_locked_by_me () =
-             Pid.equal locking_pid my_pid && pid_start_matches_lock my_pid
-           in
-           let locking_pid_exists () =
-             Signal_unix.can_send_to locking_pid && pid_start_matches_lock locking_pid
-           in
-           if (unlock_myself && is_locked_by_me ()) || not (locking_pid_exists ())
-           then (
-             (* We need to be able to recover from situation where [path] does not exist
-                for whatever reason, but [lock_path] is present. Error during unlink of
-                [path] are ignored to be able to cope with this situation and properly
-                clean up stale locks. *)
-             (try Unix.unlink path with
-              | Unix.Unix_error (ENOENT, _, _) -> ()
-              | e -> error (Exn.to_string e));
-             try Unix.unlink lock_path with
-             | e -> error (Exn.to_string e))
-           else
-             error
-               (sprintf
-                  "locking process (pid %i) still running on %s"
-                  (Pid.to_int locking_pid)
-                  locking_hostname)))
-  ;;
-
-  (* See mli for more information on the algorithm we use for locking over NFS.  Ensure
-     that you understand it before you make any changes here. *)
-  let create_exn ?(message = "") path =
-    try
-      unlock_safely_exn ~unlock_myself:false path;
-      let fd = Unix.openfile path ~mode:[ Unix.O_WRONLY; Unix.O_CREAT ] in
-      let cleanup = ref (fun () -> Unix.close fd) in
-      protect
-        ~finally:(fun () -> !cleanup ())
-        ~f:(fun () ->
-          Unix.link ~target:path ~link_name:(lock_path path) ();
-          Unix.ftruncate fd ~len:0L;
-          let info = Info.create ~message in
-          (* if this fprintf fails, empty lock file would be left behind, and
-             subsequent calls to [Lock_file.Nfs.create_exn] would be unable to
-             figure out that it is stale/corrupt and remove it. So we need to
-             remove it ourselves *)
-          try
-            let out_channel = Unix.out_channel_of_descr fd in
-            (cleanup := fun () -> Stdlib.close_out_noerr out_channel);
-            fprintf out_channel "%s\n%!" (Sexp.to_string_hum (Info.sexp_of_t info))
-          with
-          | Sys_error _ as err ->
-            Unix.unlink path;
-            Unix.unlink (lock_path path);
-            raise err);
-      at_exit (fun () ->
-        try unlock_safely_exn ~unlock_myself:true path with
-        | _ -> ())
-    with
-    | e ->
-      failwithf
-        "Lock_file.Nfs.create_exn: unable to lock '%s' - %s"
-        path
-        (Exn.to_string e)
-        ()
-  ;;
-
-  let create ?message path = Or_error.try_with (fun () -> create_exn ?message path)
-
-  (* default timeout is to wait indefinitely *)
-  let blocking_create ?timeout ?message path =
-    repeat_with_timeout ?timeout (fun path -> create_exn ?message path) path
-  ;;
-
-  let critical_section ?message path ~timeout ~f =
-    blocking_create ~timeout ?message path;
-    Exn.protect ~f ~finally:(fun () -> unlock_safely_exn ~unlock_myself:true path)
-  ;;
-
-  let unlock_exn path = unlock_safely_exn ~unlock_myself:true path
-  let unlock path = Or_error.try_with (fun () -> unlock_exn path)
-end
+module Nfs = Nfs_lock
 
 (* The reason this function is used is to make sure the file the path is pointing to
    remains stable across [chdir]. In fact we'd prefer for it to remain stable over

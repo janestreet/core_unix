@@ -254,7 +254,7 @@ let make_socket () = Unix.socket ~domain:Unix.PF_INET ~kind:Unix.SOCK_DGRAM ~pro
 let%expect_test "[Epoll.set] has allocation limits" =
   with_epoll ~f:(fun epset ->
     let sock1 = make_socket () in
-    require_allocation_does_not_exceed (Minor_words 6) [%here] (fun () ->
+    require_allocation_does_not_exceed (Minor_words 6) (fun () ->
       Epoll.set epset sock1 Flags.in_));
   [%expect {| |}]
 ;;
@@ -262,7 +262,7 @@ let%expect_test "[Epoll.set] has allocation limits" =
 let%expect_test "[Epoll.find] does not allocate when not present" =
   with_epoll ~f:(fun epset ->
     let sock1 = make_socket () in
-    require_no_allocation [%here] (fun () -> ignore (Epoll.find epset sock1 : _ option)));
+    require_no_allocation (fun () -> ignore (Epoll.find epset sock1 : _ option)));
   [%expect {| |}]
 ;;
 
@@ -270,7 +270,7 @@ let%expect_test "[Epoll.find] has allocation limits when present" =
   with_epoll ~f:(fun epset ->
     let sock1 = make_socket () in
     Epoll.set epset sock1 Flags.in_;
-    require_allocation_does_not_exceed (Minor_words 2) [%here] (fun () ->
+    require_allocation_does_not_exceed (Minor_words 2) (fun () ->
       ignore (Epoll.find epset sock1 : _ option)));
   [%expect {| |}]
 ;;
@@ -278,9 +278,9 @@ let%expect_test "[Epoll.find] has allocation limits when present" =
 let%expect_test "[Epoll.remove] does not allocate" =
   with_epoll ~f:(fun epset ->
     let sock1 = make_socket () in
-    require_no_allocation [%here] (fun () -> ignore (Epoll.remove epset sock1 : unit));
+    require_no_allocation (fun () -> ignore (Epoll.remove epset sock1 : unit));
     Epoll.set epset sock1 Flags.in_;
-    require_no_allocation [%here] (fun () -> ignore (Epoll.remove epset sock1 : unit)));
+    require_no_allocation (fun () -> ignore (Epoll.remove epset sock1 : unit)));
   [%expect {| |}]
 ;;
 
@@ -299,7 +299,8 @@ let%expect_test "[Epoll.Expert.clear_ready]" =
       print_num_ready ();
       Epoll.Expert.clear_ready t;
       print_num_ready ();
-      [%expect {|
+      [%expect
+        {|
         (!num_ready 1)
         (!num_ready 0)
         |}])
@@ -386,7 +387,8 @@ let%test_module "getpriority and setpriority" =
         let priority = Linux_ext.Priority.of_int (index + 1) in
         setpriority ?pid:set_pid priority;
         print_priority ?pid:get_pid ());
-      [%expect {|
+      [%expect
+        {|
         1
         2
         3
@@ -482,10 +484,10 @@ let%test_unit "get_terminal_size" =
         (Filename_unix.temp_file "get_terminal_size" "")
         ~finally:Unix.unlink
         ~f:(fun fname ->
-        protectx
-          (Unix.openfile fname ~mode:[ Unix.O_RDONLY ] ~perm:0)
-          ~finally:Unix.close
-          ~f)
+          protectx
+            (Unix.openfile fname ~mode:[ Unix.O_RDONLY ] ~perm:0)
+            ~finally:Unix.close
+            ~f)
     in
     (match with_tmp_fd (fun fd -> f (`Fd fd)) with
      | exception Unix.Unix_error (ENOTTY, _, _) -> ()
@@ -664,26 +666,28 @@ let%test_unit "peer_credentials" =
       (Filename_unix.temp_file "linux_ext" "")
       ~finally:Unix.unlink
       ~f:(fun fname ->
-      (let fd = Unix.openfile fname ~mode:[ O_RDONLY ] in
-       try
-         ignore (peer_credentials fd : Peer_credentials.t);
-         failwith "peer credential on non socket should have raised"
-       with
-       | Unix.Unix_error (ENOTSOCK, _, _) -> ());
-      with_listening_server_unix_socket (fname ^ ".peercredsocket") ~f:(fun fname ->
-        let client_sock = Unix.socket ~domain:PF_UNIX ~kind:SOCK_STREAM ~protocol:0 () in
-        let rec connect count =
-          try Unix.connect client_sock ~addr:(ADDR_UNIX fname) with
-          | Unix_error (ECONNREFUSED, _, _) when count < 100 ->
-            (* the server might not have listened yet *)
-            ignore (Unix.nanosleep 0.1 : float);
-            connect (count + 1)
-        in
-        connect 0;
-        let p = peer_credentials client_sock in
-        [%test_eq: Pid.t] p.pid (Unix.getpid ());
-        [%test_eq: int] p.uid (Unix.getuid ());
-        [%test_eq: int] p.gid (Unix.getgid ())))
+        (let fd = Unix.openfile fname ~mode:[ O_RDONLY ] in
+         try
+           ignore (peer_credentials fd : Peer_credentials.t);
+           failwith "peer credential on non socket should have raised"
+         with
+         | Unix.Unix_error (ENOTSOCK, _, _) -> ());
+        with_listening_server_unix_socket (fname ^ ".peercredsocket") ~f:(fun fname ->
+          let client_sock =
+            Unix.socket ~domain:PF_UNIX ~kind:SOCK_STREAM ~protocol:0 ()
+          in
+          let rec connect count =
+            try Unix.connect client_sock ~addr:(ADDR_UNIX fname) with
+            | Unix_error (ECONNREFUSED, _, _) when count < 100 ->
+              (* the server might not have listened yet *)
+              ignore (Unix.nanosleep 0.1 : float);
+              connect (count + 1)
+          in
+          connect 0;
+          let p = peer_credentials client_sock in
+          [%test_eq: Pid.t] p.pid (Unix.getpid ());
+          [%test_eq: int] p.uid (Unix.getuid ());
+          [%test_eq: int] p.gid (Unix.getgid ())))
 ;;
 
 let%expect_test "cpu_list_of_string_exn" =

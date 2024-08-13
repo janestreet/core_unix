@@ -8,7 +8,7 @@
  (name core_unix)
  (public_name core_unix)
  (libraries core error_checking_mutex core_kernel.flags sexplib.unix
-   signal_unix spawn)
+   signal_unix spawn ppx_stable_witness.stable_witness unix)
  (preprocess
   (pps ppx_jane ppx_optcomp))
  (preprocessor_deps config.h))

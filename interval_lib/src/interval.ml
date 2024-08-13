@@ -9,10 +9,11 @@ module Stable = struct
       type 'a t =
         | Interval of 'a * 'a
         | Empty
-      [@@deriving bin_io, of_sexp, variants, compare, hash, sexp_grammar, stable_witness]
+      [@@deriving
+        bin_io, of_sexp, variants, compare, equal, hash, sexp_grammar, stable_witness]
 
       type 'a interval = 'a t
-      [@@deriving bin_io, of_sexp, compare, hash, sexp_grammar, stable_witness]
+      [@@deriving bin_io, of_sexp, compare, equal, hash, sexp_grammar, stable_witness]
 
       let interval_of_sexp a_of_sexp sexp =
         try interval_of_sexp a_of_sexp sexp (* for backwards compatibility *) with
@@ -46,12 +47,12 @@ module Stable = struct
     open T
 
     type 'a t = 'a interval
-    [@@deriving sexp, bin_io, compare, hash, sexp_grammar, stable_witness]
+    [@@deriving sexp, bin_io, compare, equal, hash, sexp_grammar, stable_witness]
 
     module Float = struct
       module T = struct
         type t = float interval
-        [@@deriving sexp, bin_io, compare, hash, sexp_grammar, stable_witness]
+        [@@deriving sexp, bin_io, compare, equal, hash, sexp_grammar, stable_witness]
       end
 
       include T
@@ -61,7 +62,7 @@ module Stable = struct
     module Int = struct
       module T = struct
         type t = int interval
-        [@@deriving sexp, bin_io, compare, hash, sexp_grammar, stable_witness]
+        [@@deriving sexp, bin_io, compare, equal, hash, sexp_grammar, stable_witness]
       end
 
       include T
@@ -74,7 +75,7 @@ module Stable = struct
     module Ofday = struct
       module T = struct
         type t = Core.Time_float.Stable.Ofday.V1.t interval
-        [@@deriving sexp, bin_io, compare, hash, sexp_grammar, stable_witness]
+        [@@deriving sexp, bin_io, compare, equal, hash, sexp_grammar, stable_witness]
       end
 
       include T
@@ -84,7 +85,7 @@ module Stable = struct
     module Ofday_ns = struct
       module T = struct
         type t = Core.Time_ns.Stable.Ofday.V1.t interval
-        [@@deriving sexp, bin_io, compare, sexp_grammar, stable_witness]
+        [@@deriving sexp, bin_io, compare, equal, hash, sexp_grammar, stable_witness]
       end
 
       include T
@@ -309,12 +310,12 @@ module Raw_make (T : Bound) = struct
          intersect, and that will capture all necessary merges.  *)
       drop_empty_intervals_and_sort intervals
       |> List.fold ~init:[] ~f:(fun acc interval ->
-           match acc with
-           | [] -> [ interval ]
-           | prev_interval :: tl ->
-             if Interval.are_disjoint [ prev_interval; interval ]
-             then interval :: acc
-             else Interval.convex_hull [ prev_interval; interval ] :: tl)
+        match acc with
+        | [] -> [ interval ]
+        | prev_interval :: tl ->
+          if Interval.are_disjoint [ prev_interval; interval ]
+          then interval :: acc
+          else Interval.convex_hull [ prev_interval; interval ] :: tl)
       |> List.rev
     ;;
 
@@ -369,13 +370,13 @@ module Raw_make (T : Bound) = struct
   end
 end
 
-type 'a t = 'a interval [@@deriving bin_io, sexp, compare, hash]
+type 'a t = 'a interval [@@deriving bin_io, sexp, compare, equal, hash]
 
 module C = Raw_make (struct
-  type 'a bound = 'a
+    type 'a bound = 'a
 
-  include Poly
-end)
+    include Poly
+  end)
 
 include C.Interval
 
@@ -386,28 +387,28 @@ let t_of_sexp a_of_sexp s =
 ;;
 
 module Set = struct
-  type 'a t = 'a interval list [@@deriving bin_io, sexp, compare, hash]
+  type 'a t = 'a interval list [@@deriving bin_io, sexp, compare, equal, hash]
 
   include C.Set
 end
 
 module Make (Bound : sig
-  type t [@@deriving bin_io, sexp, hash]
+    type t [@@deriving bin_io, compare, equal, hash, sexp]
 
-  include Comparable.S with type t := t
-end) =
+    include Comparable.S with type t := t
+  end) =
 struct
-  type t = Bound.t interval [@@deriving bin_io, sexp, compare, hash]
+  type t = Bound.t interval [@@deriving bin_io, sexp, compare, equal, hash]
   type interval = t [@@deriving bin_io, sexp]
   type bound = Bound.t
 
   module C = Raw_make (struct
-    type 'a bound = Bound.t
+      type 'a bound = Bound.t
 
-    let compare = Bound.compare
+      let compare = Bound.compare
 
-    include (Bound : Comparable.Infix with type t := Bound.t)
-  end)
+      include (Bound : Comparable.Infix with type t := Bound.t)
+    end)
 
   include C.Interval
 
@@ -490,14 +491,14 @@ module Int = struct
   ;;
 
   module For_container = Container.Make0 (struct
-    type nonrec t = t
+      type nonrec t = t
 
-    module Elt = Int
+      module Elt = Int
 
-    let iter = `Custom iter
-    let fold = fold
-    let length = `Custom length
-  end)
+      let iter = `Custom iter
+      let fold = fold
+      let length = `Custom length
+    end)
 
   let exists = For_container.exists
   let for_all = For_container.for_all
@@ -522,27 +523,25 @@ module Int = struct
     else ubound t
   ;;
 
-  let mem t x =
-    if not (phys_equal equal Int.equal) then For_container.mem t x else contains t x
-  ;;
+  let mem t x = contains t x
 
   (* Note that we use zero-based indexing here, because that's what Binary_searchable
      requires, even though at the end we want to export functions that use the natural
      bounds of the interval.  *)
   module For_binary_search = Binary_searchable.Make (struct
-    type nonrec t = t
-    type nonrec elt = bound
+      type nonrec t = t
+      type nonrec elt = bound
 
-    let length = length
-    let get = get
-  end)
+      let length = length
+      let get = get
+    end)
 
   let binary_search ?pos ?len t ~compare which elt =
     let zero_based_pos = Option.map pos ~f:(fun x -> x - lbound_exn t) in
     let zero_based_result =
       For_binary_search.binary_search ?pos:zero_based_pos ?len t ~compare which elt
     in
-    Option.map zero_based_result ~f:(fun x -> x + lbound_exn t)
+    Option.map_local zero_based_result ~f:(fun x -> x + lbound_exn t)
   ;;
 
   let binary_search_segmented ?pos ?len t ~segment_of which =
@@ -555,7 +554,7 @@ module Int = struct
         ~segment_of
         which
     in
-    Option.map zero_based_result ~f:(fun x -> x + lbound_exn t)
+    Option.map_local zero_based_result ~f:(fun x -> x + lbound_exn t)
   ;;
 
   module Private = struct

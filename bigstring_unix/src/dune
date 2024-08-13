@@ -1,7 +1,8 @@
 (library
  (foreign_stubs
   (language c)
-  (names bigstring_unix_stubs recvmmsg))
+  (names bigstring_unix_stubs recvmmsg)
+  (flags :standard))
  (name bigstring_unix)
  (public_name core_unix.bigstring_unix)
  (libraries core core_unix ocaml_c_utils)

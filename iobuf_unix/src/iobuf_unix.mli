@@ -40,14 +40,14 @@ val recvfrom_assume_fd_is_nonblocking
     returned iobufs have had their underlying bigstring or limits changed (e.g., through a
     call to [set_bounds_and_buffer] or [narrow_lo]), the call will fail with [EINVAL]. *)
 module Recvmmsg_context : sig
-  type ('rw, 'seek) iobuf
-  type t
+    type ('rw, 'seek) iobuf
+    type t
 
-  (** Do not change these [Iobuf]'s [buf]s or limits before calling
+    (** Do not change these [Iobuf]'s [buf]s or limits before calling
       [recvmmsg_assume_fd_is_nonblocking]. *)
-  val create : (read_write, seek) iobuf array -> t
-end
-with type ('rw, 'seek) iobuf := ('rw, 'seek) t
+    val create : (read_write, seek) iobuf array -> t
+  end
+  with type ('rw, 'seek) iobuf := ('rw, 'seek) t
 
 (** [recvmmsg_assume_fd_is_nonblocking fd context] returns the number of [context] iobufs
     read into (or [errno]).  [fd] must not block.  [THREAD_IO_CUTOFF] is ignored.
@@ -67,7 +67,7 @@ val sendto_nonblocking_no_sigpipe
       -> Unix.File_descr.t
       -> Unix.sockaddr
       -> Unix.Syscall_result.Unit.t)
-     Or_error.t
+       Or_error.t
 
 (** Write from the iobuf to the specified channel without changing the iobuf
     window.  Returns the number of bytes written. *)
