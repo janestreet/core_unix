@@ -175,9 +175,9 @@ module Goodies = struct
   let command =
     Command.basic
       ~summary:"demo of how to get various backdoor values"
-      (let%map_open.Command help = help
-       and path = path
-       and args = args
+      (let%map_open.Command help
+       and path
+       and args
        and _ = flag "t" (optional string) ~doc:""
        and _ = flag "-fail" no_arg ~doc:" die, die, die!" in
        fun () ->

@@ -22,23 +22,27 @@ val file_exists
   -> string
   -> [ `Yes | `No | `Unknown ]
 
-(** Same as [file_exists] but blows up on [`Unknown] *)
+(** Same as [file_exists] but blows up on [`Unknown]. *)
 val file_exists_exn : ?follow_symlinks:bool (** defaults to true *) -> string -> bool
 
-(** Returns [`Yes] if the file exists and is a directory*)
+(** Returns [`Yes] if the file exists and is a directory. *)
 val is_directory
   :  ?follow_symlinks:bool (** defaults to true *)
   -> string
   -> [ `Yes | `No | `Unknown ]
 
-(** Returns [`Yes] if the file exists and is a regular file *)
+(** Returns [`Yes] if the file exists and is a regular file. *)
 val is_file
   :  ?follow_symlinks:bool (** defaults to true *)
   -> string
   -> [ `Yes | `No | `Unknown ]
 
+(** Returns [`Yes] if the file exists and is a symlink. *)
+val is_symlink : string -> [ `Yes | `No | `Unknown ]
+
 val is_directory_exn : ?follow_symlinks:bool (** defaults to true *) -> string -> bool
 val is_file_exn : ?follow_symlinks:bool (** defaults to true *) -> string -> bool
+val is_symlink_exn : string -> bool
 
 (** Remove the given file name from the file system. *)
 val remove : string -> unit

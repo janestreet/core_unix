@@ -662,14 +662,14 @@ type file_kind = Unix.file_kind =
     number of seconds since the epoch; we don't use [Time.t] because [Time] depends on
     [Unix], so the fix isn't so trivial.  Same for [Native_file.stats] below. *)
 type stats = Unix.LargeFile.stats =
-  { st_dev : int (** Device number *)
+  { st_dev : int (** Device number (on which the file resides) *)
   ; st_ino : int (** Inode number *)
   ; st_kind : file_kind (** Kind of the file *)
   ; st_perm : file_perm (** Access rights *)
   ; st_nlink : int (** Number of links *)
   ; st_uid : int (** User id of the owner *)
   ; st_gid : int (** Group ID of the file's group *)
-  ; st_rdev : int (** Device minor number *)
+  ; st_rdev : int (** Device number of this file (if it is a character or block device) *)
   ; st_size : int64 (** Size in bytes *)
   ; st_atime : float (** Last access time *)
   ; st_mtime : float (** Last modification time *)

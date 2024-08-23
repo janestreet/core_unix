@@ -26,7 +26,7 @@ val unlock : t -> unit
 
 (** [critical_section t ~f] locks [t], runs [f], unlocks [t], and returns the result of
     [f] (or raises if [f] raised). *)
-val critical_section : t -> f:(unit -> 'a) -> 'a
+val critical_section : t -> f:local_ (unit -> 'a) -> 'a
 
 (** [synchronize f] creates a mutex and returns a new function that is identical to [f]
     except that the mutex is held during its execution. *)

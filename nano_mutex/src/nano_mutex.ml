@@ -9,7 +9,7 @@ module Blocker : sig
   type t [@@deriving sexp_of]
 
   val create : unit -> t
-  val critical_section : t -> f:(unit -> 'a) -> 'a
+  val critical_section : t -> f:local_ (unit -> 'a) -> 'a
   val wait : t -> unit
   val signal : t -> unit
   val save_unused : t -> unit
@@ -49,7 +49,7 @@ end = struct
 end
 
 module Thread_id_option : sig
-  type t [@@deriving equal, sexp_of] [@@immediate]
+  type t : immediate [@@deriving equal, sexp_of]
 
   val none : t
   val some : int -> t
@@ -174,7 +174,7 @@ let[@inline never] [@specialise never] [@local never] with_blocker0 t ~new_block
 
 (* [with_blocker t f] runs [f blocker] in a critical section.  It allocates a blocker for
    [t] if [t] doesn't already have one. *)
-let with_blocker t f =
+let with_blocker t (local_ f) =
   t.num_using_blocker <- t.num_using_blocker + 1;
   let blocker =
     match%optional.Uopt t.blocker with

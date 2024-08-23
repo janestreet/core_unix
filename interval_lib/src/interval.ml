@@ -511,13 +511,13 @@ module Int = struct
   let fold_result = For_container.fold_result
   let fold_until = For_container.fold_until
 
-  let min_elt t ~(compare : _ -> _ -> _) =
+  let min_elt t ~(local_ compare : _ -> _ -> _) =
     if not (phys_equal compare Int.compare)
     then For_container.min_elt t ~compare
     else lbound t
   ;;
 
-  let max_elt t ~(compare : _ -> _ -> _) =
+  let max_elt t ~(local_ compare : _ -> _ -> _) =
     if not (phys_equal compare Int.compare)
     then For_container.max_elt t ~compare
     else ubound t
@@ -536,7 +536,7 @@ module Int = struct
       let get = get
     end)
 
-  let binary_search ?pos ?len t ~compare which elt =
+  let binary_search ?pos ?len t ~compare which elt = exclave_
     let zero_based_pos = Option.map pos ~f:(fun x -> x - lbound_exn t) in
     let zero_based_result =
       For_binary_search.binary_search ?pos:zero_based_pos ?len t ~compare which elt
@@ -544,7 +544,7 @@ module Int = struct
     Option.map_local zero_based_result ~f:(fun x -> x + lbound_exn t)
   ;;
 
-  let binary_search_segmented ?pos ?len t ~segment_of which =
+  let binary_search_segmented ?pos ?len t ~segment_of which = exclave_
     let zero_based_pos = Option.map pos ~f:(fun x -> x - lbound_exn t) in
     let zero_based_result =
       For_binary_search.binary_search_segmented
