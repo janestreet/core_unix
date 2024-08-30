@@ -96,7 +96,7 @@ let zero = Int63.zero
 [%%ifdef JSC_ARCH_SIXTYFOUR]
 
 external rdtsc : unit -> (int64[@unboxed]) = "caml_rdtsc" "caml_rdtsc_unboxed"
-[@@noalloc] [@@builtin]
+[@@noalloc]
 
 (* noalloc on x86_64 only *)
 let[@inline] now () =
