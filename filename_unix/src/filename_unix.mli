@@ -30,25 +30,25 @@ val open_temp_file_fd
   -> string
   -> string * Unix.file_descr
 
-(** [temp_file ?perm ?in_dir_name prefix suffix]
-
-    Returns the name of a fresh temporary file in the temporary directory. The base name
-    of the temporary file is formed by concatenating prefix, then [.tmp.], then a 6-digit
-    hex number, then suffix. The temporary file is created empty. The file is guaranteed
-    to be fresh, i.e. not already existing in the directory.
-
-    @param in_dir the directory in which to create the temporary file.  The default is
-    [temp_dir_name]
+(** Creates an empty temporary file with a fresh name and returns the name of the
+    temporary file. The temporary file is created in the directory specified by [in_dir],
+    with permissions specified by [perm]. The base name of the temporary file is formed by
+    concatenating [prefix], then ".tmp.", then 6 random alphanumeric characters, then
+    [suffix]. The function ensures that the temporary filename does not
+    already exist in the directory.
 
     @param perm the permission of the temporary file. The default value is [0o600]
     (readable and writable only by the file owner)
 
-    Note that prefix and suffix will be changed when necessary to make the final filename
-    valid POSIX.
+    @param in_dir the directory in which to create the temporary file. The default is
+    [temp_dir_name]
 
-    [temp_dir] is the same as [temp_file] but creates a temporary directory. *)
+    Note that prefix and suffix will be changed when necessary to make the final filename
+    valid POSIX.*)
 val temp_file : ?perm:int -> ?in_dir:string -> string -> string -> string
 
+(** [temp_dir] is the same as [temp_file] but creates a temporary directory and uses a
+    default permission value of [0o700] *)
 val temp_dir : ?perm:int -> ?in_dir:string -> string -> string -> string
 
 (** [create_arg_type]'s resulting [Arg_type.t] does bash autocompletion, via [compgen]. *)

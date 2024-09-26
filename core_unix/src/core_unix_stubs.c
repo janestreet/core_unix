@@ -283,6 +283,18 @@ CAMLprim value core_unix_flock(value v_blocking, value v_fd, value v_lock_type) 
 
 /* Filesystem functions */
 
+CAMLprim value core_unix_major_stub(value v_dev) {
+  return Val_long(major(Long_val(v_dev)));
+}
+
+CAMLprim value core_unix_minor_stub(value v_dev) {
+  return Val_long(minor(Long_val(v_dev)));
+}
+
+CAMLprim value core_unix_makedev_stub(value v_major, value v_minor) {
+  return Val_long(makedev(Long_val(v_major), Long_val(v_minor)));
+}
+
 CAMLprim value core_unix_mknod_stub(value v_pathname, value v_mode, value v_perm,
                                     value v_major, value v_minor) {
   CAMLparam1(v_pathname);

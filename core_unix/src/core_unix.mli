@@ -662,14 +662,14 @@ type file_kind = Unix.file_kind =
     number of seconds since the epoch; we don't use [Time.t] because [Time] depends on
     [Unix], so the fix isn't so trivial.  Same for [Native_file.stats] below. *)
 type stats = Unix.LargeFile.stats =
-  { st_dev : int (** Device number *)
+  { st_dev : int (** Device number (on which the file resides) *)
   ; st_ino : int (** Inode number *)
   ; st_kind : file_kind (** Kind of the file *)
   ; st_perm : file_perm (** Access rights *)
   ; st_nlink : int (** Number of links *)
   ; st_uid : int (** User id of the owner *)
   ; st_gid : int (** Group ID of the file's group *)
-  ; st_rdev : int (** Device minor number *)
+  ; st_rdev : int (** Device number of this file (if it is a character or block device) *)
   ; st_size : int64 (** Size in bytes *)
   ; st_atime : float (** Last access time *)
   ; st_mtime : float (** Last modification time *)
@@ -2104,6 +2104,15 @@ val set_out_channel_timeout : Out_channel.t -> float -> unit
 val exit_immediately : int -> _
 
 (** {2 Filesystem functions} *)
+
+(** Get the major number of a device ID. *)
+val major : device_id:int -> int
+
+(** Get the minor number of a device ID. *)
+val minor : device_id:int -> int
+
+(** Get the device ID from a major and minor number. *)
+val makedev : major:int -> minor:int -> int
 
 (** [mknod ?file_kind ?perm ?major ?minor path] creates a filesystem
     entry.  Note that only FIFO-entries are guaranteed to be supported

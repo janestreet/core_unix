@@ -308,7 +308,7 @@ let%expect_test "nested [choose_one]" =
     in
     run_command
       ~args
-      (let%map_open.Command arg = arg in
+      (let%map_open.Command arg in
        fun () ->
          print_s [%message (arg : [ `Foo_bar of bool * bool | `Baz_qux of bool * bool ])])
   in

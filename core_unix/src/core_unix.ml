@@ -110,6 +110,10 @@ let write_assume_fd_is_nonblocking fd ?pos ?len buf =
 
 (* Filesystem functions *)
 
+external major : device_id:int -> int = "core_unix_major_stub"
+external minor : device_id:int -> int = "core_unix_minor_stub"
+external makedev : major:int -> minor:int -> int = "core_unix_makedev_stub"
+
 external mknod
   :  string
   -> Unix.file_kind

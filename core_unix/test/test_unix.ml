@@ -566,3 +566,17 @@ let%test_unit "readdir_detailed" =
      | None | Some S_DIR -> ()
      | Some _ -> assert false)
 ;;
+
+let%expect_test "makedev, major, minor" =
+  let expected_major = 240 in
+  let expected_minor = 12 in
+  let device_id = makedev ~major:expected_major ~minor:expected_minor in
+  print_s [%sexp (device_id : int)];
+  [%expect {| 61452 |}];
+  let actual_major = major ~device_id in
+  let actual_minor = minor ~device_id in
+  printf
+    "%b\n"
+    ([%equal: int * int] (expected_major, expected_minor) (actual_major, actual_minor));
+  [%expect {| true |}]
+;;

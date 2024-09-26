@@ -21,29 +21,30 @@ let unsafe_getenv_exn = getenv_exn_f ~f_str:"Sys.unsafe_getenv_exn" ~f:unsafe_ge
 let stat_check_exn f ?(follow_symlinks = true) path =
   let rec loop () =
     try f (if follow_symlinks then LargeFile.stat path else LargeFile.lstat path) with
-    | Unix.Unix_error (Unix.EINTR, _, _) -> loop ()
-    | Unix.Unix_error ((Unix.ENOENT | Unix.ENOTDIR), _, _) -> false
+    | Unix.Unix_error (EINTR, _, _) -> loop ()
+    | Unix.Unix_error ((ENOENT | ENOTDIR), _, _) -> false
   in
   loop ()
 ;;
 
 let stat_check f ?follow_symlinks path =
   try if stat_check_exn f ?follow_symlinks path then `Yes else `No with
-  | Unix.Unix_error ((Unix.EACCES | Unix.ELOOP), _, _) -> `Unknown
+  | Unix.Unix_error ((EACCES | ELOOP), _, _) -> `Unknown
 ;;
 
 let file_exists = stat_check (fun _ -> true)
 let file_exists_exn = stat_check_exn (fun _ -> true)
-let is_directory = stat_check (fun stat -> Poly.equal stat.LargeFile.st_kind Unix.S_DIR)
+let is_directory = stat_check (fun stat -> Poly.equal stat.st_kind S_DIR)
+let is_directory_exn = stat_check_exn (fun stat -> Poly.equal stat.st_kind S_DIR)
+let is_file = stat_check (fun stat -> Poly.equal stat.st_kind S_REG)
+let is_file_exn = stat_check_exn (fun stat -> Poly.equal stat.st_kind S_REG)
 
-let is_directory_exn =
-  stat_check_exn (fun stat -> Poly.equal stat.LargeFile.st_kind Unix.S_DIR)
+let is_symlink =
+  stat_check (fun stat -> Poly.equal stat.st_kind S_LNK) ~follow_symlinks:false
 ;;
 
-let is_file = stat_check (fun stat -> Poly.equal stat.LargeFile.st_kind Unix.S_REG)
-
-let is_file_exn =
-  stat_check_exn (fun stat -> Poly.equal stat.LargeFile.st_kind Unix.S_REG)
+let is_symlink_exn =
+  stat_check_exn (fun stat -> Poly.equal stat.st_kind S_LNK) ~follow_symlinks:false
 ;;
 
 include struct

@@ -613,7 +613,7 @@ let%test_module "Time.Stable" =
     ;;
 
     module For_time = struct
-      let compare = Time.robustly_compare
+      let compare x y = Time.robustly_compare x y
       let examples = examples
 
       let quickcheck_generator =
