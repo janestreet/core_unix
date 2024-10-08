@@ -6,76 +6,71 @@ open Linux_ext
 open Expect_test_helpers_core
 module Thread = Core_thread
 
-let%test_module "[Timerfd]" =
-  (module struct
-    open Timerfd
+module%test [@name "[Timerfd]"] _ = struct
+  open Timerfd
 
-    let%test_unit "unsafe_timerfd_settime returning errno" =
-      let result =
-        Private.unsafe_timerfd_settime
-          (File_descr.of_int (-1))
-          false
-          ~initial:Int63.zero
-          ~interval:Int63.zero
+  let%test_unit "unsafe_timerfd_settime returning errno" =
+    let result =
+      Private.unsafe_timerfd_settime
+        (File_descr.of_int (-1))
+        false
+        ~initial:Int63.zero
+        ~interval:Int63.zero
+    in
+    if Syscall_result.Unit.is_ok result
+    then
+      failwiths
+        ~here:[%here]
+        "unsafe_timerfd_settime unexpectedly succeeded"
+        result
+        [%sexp_of: Syscall_result.Unit.t];
+    [%test_result: Unix.Error.t] (Syscall_result.Unit.error_exn result) ~expect:EBADF
+  ;;
+
+  let%test_unit _ =
+    match create with
+    | Error _ -> ()
+    | Ok create ->
+      let t = create Clock.realtime in
+      assert (get t = `Not_armed);
+      set_after t Time_ns.Span.minute;
+      assert (
+        match get t with
+        | `Fire_after span -> Time_ns.Span.( <= ) span Time_ns.Span.minute
+        | _ -> false);
+      let span = Time_ns.Span.scale Time_ns.Span.minute 2. in
+      set_repeating t ~after:Time_ns.Span.minute span;
+      assert (
+        match get t with
+        | `Repeat { fire_after; interval } ->
+          Time_ns.Span.( <= ) fire_after Time_ns.Span.minute
+          && Time_ns.Span.equal interval span
+        | _ -> false)
+  ;;
+end
+
+module%test [@name "[Memfd]"] _ = struct
+  open Memfd
+
+  let%test_unit "[create] returns file descriptors that look correct in \
+                 [/proc/self/fd/...] and are the right size"
+    =
+    match create with
+    | Error _ -> ()
+    | Ok create ->
+      let name = "foo" in
+      let initial_size = 4096 * 2 in
+      let fd =
+        create ~flags:Flags.(cloexec + allow_sealing) ~initial_size name |> to_file_descr
       in
-      if Syscall_result.Unit.is_ok result
-      then
-        failwiths
-          ~here:[%here]
-          "unsafe_timerfd_settime unexpectedly succeeded"
-          result
-          [%sexp_of: Syscall_result.Unit.t];
-      [%test_result: Unix.Error.t] (Syscall_result.Unit.error_exn result) ~expect:EBADF
-    ;;
-
-    let%test_unit _ =
-      match create with
-      | Error _ -> ()
-      | Ok create ->
-        let t = create Clock.realtime in
-        assert (get t = `Not_armed);
-        set_after t Time_ns.Span.minute;
-        assert (
-          match get t with
-          | `Fire_after span -> Time_ns.Span.( <= ) span Time_ns.Span.minute
-          | _ -> false);
-        let span = Time_ns.Span.scale Time_ns.Span.minute 2. in
-        set_repeating t ~after:Time_ns.Span.minute span;
-        assert (
-          match get t with
-          | `Repeat { fire_after; interval } ->
-            Time_ns.Span.( <= ) fire_after Time_ns.Span.minute
-            && Time_ns.Span.equal interval span
-          | _ -> false)
-    ;;
-  end)
-;;
-
-let%test_module "[Memfd]" =
-  (module struct
-    open Memfd
-
-    let%test_unit "[create] returns file descriptors that look correct in \
-                   [/proc/self/fd/...] and are the right size"
-      =
-      match create with
-      | Error _ -> ()
-      | Ok create ->
-        let name = "foo" in
-        let initial_size = 4096 * 2 in
-        let fd =
-          create ~flags:Flags.(cloexec + allow_sealing) ~initial_size name
-          |> to_file_descr
-        in
-        let basename =
-          Unix.readlink [%string "/proc/self/fd/%{fd#File_descr}"] |> Filename.basename
-        in
-        assert (String.(basename = [%string "memfd:%{name} (deleted)"]));
-        assert (Int64.((Unix.fstat fd).st_size = of_int initial_size));
-        Unix.close fd
-    ;;
-  end)
-;;
+      let basename =
+        Unix.readlink [%string "/proc/self/fd/%{fd#File_descr}"] |> Filename.basename
+      in
+      assert (String.(basename = [%string "memfd:%{name} (deleted)"]));
+      assert (Int64.((Unix.fstat fd).st_size = of_int initial_size));
+      Unix.close fd
+  ;;
+end
 
 let%test_unit _ =
   match cores with
@@ -98,147 +93,143 @@ let%test "lo interface addr is 127.0.0.1" =
    adds them to an epoll set, sends data to one of them and calls Epoll.wait.
    The test passes if the resulting Ready_fds set has 1 ready fd, matching
    the one we sent to, with read, !write, and !error. *)
-let%test_module _ =
-  (module struct
-    module Flags = Epoll.Flags
+module%test _ = struct
+  module Flags = Epoll.Flags
 
-    let udp_listener ~port =
-      let sock = Unix.socket ~domain:Unix.PF_INET ~kind:Unix.SOCK_DGRAM ~protocol:0 () in
-      let iaddr = Unix.ADDR_INET (Unix.Inet_addr.localhost, port) in
-      Unix.setsockopt sock Unix.SO_REUSEADDR true;
-      Unix.bind sock ~addr:iaddr;
-      sock
-    ;;
+  let udp_listener ~port =
+    let sock = Unix.socket ~domain:Unix.PF_INET ~kind:Unix.SOCK_DGRAM ~protocol:0 () in
+    let iaddr = Unix.ADDR_INET (Unix.Inet_addr.localhost, port) in
+    Unix.setsockopt sock Unix.SO_REUSEADDR true;
+    Unix.bind sock ~addr:iaddr;
+    sock
+  ;;
 
-    let send_substring s buf ~port =
-      let addr = Unix.ADDR_INET (Unix.Inet_addr.localhost, port) in
-      let len = String.length buf in
-      Unix.sendto_substring s ~buf ~pos:0 ~len ~mode:[] ~addr
-    ;;
+  let send_substring s buf ~port =
+    let addr = Unix.ADDR_INET (Unix.Inet_addr.localhost, port) in
+    let len = String.length buf in
+    Unix.sendto_substring s ~buf ~pos:0 ~len ~mode:[] ~addr
+  ;;
 
-    let with_epoll ~f =
-      protectx
-        ~finally:Epoll.close
-        ~f
-        ((Or_error.ok_exn Epoll.create) ~num_file_descrs:1024 ~max_ready_events:256)
-    ;;
+  let with_epoll ~f =
+    protectx
+      ~finally:Epoll.close
+      ~f
+      ((Or_error.ok_exn Epoll.create) ~num_file_descrs:1024 ~max_ready_events:256)
+  ;;
 
-    let%test_unit "epoll errors" =
-      with_epoll ~f:(fun t ->
-        let tmp = "temporary-file-for-testing-epoll" in
-        let fd = Unix.openfile tmp ~mode:[ Unix.O_CREAT; Unix.O_WRONLY ] in
-        (* Epoll does not support ordinary files, and so should fail if you ask it to watch
+  let%test_unit "epoll errors" =
+    with_epoll ~f:(fun t ->
+      let tmp = "temporary-file-for-testing-epoll" in
+      let fd = Unix.openfile tmp ~mode:[ Unix.O_CREAT; Unix.O_WRONLY ] in
+      (* Epoll does not support ordinary files, and so should fail if you ask it to watch
            one. *)
-        assert (Result.is_error (Result.try_with (fun () -> Epoll.set t fd Flags.none)));
-        Unix.close fd;
-        Unix.unlink tmp)
-    ;;
+      assert (Result.is_error (Result.try_with (fun () -> Epoll.set t fd Flags.none)));
+      Unix.close fd;
+      Unix.unlink tmp)
+  ;;
 
-    let%test_unit "epoll test" =
-      with_epoll ~f:(fun epset ->
-        let span = Time_ns.Span.of_sec 0.1 in
-        let sock1 = udp_listener ~port:7070 in
-        let sock2 = udp_listener ~port:7071 in
-        Epoll.set epset sock1 Flags.in_;
-        Epoll.set epset sock2 Flags.in_;
-        let _sent = send_substring sock2 "TEST" ~port:7070 in
-        match Epoll.wait_timeout_after epset span with
-        | `Timeout -> assert false
-        | `Ok ->
-          let ready =
-            Epoll.fold_ready epset ~init:[] ~f:(fun ac fd flags ->
-              if flags = Flags.in_ then fd :: ac else ac)
-          in
-          (* Explanation of the test:
+  let%test_unit "epoll test" =
+    with_epoll ~f:(fun epset ->
+      let span = Time_ns.Span.of_sec 0.1 in
+      let sock1 = udp_listener ~port:7070 in
+      let sock2 = udp_listener ~port:7071 in
+      Epoll.set epset sock1 Flags.in_;
+      Epoll.set epset sock2 Flags.in_;
+      let _sent = send_substring sock2 "TEST" ~port:7070 in
+      match Epoll.wait_timeout_after epset span with
+      | `Timeout -> assert false
+      | `Ok ->
+        let ready =
+          Epoll.fold_ready epset ~init:[] ~f:(fun ac fd flags ->
+            if flags = Flags.in_ then fd :: ac else ac)
+        in
+        (* Explanation of the test:
              1) I create two udp sockets, sock1 listening on 7070 and sock2, on 7071
              2) These two sockets are both added to epoll for read notification
              3) I send a packet, _using_ sock2 to sock1 (who is listening on 7070)
              4) epoll_wait should return, with [ sock1 ] ready to be read.
-          *)
-          (match ready with
-           | [ sock ] when sock = sock1 -> ()
-           | [ _ ] -> failwith "wrong socket is ready"
-           | xs -> failwithf "%d sockets are ready" (List.length xs) ()))
-    ;;
+        *)
+        (match ready with
+         | [ sock ] when sock = sock1 -> ()
+         | [ _ ] -> failwith "wrong socket is ready"
+         | xs -> failwithf "%d sockets are ready" (List.length xs) ()))
+  ;;
 
-    let%test_unit "Timerfd.set_after small span test" =
-      match Timerfd.create with
-      | Error _ -> ()
-      | Ok timerfd_create ->
-        with_epoll ~f:(fun epoll ->
-          let timerfd = timerfd_create Timerfd.Clock.realtime in
-          Epoll.set epoll (timerfd :> File_descr.t) Epoll.Flags.in_;
-          List.iter [ 0; 1 ] ~f:(fun span_ns ->
-            Timerfd.set_after timerfd (Time_ns.Span.of_int63_ns (Int63.of_int span_ns));
-            match Epoll.wait epoll ~timeout:`Never with
-            | `Timeout -> assert false
-            | `Ok -> ());
-          Unix.close (timerfd :> Unix.File_descr.t))
-    ;;
-
-    let%test_unit "epoll detects an error on the write side of a pipe when the read side \
-                   of the pipe closes\n\
-                   after a partial read"
-      =
-      let saw_sigpipe = ref false in
-      let new_sigpipe_handler = `Handle (fun _ -> saw_sigpipe := true) in
-      let old_sigpipe_handler = Signal.Expert.signal Signal.pipe new_sigpipe_handler in
-      Exn.protect
-        ~finally:(fun () -> Signal.Expert.set Signal.pipe old_sigpipe_handler)
-        ~f:(fun () ->
-          let r, w = Unix.pipe () in
-          let w_len = 1_000_000 in
-          let r_len = 1_000 in
-          let read =
-            Thread.create
-              ~on_uncaught_exn:`Print_to_stderr
-              (fun () ->
-                let nr =
-                  Bigstring_unix.read r (Bigstring.create r_len) ~pos:0 ~len:r_len
-                in
-                assert (nr > 0 && nr <= r_len);
-                Unix.close r)
-              ()
-          in
-          let nw =
-            Bigstring_unix.writev w [| Unix.IOVec.of_bigstring (Bigstring.create w_len) |]
-          in
-          assert (nw > 0 && nw < w_len);
-          Thread.join read;
-          with_epoll ~f:(fun epoll ->
-            Epoll.set epoll w Epoll.Flags.out;
-            match Epoll.wait_timeout_after epoll Time_ns.Span.second with
-            | `Timeout -> assert false
-            | `Ok ->
-              assert !saw_sigpipe;
-              let saw_fd = ref false in
-              Epoll.iter_ready epoll ~f:(fun fd flags ->
-                assert (Unix.File_descr.equal fd w);
-                assert (Epoll.Flags.equal flags Epoll.Flags.err);
-                saw_fd := true);
-              assert !saw_fd))
-    ;;
-
-    let%test_unit "epoll removes a file descriptor from tracking even if it gets EBADFD" =
+  let%test_unit "Timerfd.set_after small span test" =
+    match Timerfd.create with
+    | Error _ -> ()
+    | Ok timerfd_create ->
       with_epoll ~f:(fun epoll ->
+        let timerfd = timerfd_create Timerfd.Clock.realtime in
+        Epoll.set epoll (timerfd :> File_descr.t) Epoll.Flags.in_;
+        List.iter [ 0; 1 ] ~f:(fun span_ns ->
+          Timerfd.set_after timerfd (Time_ns.Span.of_int63_ns (Int63.of_int span_ns));
+          match Epoll.wait epoll ~timeout:`Never with
+          | `Timeout -> assert false
+          | `Ok -> ());
+        Unix.close (timerfd :> Unix.File_descr.t))
+  ;;
+
+  let%test_unit "epoll detects an error on the write side of a pipe when the read side \
+                 of the pipe closes\n\
+                 after a partial read"
+    =
+    let saw_sigpipe = ref false in
+    let new_sigpipe_handler = `Handle (fun _ -> saw_sigpipe := true) in
+    let old_sigpipe_handler = Signal.Expert.signal Signal.pipe new_sigpipe_handler in
+    Exn.protect
+      ~finally:(fun () -> Signal.Expert.set Signal.pipe old_sigpipe_handler)
+      ~f:(fun () ->
         let r, w = Unix.pipe () in
-        Epoll.set epoll w Epoll.Flags.out;
-        Unix.close r;
-        Unix.close w;
-        (* It is bad to close a FD before removing it from epoll, and it raises *)
-        (match Epoll.remove epoll w with
-         | () -> assert false
-         | exception Unix.Unix_error (EBADF, _, _) -> ());
-        (* Even though the above failed, the FD should be removed from the tracking set.
+        let w_len = 1_000_000 in
+        let r_len = 1_000 in
+        let read =
+          Thread.create
+            ~on_uncaught_exn:`Print_to_stderr
+            (fun () ->
+              let nr = Bigstring_unix.read r (Bigstring.create r_len) ~pos:0 ~len:r_len in
+              assert (nr > 0 && nr <= r_len);
+              Unix.close r)
+            ()
+        in
+        let nw =
+          Bigstring_unix.writev w [| Unix.IOVec.of_bigstring (Bigstring.create w_len) |]
+        in
+        assert (nw > 0 && nw < w_len);
+        Thread.join read;
+        with_epoll ~f:(fun epoll ->
+          Epoll.set epoll w Epoll.Flags.out;
+          match Epoll.wait_timeout_after epoll Time_ns.Span.second with
+          | `Timeout -> assert false
+          | `Ok ->
+            assert !saw_sigpipe;
+            let saw_fd = ref false in
+            Epoll.iter_ready epoll ~f:(fun fd flags ->
+              assert (Unix.File_descr.equal fd w);
+              assert (Epoll.Flags.equal flags Epoll.Flags.err);
+              saw_fd := true);
+            assert !saw_fd))
+  ;;
+
+  let%test_unit "epoll removes a file descriptor from tracking even if it gets EBADFD" =
+    with_epoll ~f:(fun epoll ->
+      let r, w = Unix.pipe () in
+      Epoll.set epoll w Epoll.Flags.out;
+      Unix.close r;
+      Unix.close w;
+      (* It is bad to close a FD before removing it from epoll, and it raises *)
+      (match Epoll.remove epoll w with
+       | () -> assert false
+       | exception Unix.Unix_error (EBADF, _, _) -> ());
+      (* Even though the above failed, the FD should be removed from the tracking set.
            When the FD numbers are reused below, they should work fine. *)
-        let r, w = Unix.pipe () in
-        Epoll.set epoll w Epoll.Flags.out;
-        Epoll.remove epoll w;
-        Unix.close r;
-        Unix.close w)
-    ;;
-  end)
-;;
+      let r, w = Unix.pipe () in
+      Epoll.set epoll w Epoll.Flags.out;
+      Epoll.remove epoll w;
+      Unix.close r;
+      Unix.close w)
+  ;;
+end
 
 module Flags = Epoll.Flags
 
@@ -369,43 +360,42 @@ let%expect_test "set and get affinity" =
 ;;
 
 (* Priority *)
-let%test_module "getpriority and setpriority" =
-  (module struct
-    let getpriority = ok_exn getpriority
-    let setpriority = ok_exn setpriority
-    let gettid = ok_exn Core_unix.gettid
+module%test [@name "getpriority and setpriority"] _ = struct
+  let getpriority = ok_exn getpriority
+  let setpriority = ok_exn setpriority
+  let gettid = ok_exn Core_unix.gettid
 
-    let print_priority ?pid () =
-      printf !"%{sexp:Linux_ext.Priority.t}\n" (getpriority ?pid ())
-    ;;
+  let print_priority ?pid () =
+    printf !"%{sexp:Linux_ext.Priority.t}\n" (getpriority ?pid ())
+  ;;
 
-    let%expect_test "this thread" =
-      let starting_priority = getpriority () in
-      (* All of these actually refer to the current thread. *)
-      let tids = [ None; Some (gettid () |> Thread_id.to_int |> Pid.of_int) ] in
-      List.iteri (List.cartesian_product tids tids) ~f:(fun index (set_pid, get_pid) ->
-        let priority = Linux_ext.Priority.of_int (index + 1) in
-        setpriority ?pid:set_pid priority;
-        print_priority ?pid:get_pid ());
-      [%expect
-        {|
-        1
-        2
-        3
-        4
-        |}];
-      setpriority starting_priority;
-      print_s
-        [%sexp ([%equal: Linux_ext.Priority.t] starting_priority (getpriority ()) : bool)];
-      [%expect {| true |}]
-    ;;
+  let%expect_test "this thread" =
+    let starting_priority = getpriority () in
+    (* All of these actually refer to the current thread. *)
+    let tids = [ None; Some (gettid () |> Thread_id.to_int |> Pid.of_int) ] in
+    List.iteri (List.cartesian_product tids tids) ~f:(fun index (set_pid, get_pid) ->
+      let priority = Linux_ext.Priority.of_int (index + 1) in
+      setpriority ?pid:set_pid priority;
+      print_priority ?pid:get_pid ());
+    [%expect
+      {|
+      1
+      2
+      3
+      4
+      |}];
+    setpriority starting_priority;
+    print_s
+      [%sexp ([%equal: Linux_ext.Priority.t] starting_priority (getpriority ()) : bool)];
+    [%expect {| true |}]
+  ;;
 
-    let%expect_test "other thread" =
-      let child_tid = Set_once.create () in
-      let ready_for_thread_to_get_priority = Set_once.create () in
-      let priority_retrieved_in_thread = Set_once.create () in
-      let ready_for_thread_to_exit = Set_once.create () in
-      (* [mutex] guards the vars above; [condition] is signalled when any change.
+  let%expect_test "other thread" =
+    let child_tid = Set_once.create () in
+    let ready_for_thread_to_get_priority = Set_once.create () in
+    let priority_retrieved_in_thread = Set_once.create () in
+    let ready_for_thread_to_exit = Set_once.create () in
+    (* [mutex] guards the vars above; [condition] is signalled when any change.
 
          As there are only two threads involved, [signal] will suffice, but we may as well
          broadcast since we do not care about performance and don't want to ambush someone
@@ -413,67 +403,66 @@ let%test_module "getpriority and setpriority" =
 
          The [`Locked] argument indicates that the caller knows they must have the mutex
          locked. *)
-      let mutex = Caml_threads.Mutex.create () in
-      let condition = Caml_threads.Condition.create () in
-      let rec wait_for_set_once set_once `Locked =
-        match Set_once.get set_once with
-        | None ->
-          Caml_threads.Condition.wait condition mutex;
-          wait_for_set_once set_once `Locked
-        | Some v -> v
-      in
-      let set_set_once set_once value `Locked =
-        Set_once.set_exn set_once [%here] value;
-        Caml_threads.Condition.broadcast condition
-      in
-      let thread_body () =
-        Caml_threads.Mutex.lock mutex;
-        setpriority (Priority.of_int 4);
-        let tid = gettid () |> Thread_id.to_int |> Pid.of_int in
-        set_set_once child_tid tid `Locked;
-        wait_for_set_once ready_for_thread_to_get_priority `Locked;
-        let priority = getpriority () in
-        set_set_once priority_retrieved_in_thread priority `Locked;
-        wait_for_set_once ready_for_thread_to_exit `Locked;
-        Caml_threads.Mutex.unlock mutex
-      in
+    let mutex = Caml_threads.Mutex.create () in
+    let condition = Caml_threads.Condition.create () in
+    let rec wait_for_set_once set_once `Locked =
+      match Set_once.get set_once with
+      | None ->
+        Caml_threads.Condition.wait condition mutex;
+        wait_for_set_once set_once `Locked
+      | Some v -> v
+    in
+    let set_set_once set_once value `Locked =
+      Set_once.set_exn set_once [%here] value;
+      Caml_threads.Condition.broadcast condition
+    in
+    let thread_body () =
       Caml_threads.Mutex.lock mutex;
-      let starting_priority = getpriority () in
-      setpriority (Priority.of_int 6);
-      print_priority ();
-      [%expect {| 6 |}];
-      (* Create the thread. *)
-      let thread = Caml_threads.Thread.create thread_body () in
-      let child_tid = wait_for_set_once child_tid `Locked in
-      (* When the child starts, it sets its priority to 4. We can read it by its TID: *)
-      print_priority ~pid:child_tid ();
-      [%expect {| 4 |}];
-      (* Our priority is unchanged: *)
-      print_priority ();
-      [%expect {| 6 |}];
-      (* We can modify the child's priority from here: *)
-      setpriority ~pid:child_tid (Priority.of_int 5);
-      print_priority ~pid:child_tid ();
-      [%expect {| 5 |}];
-      (* Our priority is unchanged: *)
-      print_priority ();
-      [%expect {| 6 |}];
-      (* Ask the child to read its own priority: *)
-      set_set_once ready_for_thread_to_get_priority () `Locked;
-      let priority_retrieved_in_thread =
-        wait_for_set_once priority_retrieved_in_thread `Locked
-      in
-      (* It reads the correct priority: *)
-      print_s [%sexp (priority_retrieved_in_thread : Priority.t)];
-      [%expect {| 5 |}];
-      (* Clean up. *)
-      set_set_once ready_for_thread_to_exit () `Locked;
-      Caml_threads.Mutex.unlock mutex;
-      Caml_threads.Thread.join thread;
-      setpriority starting_priority
-    ;;
-  end)
-;;
+      setpriority (Priority.of_int 4);
+      let tid = gettid () |> Thread_id.to_int |> Pid.of_int in
+      set_set_once child_tid tid `Locked;
+      wait_for_set_once ready_for_thread_to_get_priority `Locked;
+      let priority = getpriority () in
+      set_set_once priority_retrieved_in_thread priority `Locked;
+      wait_for_set_once ready_for_thread_to_exit `Locked;
+      Caml_threads.Mutex.unlock mutex
+    in
+    Caml_threads.Mutex.lock mutex;
+    let starting_priority = getpriority () in
+    setpriority (Priority.of_int 6);
+    print_priority ();
+    [%expect {| 6 |}];
+    (* Create the thread. *)
+    let thread = Caml_threads.Thread.create thread_body () in
+    let child_tid = wait_for_set_once child_tid `Locked in
+    (* When the child starts, it sets its priority to 4. We can read it by its TID: *)
+    print_priority ~pid:child_tid ();
+    [%expect {| 4 |}];
+    (* Our priority is unchanged: *)
+    print_priority ();
+    [%expect {| 6 |}];
+    (* We can modify the child's priority from here: *)
+    setpriority ~pid:child_tid (Priority.of_int 5);
+    print_priority ~pid:child_tid ();
+    [%expect {| 5 |}];
+    (* Our priority is unchanged: *)
+    print_priority ();
+    [%expect {| 6 |}];
+    (* Ask the child to read its own priority: *)
+    set_set_once ready_for_thread_to_get_priority () `Locked;
+    let priority_retrieved_in_thread =
+      wait_for_set_once priority_retrieved_in_thread `Locked
+    in
+    (* It reads the correct priority: *)
+    print_s [%sexp (priority_retrieved_in_thread : Priority.t)];
+    [%expect {| 5 |}];
+    (* Clean up. *)
+    set_set_once ready_for_thread_to_exit () `Locked;
+    Caml_threads.Mutex.unlock mutex;
+    Caml_threads.Thread.join thread;
+    setpriority starting_priority
+  ;;
+end
 
 let%test_unit "get_terminal_size" =
   match get_terminal_size with
@@ -501,149 +490,147 @@ let%test_unit "get_terminal_size" =
 *)
 
 (* Extended file attributes *)
-let%test_module "getxattr and setxattr" =
-  (module struct
-    let expect_error f =
-      match f () with
-      | exception exn -> print_s [%sexp (exn : Exn.t)]
-      | _ -> raise_s [%message "expected error but returned"]
-    ;;
+module%test [@name "getxattr and setxattr"] _ = struct
+  let expect_error f =
+    match f () with
+    | exception exn -> print_s [%sexp (exn : Exn.t)]
+    | _ -> raise_s [%message "expected error but returned"]
+  ;;
 
-    let with_tmpfile f =
-      let tmpfile = "temporary-file-for-testing-xattr" in
-      let fd = Unix.openfile tmpfile ~mode:[ Unix.O_CREAT; Unix.O_WRONLY ] in
-      Unix.close fd;
-      (try f tmpfile with
-       | (_ : exn) -> ());
-      Unix.unlink tmpfile
-    ;;
+  let with_tmpfile f =
+    let tmpfile = "temporary-file-for-testing-xattr" in
+    let fd = Unix.openfile tmpfile ~mode:[ Unix.O_CREAT; Unix.O_WRONLY ] in
+    Unix.close fd;
+    (try f tmpfile with
+     | (_ : exn) -> ());
+    Unix.unlink tmpfile
+  ;;
 
-    let get_and_print ~follow_symlinks ~path ~name =
-      let value =
-        (Extended_file_attributes.getxattr |> ok_exn) ~follow_symlinks ~path ~name
-      in
-      print_s [%sexp (value : Extended_file_attributes.Get_attr_result.t)]
-    ;;
+  let get_and_print ~follow_symlinks ~path ~name =
+    let value =
+      (Extended_file_attributes.getxattr |> ok_exn) ~follow_symlinks ~path ~name
+    in
+    print_s [%sexp (value : Extended_file_attributes.Get_attr_result.t)]
+  ;;
 
-    let set_and_print ?how ~follow_symlinks ~path ~name ~value () =
-      let result =
-        (Extended_file_attributes.setxattr |> ok_exn)
-          ?how
-          ~follow_symlinks
-          ~path
-          ~name
-          ~value
-          ()
-      in
-      print_s [%sexp (result : Extended_file_attributes.Set_attr_result.t)]
-    ;;
+  let set_and_print ?how ~follow_symlinks ~path ~name ~value () =
+    let result =
+      (Extended_file_attributes.setxattr |> ok_exn)
+        ?how
+        ~follow_symlinks
+        ~path
+        ~name
+        ~value
+        ()
+    in
+    print_s [%sexp (result : Extended_file_attributes.Set_attr_result.t)]
+  ;;
 
-    let%expect_test "simple test" =
-      with_tmpfile (fun path ->
-        let name = "user.foo" in
-        get_and_print ~follow_symlinks:true ~path ~name;
-        [%expect {| ENOATTR |}];
-        set_and_print ~follow_symlinks:true ~path ~name ~value:"bar" ();
-        [%expect {| Ok |}];
-        get_and_print ~follow_symlinks:true ~path ~name;
-        [%expect {| (Ok bar) |}])
-    ;;
-
-    let%expect_test "symlink test" =
-      with_tmpfile (fun path ->
-        let symlink_to_path = path ^ ".symlink" in
-        Unix.symlink ~target:path ~link_name:symlink_to_path;
-        let name = "user.foo" in
-        get_and_print ~follow_symlinks:false ~path:symlink_to_path ~name;
-        [%expect {| ENOATTR |}];
-        get_and_print ~follow_symlinks:true ~path:symlink_to_path ~name;
-        [%expect {| ENOATTR |}];
-        expect_error (fun () ->
-          set_and_print ~follow_symlinks:false ~path:symlink_to_path ~name ~value:"baz" ());
-        [%expect
-          {|
-          (Unix.Unix_error
-           "Operation not permitted"
-           lsetxattr
-           temporary-file-for-testing-xattr.symlink)
-          |}];
-        set_and_print ~follow_symlinks:true ~path:symlink_to_path ~name ~value:"bar" ();
-        [%expect {| Ok |}];
-        get_and_print ~follow_symlinks:false ~path:symlink_to_path ~name;
-        [%expect {| ENOATTR |}];
-        get_and_print ~follow_symlinks:true ~path:symlink_to_path ~name;
-        [%expect {| (Ok bar) |}];
-        Unix.unlink symlink_to_path)
-    ;;
-
-    let%expect_test "roundtrip a binary blob that contains null characters to confirm \
-                     that they are preserved"
-      =
-      with_tmpfile (fun path ->
-        let name = "user.foo" in
-        get_and_print ~follow_symlinks:false ~path ~name;
-        [%expect {| ENOATTR |}];
-        set_and_print ~follow_symlinks:false ~path ~name ~value:"foo\000\nbar\000" ();
-        [%expect {| Ok |}];
-        get_and_print ~follow_symlinks:false ~path ~name;
-        [%expect {| (Ok "foo\000\nbar\000") |}])
-    ;;
-
-    let%expect_test "test setxattr [`Create] semantics" =
-      with_tmpfile (fun path ->
-        let name = "user.foo" in
-        let set_and_create () =
-          set_and_print ~how:`Create ~follow_symlinks:true ~path ~name ~value:"blah" ()
-        in
-        set_and_create ();
-        [%expect {| Ok |}];
-        get_and_print ~follow_symlinks:true ~path ~name;
-        [%expect {| (Ok blah) |}];
-        set_and_create ();
-        [%expect {| EEXIST |}])
-    ;;
-
-    let%expect_test "test setxattr [`Replace] semantics" =
-      with_tmpfile (fun path ->
-        let name = "user.foo" in
-        let set_with_replace () =
-          set_and_print ~how:`Replace ~follow_symlinks:true ~path ~name ~value:"xyz" ()
-        in
-        set_with_replace ();
-        [%expect {| ENOATTR |}];
-        set_and_print ~how:`Create ~follow_symlinks:true ~path ~name ~value:"bar" ();
-        [%expect {| Ok |}];
-        get_and_print ~follow_symlinks:true ~path ~name;
-        [%expect {| (Ok bar) |}];
-        set_with_replace ();
-        [%expect {| Ok |}];
-        get_and_print ~follow_symlinks:true ~path ~name;
-        [%expect {| (Ok xyz) |}])
-    ;;
-
-    let%expect_test "test getxattr and setxattr on a non-existent file" =
-      let path = "some-file-that-doesnt-exist" in
+  let%expect_test "simple test" =
+    with_tmpfile (fun path ->
       let name = "user.foo" in
+      get_and_print ~follow_symlinks:true ~path ~name;
+      [%expect {| ENOATTR |}];
+      set_and_print ~follow_symlinks:true ~path ~name ~value:"bar" ();
+      [%expect {| Ok |}];
+      get_and_print ~follow_symlinks:true ~path ~name;
+      [%expect {| (Ok bar) |}])
+  ;;
+
+  let%expect_test "symlink test" =
+    with_tmpfile (fun path ->
+      let symlink_to_path = path ^ ".symlink" in
+      Unix.symlink ~target:path ~link_name:symlink_to_path;
+      let name = "user.foo" in
+      get_and_print ~follow_symlinks:false ~path:symlink_to_path ~name;
+      [%expect {| ENOATTR |}];
+      get_and_print ~follow_symlinks:true ~path:symlink_to_path ~name;
+      [%expect {| ENOATTR |}];
       expect_error (fun () ->
-        set_and_print ~follow_symlinks:true ~path ~name ~value:"xyz" ());
+        set_and_print ~follow_symlinks:false ~path:symlink_to_path ~name ~value:"baz" ());
       [%expect
         {|
         (Unix.Unix_error
-         "No such file or directory"
-         setxattr
-         some-file-that-doesnt-exist)
+         "Operation not permitted"
+         lsetxattr
+         temporary-file-for-testing-xattr.symlink)
         |}];
-      expect_error (fun () -> get_and_print ~follow_symlinks:true ~path ~name);
-      [%expect
-        {|
-        (Unix.Unix_error
-         "No such file or directory"
-         getxattr
-         some-file-that-doesnt-exist)
-        |}]
-    ;;
-  end)
-;;
+      set_and_print ~follow_symlinks:true ~path:symlink_to_path ~name ~value:"bar" ();
+      [%expect {| Ok |}];
+      get_and_print ~follow_symlinks:false ~path:symlink_to_path ~name;
+      [%expect {| ENOATTR |}];
+      get_and_print ~follow_symlinks:true ~path:symlink_to_path ~name;
+      [%expect {| (Ok bar) |}];
+      Unix.unlink symlink_to_path)
+  ;;
+
+  let%expect_test "roundtrip a binary blob that contains null characters to confirm that \
+                   they are preserved"
+    =
+    with_tmpfile (fun path ->
+      let name = "user.foo" in
+      get_and_print ~follow_symlinks:false ~path ~name;
+      [%expect {| ENOATTR |}];
+      set_and_print ~follow_symlinks:false ~path ~name ~value:"foo\000\nbar\000" ();
+      [%expect {| Ok |}];
+      get_and_print ~follow_symlinks:false ~path ~name;
+      [%expect {| (Ok "foo\000\nbar\000") |}])
+  ;;
+
+  let%expect_test "test setxattr [`Create] semantics" =
+    with_tmpfile (fun path ->
+      let name = "user.foo" in
+      let set_and_create () =
+        set_and_print ~how:`Create ~follow_symlinks:true ~path ~name ~value:"blah" ()
+      in
+      set_and_create ();
+      [%expect {| Ok |}];
+      get_and_print ~follow_symlinks:true ~path ~name;
+      [%expect {| (Ok blah) |}];
+      set_and_create ();
+      [%expect {| EEXIST |}])
+  ;;
+
+  let%expect_test "test setxattr [`Replace] semantics" =
+    with_tmpfile (fun path ->
+      let name = "user.foo" in
+      let set_with_replace () =
+        set_and_print ~how:`Replace ~follow_symlinks:true ~path ~name ~value:"xyz" ()
+      in
+      set_with_replace ();
+      [%expect {| ENOATTR |}];
+      set_and_print ~how:`Create ~follow_symlinks:true ~path ~name ~value:"bar" ();
+      [%expect {| Ok |}];
+      get_and_print ~follow_symlinks:true ~path ~name;
+      [%expect {| (Ok bar) |}];
+      set_with_replace ();
+      [%expect {| Ok |}];
+      get_and_print ~follow_symlinks:true ~path ~name;
+      [%expect {| (Ok xyz) |}])
+  ;;
+
+  let%expect_test "test getxattr and setxattr on a non-existent file" =
+    let path = "some-file-that-doesnt-exist" in
+    let name = "user.foo" in
+    expect_error (fun () ->
+      set_and_print ~follow_symlinks:true ~path ~name ~value:"xyz" ());
+    [%expect
+      {|
+      (Unix.Unix_error
+       "No such file or directory"
+       setxattr
+       some-file-that-doesnt-exist)
+      |}];
+    expect_error (fun () -> get_and_print ~follow_symlinks:true ~path ~name);
+    [%expect
+      {|
+      (Unix.Unix_error
+       "No such file or directory"
+       getxattr
+       some-file-that-doesnt-exist)
+      |}]
+  ;;
+end
 
 let with_listening_server_unix_socket fname ~f =
   let server_sock = Unix.socket ~domain:PF_UNIX ~kind:SOCK_STREAM ~protocol:0 () in

@@ -119,32 +119,30 @@ let%test_unit "fork_exec ~env last binding takes precedence" =
       [%test_result: string] ~expect:"undefined" (var_in_child env))
 ;;
 
-let%test_module _ =
-  (module struct
-    open Open_flags
+module%test _ = struct
+  open Open_flags
 
-    let%test _ = can_read rdonly
-    let%test _ = can_read rdwr
-    let%test _ = not (can_read wronly)
-    let%test _ = can_write wronly
-    let%test _ = can_write rdwr
-    let%test _ = not (can_write rdonly)
+  let%test _ = can_read rdonly
+  let%test _ = can_read rdwr
+  let%test _ = not (can_read wronly)
+  let%test _ = can_write wronly
+  let%test _ = can_write rdwr
+  let%test _ = not (can_write rdonly)
 
-    let check t string =
-      let sexp1 = sexp_of_t t in
-      let sexp2 = Sexp.of_string string in
-      if Sexp.( <> ) sexp1 sexp2
-      then
-        failwiths ~here:[%here] "unequal sexps" (sexp1, sexp2) [%sexp_of: Sexp.t * Sexp.t]
-    ;;
+  let check t string =
+    let sexp1 = sexp_of_t t in
+    let sexp2 = Sexp.of_string string in
+    if Sexp.( <> ) sexp1 sexp2
+    then
+      failwiths ~here:[%here] "unequal sexps" (sexp1, sexp2) [%sexp_of: Sexp.t * Sexp.t]
+  ;;
 
-    let%test_unit _ = check rdonly "(rdonly)"
-    let%test_unit _ = check wronly "(wronly)"
-    let%test_unit _ = check rdwr "(rdwr)"
-    let%test_unit _ = check append "(rdonly append)"
-    let%test_unit _ = check (wronly + append) "(wronly append)"
-  end)
-;;
+  let%test_unit _ = check rdonly "(rdonly)"
+  let%test_unit _ = check wronly "(wronly)"
+  let%test_unit _ = check rdwr "(rdwr)"
+  let%test_unit _ = check append "(rdonly append)"
+  let%test_unit _ = check (wronly + append) "(wronly append)"
+end
 
 let%expect_test "close-on-exec" =
   let r, w = pipe ~close_on_exec:true () in
@@ -359,39 +357,34 @@ let%test_unit "Sexplib_unix sexp converter" =
     failwithf "sexp_of_exn (Unix_error ...) gave %s" (Sexp.to_string something_else) ()
 ;;
 
-let%test_module "" =
-  (module struct
-    open Ifaddr.Flag
-    open Ifaddr.Flag.Private
+module%test _ = struct
+  open Ifaddr.Flag
+  open Ifaddr.Flag.Private
 
-    let int_of_set =
-      Core.Set.fold ~init:0 ~f:(fun acc t -> acc lor core_unix_iff_to_int t)
-    ;;
+  let int_of_set = Core.Set.fold ~init:0 ~f:(fun acc t -> acc lor core_unix_iff_to_int t)
+  let to_int = core_unix_iff_to_int
+  let%test_unit _ = [%test_result: Set.t] (set_of_int 0) ~expect:Set.empty
 
-    let to_int = core_unix_iff_to_int
-    let%test_unit _ = [%test_result: Set.t] (set_of_int 0) ~expect:Set.empty
+  let%test_unit _ =
+    List.iter all ~f:(fun t ->
+      let x = to_int t in
+      if Int.( <> ) (Int.ceil_pow2 x) x
+      then failwiths ~here:[%here] "Flag is not a power of 2" t sexp_of_t)
+  ;;
 
-    let%test_unit _ =
-      List.iter all ~f:(fun t ->
-        let x = to_int t in
-        if Int.( <> ) (Int.ceil_pow2 x) x
-        then failwiths ~here:[%here] "Flag is not a power of 2" t sexp_of_t)
-    ;;
-
-    let%test_unit _ =
-      List.iter all ~f:(fun t ->
-        [%test_result: Set.t]
-          (set_of_int (int_of_set (Set.singleton t)))
-          ~expect:(Set.singleton t))
-    ;;
-
-    let%test_unit _ =
+  let%test_unit _ =
+    List.iter all ~f:(fun t ->
       [%test_result: Set.t]
-        (set_of_int (int_of_set (Set.of_list all)))
-        ~expect:(Set.of_list all)
-    ;;
-  end)
-;;
+        (set_of_int (int_of_set (Set.singleton t)))
+        ~expect:(Set.singleton t))
+  ;;
+
+  let%test_unit _ =
+    [%test_result: Set.t]
+      (set_of_int (int_of_set (Set.of_list all)))
+      ~expect:(Set.of_list all)
+  ;;
+end
 
 let%expect_test "[symlink] arguments are correct" =
   let dir = mkdtemp "foo" in
@@ -414,21 +407,19 @@ let%expect_test "[symlink] arguments are correct" =
     |}]
 ;;
 
-let%test_module "the search path passed to [create_process_env] has an effect" =
-  (module struct
-    let call_ls = Unix.create_process_env ~prog:"ls" ~args:[] ~env:(`Extend [])
+module%test [@name "the search path passed to [create_process_env] has an effect"] _ =
+struct
+  let call_ls = Unix.create_process_env ~prog:"ls" ~args:[] ~env:(`Extend [])
 
-    let%expect_test "default search path" =
-      require_does_not_raise (fun () -> ignore (Sys.opaque_identity (call_ls ())))
-    ;;
+  let%expect_test "default search path" =
+    require_does_not_raise (fun () -> ignore (Sys.opaque_identity (call_ls ())))
+  ;;
 
-    let%expect_test "empty search path" =
-      require_does_raise (fun () -> call_ls ~prog_search_path:[] ());
-      [%expect
-        {| (Invalid_argument "Core_unix.create_process: empty prog_search_path") |}]
-    ;;
-  end)
-;;
+  let%expect_test "empty search path" =
+    require_does_raise (fun () -> call_ls ~prog_search_path:[] ());
+    [%expect {| (Invalid_argument "Core_unix.create_process: empty prog_search_path") |}]
+  ;;
+end
 
 let%test_unit "create_process_with_fds works" =
   let str = "hello" in

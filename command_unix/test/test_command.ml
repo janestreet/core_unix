@@ -11,63 +11,61 @@ let run ~argv ?when_parsing_succeeds ?verbose_on_parse_error command =
   | exn -> print_s [%message "raised" ~_:(exn : Exn.t)]
 ;;
 
-let%test_module "word wrap" =
-  (module struct
-    let%test _ = word_wrap "" 10 = []
-    let short_word = "abcd"
-    let%test _ = word_wrap short_word (String.length short_word) = [ short_word ]
-    let%test _ = word_wrap "abc\ndef\nghi" 100 = [ "abc"; "def"; "ghi" ]
+module%test [@name "word wrap"] _ = struct
+  let%test _ = word_wrap "" 10 = []
+  let short_word = "abcd"
+  let%test _ = word_wrap short_word (String.length short_word) = [ short_word ]
+  let%test _ = word_wrap "abc\ndef\nghi" 100 = [ "abc"; "def"; "ghi" ]
 
-    let long_text =
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus fermentum \
-       condimentum eros, sit amet pulvinar dui ultrices in."
-    ;;
+  let long_text =
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus fermentum \
+     condimentum eros, sit amet pulvinar dui ultrices in."
+  ;;
 
-    let%test _ =
-      word_wrap long_text 1000
-      = [ "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus fermentum \
-           condimentum eros, sit amet pulvinar dui ultrices in."
-        ]
-    ;;
-
-    let%test _ =
-      word_wrap long_text 39
-      = (*
-           .........1.........2.........3.........4
-           1234567890123456789012345678901234567890
-        *)
-      [ "Lorem ipsum dolor sit amet, consectetur"
-      ; "adipiscing elit. Vivamus fermentum"
-      ; "condimentum eros, sit amet pulvinar dui"
-      ; "ultrices in."
+  let%test _ =
+    word_wrap long_text 1000
+    = [ "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus fermentum \
+         condimentum eros, sit amet pulvinar dui ultrices in."
       ]
-    ;;
+  ;;
 
-    (* no guarantees: too-long words just overhang the soft bound *)
-    let%test _ =
-      word_wrap long_text 2
-      = [ "Lorem"
-        ; "ipsum"
-        ; "dolor"
-        ; "sit"
-        ; "amet,"
-        ; "consectetur"
-        ; "adipiscing"
-        ; "elit."
-        ; "Vivamus"
-        ; "fermentum"
-        ; "condimentum"
-        ; "eros,"
-        ; "sit"
-        ; "amet"
-        ; "pulvinar"
-        ; "dui"
-        ; "ultrices"
-        ; "in."
-        ]
-    ;;
-  end)
-;;
+  let%test _ =
+    word_wrap long_text 39
+    = (*
+         .........1.........2.........3.........4
+           1234567890123456789012345678901234567890
+      *)
+    [ "Lorem ipsum dolor sit amet, consectetur"
+    ; "adipiscing elit. Vivamus fermentum"
+    ; "condimentum eros, sit amet pulvinar dui"
+    ; "ultrices in."
+    ]
+  ;;
+
+  (* no guarantees: too-long words just overhang the soft bound *)
+  let%test _ =
+    word_wrap long_text 2
+    = [ "Lorem"
+      ; "ipsum"
+      ; "dolor"
+      ; "sit"
+      ; "amet,"
+      ; "consectetur"
+      ; "adipiscing"
+      ; "elit."
+      ; "Vivamus"
+      ; "fermentum"
+      ; "condimentum"
+      ; "eros,"
+      ; "sit"
+      ; "amet"
+      ; "pulvinar"
+      ; "dui"
+      ; "ultrices"
+      ; "in."
+      ]
+  ;;
+end
 
 let%test_unit _ =
   let path =
@@ -101,87 +99,83 @@ let%expect_test "[Path.to_string], [Path.to_string_dots]" =
   ()
 ;;
 
-let%test_module "[Anons]" =
-  (module struct
-    open Private.Anons
+module%test [@name "[Anons]"] _ = struct
+  open Private.Anons
 
-    let%test _ = String.equal (normalize "file") "FILE"
-    let%test _ = String.equal (normalize "FiLe") "FILE"
-    let%test _ = String.equal (normalize "<FiLe>") "<FiLe>"
-    let%test _ = String.equal (normalize "(FiLe)") "(FiLe)"
-    let%test _ = String.equal (normalize "[FiLe]") "[FiLe]"
-    let%test _ = String.equal (normalize "{FiLe}") "{FiLe}"
-    let%test _ = String.equal (normalize "<file") "<file"
-    let%test _ = String.equal (normalize "<fil>a") "<fil>a"
+  let%test _ = String.equal (normalize "file") "FILE"
+  let%test _ = String.equal (normalize "FiLe") "FILE"
+  let%test _ = String.equal (normalize "<FiLe>") "<FiLe>"
+  let%test _ = String.equal (normalize "(FiLe)") "(FiLe)"
+  let%test _ = String.equal (normalize "[FiLe]") "[FiLe]"
+  let%test _ = String.equal (normalize "{FiLe}") "{FiLe}"
+  let%test _ = String.equal (normalize "<file") "<file"
+  let%test _ = String.equal (normalize "<fil>a") "<fil>a"
 
-    let%test _ =
-      try
-        ignore (normalize "");
-        false
-      with
-      | _ -> true
-    ;;
+  let%test _ =
+    try
+      ignore (normalize "");
+      false
+    with
+    | _ -> true
+  ;;
 
-    let%test _ =
-      try
-        ignore (normalize " file ");
-        false
-      with
-      | _ -> true
-    ;;
+  let%test _ =
+    try
+      ignore (normalize " file ");
+      false
+    with
+    | _ -> true
+  ;;
 
-    let%test _ =
-      try
-        ignore (normalize "file ");
-        false
-      with
-      | _ -> true
-    ;;
+  let%test _ =
+    try
+      ignore (normalize "file ");
+      false
+    with
+    | _ -> true
+  ;;
 
-    let%test _ =
-      try
-        ignore (normalize " file");
-        false
-      with
-      | _ -> true
-    ;;
-  end)
-;;
+  let%test _ =
+    try
+      ignore (normalize " file");
+      false
+    with
+    | _ -> true
+  ;;
+end
 
-let%test_module "Cmdline.extend" =
-  (module struct
-    let path_of_list subcommands =
-      List.fold
-        subcommands
-        ~init:(Path.create ~path_to_exe:"exe")
-        ~f:(fun path subcommand -> Path.append path ~subcommand)
-    ;;
+module%test [@name "Cmdline.extend"] _ = struct
+  let path_of_list subcommands =
+    List.fold
+      subcommands
+      ~init:(Path.create ~path_to_exe:"exe")
+      ~f:(fun path subcommand -> Path.append path ~subcommand)
+  ;;
 
-    let extend path =
-      match path with
-      | [ "foo"; "bar" ] -> [ "-foo"; "-bar" ]
-      | [ "foo"; "baz" ] -> [ "-foobaz" ]
-      | _ -> [ "default" ]
-    ;;
+  let extend path =
+    match path with
+    | [ "foo"; "bar" ] -> [ "-foo"; "-bar" ]
+    | [ "foo"; "baz" ] -> [ "-foobaz" ]
+    | _ -> [ "default" ]
+  ;;
 
-    let test path args expected =
-      let expected = Cmdline.of_list expected in
-      let observed =
-        let path = path_of_list path in
-        let args = Cmdline.of_list args in
-        Cmdline.extend args ~extend ~path
-      in
-      [%compare.equal: Cmdline.t] expected observed
-    ;;
+  let test path args expected =
+    let expected = Cmdline.of_list expected in
+    let observed =
+      let path = path_of_list path in
+      let args = Cmdline.of_list args in
+      Cmdline.extend args ~extend ~path
+    in
+    [%compare.equal: Cmdline.t] expected observed
+  ;;
 
-    let%test _ =
-      test [ "foo"; "bar" ] [ "anon"; "-flag" ] [ "anon"; "-flag"; "-foo"; "-bar" ]
-    ;;
+  let%test _ =
+    test [ "foo"; "bar" ] [ "anon"; "-flag" ] [ "anon"; "-flag"; "-foo"; "-bar" ]
+  ;;
 
-    let%test _ = test [ "foo"; "baz" ] [] [ "-foobaz" ]
-    let%test _ = test [ "zzz" ] [ "x"; "y"; "z" ] [ "x"; "y"; "z"; "default" ]
-  end)
-;;
+  let%test _ = test [ "foo"; "baz" ] [] [ "-foobaz" ]
+  let%test _ = test [ "zzz" ] [ "x"; "y"; "z" ] [ "x"; "y"; "z"; "default" ]
+end
 
 let%expect_test "[choose_one] duplicate name" =
   show_raise ~hide_positions:true (fun () ->

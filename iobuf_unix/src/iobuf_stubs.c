@@ -24,7 +24,7 @@
 /* Using the Abstract_tag, expose a version of recvmmsg that allows
    for the reuse of the mmsghdr and associated iovecs. */
 
-#if defined(__FreeBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/types.h>
 #include <sys/socket.h>
 #endif

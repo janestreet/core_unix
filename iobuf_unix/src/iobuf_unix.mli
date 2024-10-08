@@ -89,27 +89,6 @@ val pwrite_assume_fd_is_nonblocking
   -> offset:int
   -> unit
 
-(** As similar APIs in [In_channel], but using an intermediate [Iobuf]; considerably
-    faster. *)
-module In_channel_optimized : sig
-  type 'a channel_op_with_opts :=
-    ?fix_win_eol:bool (** defaults to [true] *)
-    -> ?buf:(read_write, seek) t
-         (** Allocates a fresh buffer by default; will merrily resize (and rebind!) any passed
-        buffer. *)
-    -> In_channel.t
-    -> 'a
-
-  val fold_lines : (init:'a -> f:('a -> string -> 'a) -> 'a) channel_op_with_opts
-  val iter_lines : (f:(string -> unit) -> unit) channel_op_with_opts
-  val input_lines : string array channel_op_with_opts
-
-  (** More efficient than [fold_lines] because no string allocation/copying.
-  *)
-  val fold_lines_raw
-    : (init:'a -> f:('a -> (read_write, seek) t -> 'a) -> 'a) channel_op_with_opts
-end
-
 (** {2 Expert} *)
 
 (** The [Expert] module is for building efficient out-of-module [Iobuf] abstractions. *)
