@@ -37,7 +37,7 @@ external unsafe_read
   -> Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> int
   = "bigstring_read_stub"
 
@@ -55,7 +55,7 @@ external unsafe_pread
   -> offset:int
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> int
   = "bigstring_pread_bytecode" "bigstring_pread_stub"
 
@@ -72,7 +72,7 @@ external unsafe_pread_assume_fd_is_nonblocking_stub
   -> offset:int
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> int
   = "bigstring_pread_assume_fd_is_nonblocking_stub"
 
@@ -97,7 +97,7 @@ external unsafe_really_recv
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> unit
   = "bigstring_really_recv_stub"
 
@@ -105,7 +105,7 @@ external unsafe_recv_peek_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> int
   = "bigstring_recv_peek_assume_fd_is_nonblocking_stub"
 
@@ -124,7 +124,7 @@ external unsafe_recvfrom_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> int * Unix.sockaddr
   = "bigstring_recvfrom_assume_fd_is_nonblocking_stub"
 
@@ -138,7 +138,7 @@ external unsafe_read_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> Syscall_result.Int.t
   = "bigstring_read_assume_fd_is_nonblocking_stub"
 
@@ -153,7 +153,7 @@ external unsafe_input
   -> In_channel.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> int
   = "bigstring_input_stub"
 
@@ -177,7 +177,7 @@ external unsafe_really_write
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> unit
   = "bigstring_really_write_stub"
 
@@ -192,7 +192,7 @@ external unsafe_pwrite_assume_fd_is_nonblocking
   -> offset:int
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> int
   = "bigstring_pwrite_assume_fd_is_nonblocking_stub"
 
@@ -215,7 +215,7 @@ external unsafe_really_send_no_sigpipe
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> unit
   = "bigstring_really_send_no_sigpipe_stub"
 
@@ -229,7 +229,7 @@ external unsafe_send_nonblocking_no_sigpipe
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> Syscall_result.Int.t
   = "bigstring_send_nonblocking_no_sigpipe_stub"
 [@@noalloc]
@@ -244,7 +244,7 @@ external unsafe_sendto_nonblocking_no_sigpipe
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> Unix.sockaddr
   -> Syscall_result.Int.t
   = "bigstring_sendto_nonblocking_no_sigpipe_stub"
@@ -276,7 +276,7 @@ external unsafe_write
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> int
   = "bigstring_write_stub"
 
@@ -290,7 +290,7 @@ external unsafe_write_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> int
   = "bigstring_write_assume_fd_is_nonblocking_stub"
 
@@ -338,7 +338,7 @@ external unsafe_output
   -> Out_channel.t
   -> pos:int
   -> len:int
-  -> t
+  -> local_ t
   -> int
   = "bigstring_output_stub"
 

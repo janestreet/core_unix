@@ -127,7 +127,8 @@ end
     2. Writing pid or message in the file.
     The file is shared between multiple processes so this feature seems hard to
     think about, and it already led to weird code. Let's just remove it.
-    You can still find who holds the file open by inspecting output of [lsof]. *)
+    You can still find who holds the file open by inspecting output of [lslocks] or [lsof].
+    *)
 module Flock : sig
   type t
 

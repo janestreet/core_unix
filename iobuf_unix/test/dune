@@ -1,6 +1,6 @@
 (library
  (name iobuf_unix_test)
  (libraries bigstring_unix iobuf_unix core core_thread core_unix
-   expect_test_helpers_core core_kernel.iobuf iobuf_test)
+   core_kernel.iobuf iobuf_test)
  (preprocess
   (pps ppx_jane)))

@@ -133,103 +133,101 @@ let%expect_test "date" =
   done
 ;;
 
-let%test_module "compare with old implementation" =
-  (module struct
-    let of_tm tm =
-      Date.create_exn
-        ~y:(tm.Unix.tm_year + 1900)
-        ~m:(Month.of_int_exn (tm.Unix.tm_mon + 1))
-        ~d:tm.Unix.tm_mday
-    ;;
+module%test [@name "compare with old implementation"] _ = struct
+  let of_tm tm =
+    Date.create_exn
+      ~y:(tm.Unix.tm_year + 1900)
+      ~m:(Month.of_int_exn (tm.Unix.tm_mon + 1))
+      ~d:tm.Unix.tm_mday
+  ;;
 
-    let to_tm t =
-      { Unix.tm_sec = 0
-      ; tm_min = 0
-      ; tm_hour = 12
-      ; tm_mday = Date.day t
-      ; tm_mon = Month.to_int (Date.month t) - 1
-      ; tm_year = Date.year t - 1900
-      ; tm_wday = 0
-      ; tm_yday = 0
-      ; tm_isdst = false
-      }
-    ;;
+  let to_tm t =
+    { Unix.tm_sec = 0
+    ; tm_min = 0
+    ; tm_hour = 12
+    ; tm_mday = Date.day t
+    ; tm_mon = Month.to_int (Date.month t) - 1
+    ; tm_year = Date.year t - 1900
+    ; tm_wday = 0
+    ; tm_yday = 0
+    ; tm_isdst = false
+    }
+  ;;
 
-    let to_time_internal t =
-      let tm_date = to_tm t in
-      let time = fst (Unix.mktime tm_date) in
-      Time.of_span_since_epoch (Time.Span.of_sec time)
-    ;;
+  let to_time_internal t =
+    let tm_date = to_tm t in
+    let time = fst (Unix.mktime tm_date) in
+    Time.of_span_since_epoch (Time.Span.of_sec time)
+  ;;
 
-    let of_time_internal time =
-      of_tm
-        (Unix.localtime
-           (Float.round ~dir:`Down (Time.to_span_since_epoch time |> Time.Span.to_sec)))
-    ;;
+  let of_time_internal time =
+    of_tm
+      (Unix.localtime
+         (Float.round ~dir:`Down (Time.to_span_since_epoch time |> Time.Span.to_sec)))
+  ;;
 
-    let add_days t n =
-      let time = to_time_internal t in
-      of_time_internal (Time.add time (Span.of_day (Float.of_int n)))
-    ;;
+  let add_days t n =
+    let time = to_time_internal t in
+    of_time_internal (Time.add time (Span.of_day (Float.of_int n)))
+  ;;
 
-    let day_of_week t =
-      let uday = to_tm t in
-      let sec, _ = Unix.mktime uday in
-      let unix_wday = (Unix.localtime sec).Unix.tm_wday in
-      Day_of_week.of_int_exn unix_wday
-    ;;
+  let day_of_week t =
+    let uday = to_tm t in
+    let sec, _ = Unix.mktime uday in
+    let unix_wday = (Unix.localtime sec).Unix.tm_wday in
+    Day_of_week.of_int_exn unix_wday
+  ;;
 
-    let exhaustive_date_range =
-      if Sys_unix.c_int_size () < 64
-      then Date.create_exn ~y:1970 ~m:Month.Jan ~d:1, 365 * 68
-      else Date.create_exn ~y:1900 ~m:Month.Jan ~d:1, 365 * 100
-    ;;
+  let exhaustive_date_range =
+    if Sys_unix.c_int_size () < 64
+    then Date.create_exn ~y:1970 ~m:Month.Jan ~d:1, 365 * 68
+    else Date.create_exn ~y:1900 ~m:Month.Jan ~d:1, 365 * 100
+  ;;
 
-    let%expect_test "exhaustive day_of_week test" =
-      let start_date, ndays = exhaustive_date_range in
-      let rec loop n current_date =
-        if n = ndays
-        then ()
-        else (
-          let old_method = day_of_week current_date in
-          let new_method = Date.day_of_week current_date in
-          if Day_of_week.( = ) new_method old_method
-          then loop (n + 1) (Date.add_days current_date 1)
-          else
-            print_cr
-              [%message
-                "Implementations do not match"
-                  (n : int)
-                  (current_date : Date.t)
-                  (old_method : Day_of_week.t)
-                  (new_method : Day_of_week.t)])
-      in
-      loop 1 start_date
-    ;;
+  let%expect_test "exhaustive day_of_week test" =
+    let start_date, ndays = exhaustive_date_range in
+    let rec loop n current_date =
+      if n = ndays
+      then ()
+      else (
+        let old_method = day_of_week current_date in
+        let new_method = Date.day_of_week current_date in
+        if Day_of_week.( = ) new_method old_method
+        then loop (n + 1) (Date.add_days current_date 1)
+        else
+          print_cr
+            [%message
+              "Implementations do not match"
+                (n : int)
+                (current_date : Date.t)
+                (old_method : Day_of_week.t)
+                (new_method : Day_of_week.t)])
+    in
+    loop 1 start_date
+  ;;
 
-    let%expect_test "exhaustive add_days test" =
-      let start_date, ndays = exhaustive_date_range in
-      let rec loop n current_date =
-        if n = ndays
-        then ()
-        else (
-          let old_method = add_days current_date 1 in
-          let new_method = Date.add_days current_date 1 in
-          if Date.( = ) old_method new_method
-          then loop (n + 1) new_method
-          else
-            print_cr
-              [%message
-                "Implementations do not match"
-                  (n : int)
-                  (current_date : Date.t)
-                  (old_method : Date.t)
-                  (new_method : Date.t)])
-      in
-      loop 1 start_date
-    ;;
-  end)
-;;
+  let%expect_test "exhaustive add_days test" =
+    let start_date, ndays = exhaustive_date_range in
+    let rec loop n current_date =
+      if n = ndays
+      then ()
+      else (
+        let old_method = add_days current_date 1 in
+        let new_method = Date.add_days current_date 1 in
+        if Date.( = ) old_method new_method
+        then loop (n + 1) new_method
+        else
+          print_cr
+            [%message
+              "Implementations do not match"
+                (n : int)
+                (current_date : Date.t)
+                (old_method : Date.t)
+                (new_method : Date.t)])
+    in
+    loop 1 start_date
+  ;;
+end
 
 let%expect_test "add_days" =
   print_s [%sexp (Date.add_days (Date.of_string "2008-11-02") 1 : Date.t)];

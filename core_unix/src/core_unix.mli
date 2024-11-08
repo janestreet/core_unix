@@ -2105,6 +2105,15 @@ val exit_immediately : int -> _
 
 (** {2 Filesystem functions} *)
 
+(** Get the major number of a device ID. *)
+val major : device_id:int -> int
+
+(** Get the minor number of a device ID. *)
+val minor : device_id:int -> int
+
+(** Get the device ID from a major and minor number. *)
+val makedev : major:int -> minor:int -> int
+
 (** [mknod ?file_kind ?perm ?major ?minor path] creates a filesystem
     entry.  Note that only FIFO-entries are guaranteed to be supported
     across all platforms as required by the POSIX-standard.  On Linux

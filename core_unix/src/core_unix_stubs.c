@@ -283,6 +283,18 @@ CAMLprim value core_unix_flock(value v_blocking, value v_fd, value v_lock_type) 
 
 /* Filesystem functions */
 
+CAMLprim value core_unix_major_stub(value v_dev) {
+  return Val_long(major(Long_val(v_dev)));
+}
+
+CAMLprim value core_unix_minor_stub(value v_dev) {
+  return Val_long(minor(Long_val(v_dev)));
+}
+
+CAMLprim value core_unix_makedev_stub(value v_major, value v_minor) {
+  return Val_long(makedev(Long_val(v_major), Long_val(v_minor)));
+}
+
 CAMLprim value core_unix_mknod_stub(value v_pathname, value v_mode, value v_perm,
                                     value v_major, value v_minor) {
   CAMLparam1(v_pathname);
@@ -1454,7 +1466,7 @@ CAMLprim value core_unix_munlockall() {
   return Val_unit;
 }
 
-static value alloc_tm(struct tm *tm) {
+static value alloc_tm(const struct tm *tm) {
   value res;
   res = caml_alloc_small(9, 0);
   Field(res, 0) = Val_int(tm->tm_sec);
@@ -1470,18 +1482,10 @@ static value alloc_tm(struct tm *tm) {
 }
 
 CAMLprim value core_unix_strptime(value v_allow_trailing_input, value v_fmt, value v_s) {
-  CAMLparam3(v_allow_trailing_input, v_fmt, v_s);
-
-  struct tm tm;
-  tm.tm_sec = 0;
-  tm.tm_min = 0;
-  tm.tm_hour = 0;
-  tm.tm_mday = 0;
-  tm.tm_mon = 0;
-  tm.tm_year = 0;
-  tm.tm_wday = 0;
-  tm.tm_yday = 0;
-  tm.tm_isdst = 0;
+  // Not necessary for as long as we don't perform OCaml allocations prior to accessing
+  // an OCaml value:
+  // CAMLparam3(v_allow_trailing_input, v_fmt, v_s);
+  struct tm tm = {0};
 
   char *end_of_consumed_input = strptime(String_val(v_s), String_val(v_fmt), &tm);
 
@@ -1492,7 +1496,10 @@ CAMLprim value core_unix_strptime(value v_allow_trailing_input, value v_fmt, val
       end_of_consumed_input < String_val(v_s) + caml_string_length(v_s))
     caml_failwith("unix_strptime: did not consume entire input");
 
-  CAMLreturn(alloc_tm(&tm));
+  // Not necessary for as long as we don't perform OCaml allocations prior to accessing
+  // an OCaml value:
+  // CAMLreturn(alloc_tm(&tm));
+  return alloc_tm(&tm);
 }
 
 CAMLprim value core_unix_remove(value v_path) {
