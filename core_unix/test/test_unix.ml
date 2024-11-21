@@ -189,6 +189,40 @@ let%test_unit "record format hasn't changed" =
        "%F %T; wday=%u; yday=%j")
 ;;
 
+let%test_unit "strftime with empty format string" =
+  [%test_result: string]
+    ~expect:""
+    (strftime
+       { tm_sec = 8
+       ; tm_min = 3
+       ; tm_hour = 4
+       ; tm_mday = 5
+       ; tm_mon = 6
+       ; tm_year = 7
+       ; tm_wday = 2
+       ; tm_yday = 9
+       ; tm_isdst = true
+       }
+       "")
+;;
+
+let%test_unit "strftime with long output" =
+  [%test_result: string]
+    ~expect:"Tue Jul  5 04:03:08 1907"
+    (strftime
+       { tm_sec = 8
+       ; tm_min = 3
+       ; tm_hour = 4
+       ; tm_mday = 5
+       ; tm_mon = 6
+       ; tm_year = 7
+       ; tm_wday = 2
+       ; tm_yday = 9
+       ; tm_isdst = true
+       }
+       "%c")
+;;
+
 module Unix_tm_for_testing = struct
   type t = Unix.tm =
     { tm_sec : int

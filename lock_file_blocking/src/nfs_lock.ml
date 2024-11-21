@@ -407,6 +407,10 @@ let blocking_create ?timeout ?message path =
   repeat_with_timeout ?timeout (fun path -> create_exn ?message path) path
 ;;
 
+let blocking_create_v2 ?timeout ?message path =
+  repeat_with_timeout ?timeout (fun path -> create_v2_exn ?message path) path
+;;
+
 let critical_section ?message path ~timeout ~f =
   blocking_create ~timeout ?message path;
   Exn.protect ~f ~finally:(fun () -> unlock_self_exn path)

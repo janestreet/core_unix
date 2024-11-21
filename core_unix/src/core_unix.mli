@@ -849,9 +849,14 @@ val rename : src:string -> dst:string -> unit
 (** [link ?force ~target ~link_name ()] creates a hard link named [link_name]
     to the file named [target].  If [force] is true, an existing entry in
     place of [link_name] will be unlinked.  This unlinking may raise a Unix
-    error, e.g. if the entry is a directory. *)
+    error, e.g. if the entry is a directory.
+
+    If [target] is a symbolic link, [follow] specifies whether the link should be
+    followed. The default behavior is equivalent to [false] on Linux.
+*)
 val link
   :  ?force:bool (** defaults to false *)
+  -> ?follow:bool
   -> target:string
   -> link_name:string
   -> unit

@@ -68,10 +68,15 @@ val create_exn : ?message:string -> string -> unit
     fails to obtain the lock. *)
 val create_v2_exn : ?message:string -> string -> unit
 
-(** [blocking_create ?message path] is like [create], but sleeps for a short while
+(** [blocking_create ?timeout ?message path] is like [create], but sleeps for a short while
       between lock attempts and does not return until it succeeds or [timeout] expires.
       Timeout defaults to wait indefinitely. *)
 val blocking_create : ?timeout:Time_float.Span.t -> ?message:string -> string -> unit
+
+(** [blocking_create_v2 ?timeout ?message path] has the same semantics as
+      [blocking_create] except the locking scheme of [create_v2] is used to attempt
+      acquiring the lock.*)
+val blocking_create_v2 : ?timeout:Time_float.Span.t -> ?message:string -> string -> unit
 
 (** [critical_section ?message ~timeout path ~f] wraps function [f] (including
       exceptions escaping it) by first locking (using {!blocking_create}) and then
@@ -84,7 +89,7 @@ val critical_section
   -> 'a
 
 (** [get_hostname_and_pid path] reads the lock file at [path] and returns the hostname
-      and path in the file.  Returns [None] if the file cannot be read. *)
+      and pid in the file.  Returns [None] if the file cannot be read. *)
 val get_hostname_and_pid : string -> (string * Pid.t) option
 
 (** [get_message path] reads the lock file at [path] and returns the message in the

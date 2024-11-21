@@ -1358,22 +1358,26 @@ let rename = src_dst Unix.rename
 
 [%%if ocaml_version >= (4, 08, 0)]
 
-let unix_link ~src ~dst = Unix.link ~src ~dst ?follow:None
+let unix_link ~follow ~src ~dst = Unix.link ?follow ~src ~dst
 
 [%%else]
 
-let unix_link ~src ~dst = Unix.link ~src ~dst
+let unix_link ~follow ~src ~dst =
+  if Option.is_some follow
+  then raise (Unix_error (Unix.ENOSYS, "Core_unix.link:follow", ""));
+  Unix.link ~src ~dst
+;;
 
 [%%endif]
 
-let link ?(force = false) ~target ~link_name () =
+let link ?(force = false) ?follow ~target ~link_name () =
   improve
     (fun () ->
       if force
       then (
         try Unix.unlink link_name with
         | Unix_error (Unix.ENOENT, _, _) -> ());
-      unix_link ~src:target ~dst:link_name)
+      unix_link ~follow ~src:target ~dst:link_name)
     (fun () -> [ "target", atom target; "link_name", atom link_name ])
 ;;
 

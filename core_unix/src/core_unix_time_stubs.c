@@ -12,7 +12,6 @@
 #include <caml/callback.h>
 #include "ocaml_utils.h"
 #include "timespec.h"
-#include "time_ns_stubs.h"
 /* Improved localtime implementation
 
    Addresses bug:
@@ -87,7 +86,7 @@ value caml_clock_gettime(value clock_type) {
 
 #endif /* JSC_POSIX_TIMERS */
 
-static value alloc_tm(struct tm *tm) {
+static value alloc_tm(const struct tm *tm) {
   value res;
   res = caml_alloc_small(9, 0);
   Field(res, 0) = Val_int(tm->tm_sec);
@@ -102,23 +101,55 @@ static value alloc_tm(struct tm *tm) {
   return res;
 }
 
+static void assign_tm(struct tm *tm, value v_tm) {
+  tm->tm_sec = Int_val(Field(v_tm, 0));
+  tm->tm_min = Int_val(Field(v_tm, 1));
+  tm->tm_hour = Int_val(Field(v_tm, 2));
+  tm->tm_mday = Int_val(Field(v_tm, 3));
+  tm->tm_mon = Int_val(Field(v_tm, 4));
+  tm->tm_year = Int_val(Field(v_tm, 5));
+  tm->tm_wday = Int_val(Field(v_tm, 6));
+  tm->tm_yday = Int_val(Field(v_tm, 7));
+  tm->tm_isdst = Bool_val(Field(v_tm, 8));
+}
+
+static value core_time_ns_format_tm(const struct tm *tm, value v_fmt) {
+  size_t buf_len = 10 * caml_string_length(v_fmt) + 1;
+  char *buf;
+  while (1) {
+    buf = malloc(buf_len);
+    if (!buf) {
+      caml_failwith("core_time_ns_format_tm: malloc failed");
+    }
+    /* POSIX only recently required strftime and strftime_l to set errno to ERANGE when
+       the buffer is too small, but most implementations don't yet do this, so we have to
+       use a hack to distinguish zero-length output from failure. */
+    buf[0] = '\x01';
+    errno = 0;
+    size_t len = strftime(buf, buf_len, String_val(v_fmt), tm);
+    if (len || !buf[0])
+      break;
+    if (errno && errno != ERANGE) {
+      free(buf);
+      caml_failwith("core_time_ns_format_tm: strftime failed");
+    }
+    free(buf);
+    buf_len *= 2;
+  }
+  value v_str = caml_copy_string(buf);
+  free(buf);
+  return v_str;
+}
+
 /*
  * converts a tm structure to a float with the assumption that that the
  * structure defines a gmtime
  */
-CAMLprim value core_timegm(value tm_val) {
-  struct tm tm;
+CAMLprim value core_timegm(value v_tm) {
+  struct tm tm = {0};
   time_t res;
-  memset(&tm, 0, sizeof(struct tm));
-  tm.tm_sec = Int_val(Field(tm_val, 0));
-  tm.tm_min = Int_val(Field(tm_val, 1));
-  tm.tm_hour = Int_val(Field(tm_val, 2));
-  tm.tm_mday = Int_val(Field(tm_val, 3));
-  tm.tm_mon = Int_val(Field(tm_val, 4));
-  tm.tm_year = Int_val(Field(tm_val, 5));
-  tm.tm_wday = Int_val(Field(tm_val, 6));
-  tm.tm_yday = Int_val(Field(tm_val, 7));
-  tm.tm_isdst = 0; /*  tm_isdst is not used by timegm (which sets it to 0) */
+  assign_tm(&tm, v_tm);
+  /*  tm_isdst is not used by timegm (which sets it to 0) */
 
   res = timegm(&tm);
 
@@ -129,17 +160,8 @@ CAMLprim value core_timegm(value tm_val) {
 }
 
 CAMLprim value core_time_ns_strftime(value v_tm, value v_fmt) {
-  struct tm tm;
-  memset(&tm, 0, sizeof(struct tm));
-  tm.tm_sec = Int_val(Field(v_tm, 0));
-  tm.tm_min = Int_val(Field(v_tm, 1));
-  tm.tm_hour = Int_val(Field(v_tm, 2));
-  tm.tm_mday = Int_val(Field(v_tm, 3));
-  tm.tm_mon = Int_val(Field(v_tm, 4));
-  tm.tm_year = Int_val(Field(v_tm, 5));
-  tm.tm_wday = Int_val(Field(v_tm, 6));
-  tm.tm_yday = Int_val(Field(v_tm, 7));
-  tm.tm_isdst = Bool_val(Field(v_tm, 8));
+  struct tm tm = {0};
+  assign_tm(&tm, v_tm);
   return core_time_ns_format_tm(&tm, v_fmt);
 }
 
