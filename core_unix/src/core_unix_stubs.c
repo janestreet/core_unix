@@ -1082,7 +1082,11 @@ CAMLprim value core_unix_getgrouplist(value v_user, value v_group) {
   c_user = strdup(String_val(v_user));
 
   caml_enter_blocking_section();
+#ifdef __APPLE__
+  n = getgrouplist(c_user, Long_val(v_group), (int *)groups, &ngroups);
+#else
   n = getgrouplist(c_user, Long_val(v_group), groups, &ngroups);
+#endif
   free(c_user);
   caml_leave_blocking_section();
 
