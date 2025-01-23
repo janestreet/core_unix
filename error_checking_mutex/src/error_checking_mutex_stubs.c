@@ -19,6 +19,8 @@ static void caml_pthread_check(int retcode, char *msg)
 
 #ifdef __GLIBC__
   err = strerror_r(retcode, err_buf, err_buf_len);
+#elif defined(_WIN32)
+  err = strerror(retcode);
 #else
   if (strerror_r(retcode, err_buf, err_buf_len) == -1)
     uerror("strerror_r", Nothing);
