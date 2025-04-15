@@ -44,11 +44,14 @@
 #define bswap_64 bswap64
 #endif
 
+#define CAML_INTERNALS
 #include "ocaml_utils.h"
 #include "unix_utils.h"
 #include <caml/socketaddr.h>
 #include <core_params.h>
 #include "recvmmsg.h"
+#include <caml/io.h>
+#undef CAML_INTERNALS
 
 /* Initialisation */
 
@@ -311,9 +314,6 @@ CAMLprim value bigstring_recvfrom_assume_fd_is_nonblocking_stub(value v_sock,
 }
 
 /* I/O of bigstrings from channels */
-
-#define CAML_INTERNALS
-#include <caml/io.h>
 
 CAMLprim value bigstring_input_stub(value v_min_len, value v_chan, value v_pos,
                                     value v_len, value v_bstr) {
