@@ -7,3 +7,9 @@
  (preprocess
   (pps ppx_jane))
  (libraries core_kernel.caml_threads core threads))
+
+(rule
+ (targets ocaml_runtime_props.h)
+ (deps)
+ (action
+  (bash "echo \"#define OCAML_DEPENDENT_MEM_TRACKING true\" > %{targets}")))

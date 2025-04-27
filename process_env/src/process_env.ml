@@ -2,7 +2,7 @@ open! Core
 open! Import
 module Unix = Core_unix
 
-let ssh_client_var = "SSH_CLIENT"
+let ssh_client_var_name = "SSH_CLIENT"
 
 let parse_ssh_client_var = function
   | None -> Ok `Nowhere
@@ -18,7 +18,9 @@ let parse_ssh_client_var = function
        Or_error.tag_arg e "Could not parse IP address in SSH_CLIENT" s [%sexp_of: string])
 ;;
 
-let parse_ssh_client () = parse_ssh_client_var (Sys.getenv ssh_client_var)
+let parse_ssh_client ?(var_name = ssh_client_var_name) () =
+  parse_ssh_client_var (Sys.getenv var_name)
+;;
 
 module Private = struct
   let parse_ssh_client_var = parse_ssh_client_var

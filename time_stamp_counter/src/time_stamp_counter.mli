@@ -1,10 +1,9 @@
 (** High-performance timing.
 
     This module provides the fast function [now ()] which is our best effort
-    high-performance cycle counter for a given platform.  For x86 systems this retrieves
-    the CPU's internal time stamp counter using the RDTSC instruction.  For systems that
-    do not have a RDTSC instruction, we fallback to using
-    [clock_gettime(CLOCK_MONOTONIC)].
+    high-performance cycle counter for a given platform. For x86 systems this retrieves
+    the CPU's internal time stamp counter using the RDTSC instruction. For systems that do
+    not have a RDTSC instruction, we fallback to using [clock_gettime(CLOCK_MONOTONIC)].
 
     Here is a benchmark of execution time in nanos and allocations in words:
 
@@ -28,15 +27,15 @@
     machines), unlike [Time.now ()] which returns a boxed float.
 
     Functions are also provided to estimate the relationship of CPU time-stamp-counter
-    frequency to real time, thereby allowing one to convert from [t] to [Time.t].  There
+    frequency to real time, thereby allowing one to convert from [t] to [Time.t]. There
     are some caveats to this that are worth noting:
 
     - The conversion to [Time.t] depends on an estimate of the time-stamp-counter
-      frequency.  This frequency may be volatile on some systems, thereby reducing the
-      utility of this conversion.  See the [Calibrator] module below for details.
+      frequency. This frequency may be volatile on some systems, thereby reducing the
+      utility of this conversion. See the [Calibrator] module below for details.
 
-    - The captured [t] can only be converted to a [Time.t] if one also has a
-      recently calibrated [Calibrator.t] from the same machine.
+    - The captured [t] can only be converted to a [Time.t] if one also has a recently
+      calibrated [Calibrator.t] from the same machine.
 
     - Put another way, it would not make sense to send a sexp of [t] from one box to
       another and then convert it to a [Time.t], because [t] counts the number of cycles
@@ -49,8 +48,7 @@
       usually be assumed to have an "invariant" tsc, and Linux has support to synchronize
       the initial counters at boot time when multiple processors are present.
 
-    See also: {:http://en.wikipedia.org/wiki/Time_Stamp_Counter}
-*)
+    See also: {:http://en.wikipedia.org/wiki/Time_Stamp_Counter} *)
 
 open! Core
 open! Import
@@ -59,42 +57,43 @@ type t = private Int63.t [@@deriving bin_io, compare, sexp, typerep]
 
 include Comparisons.S with type t := t
 
+val ( = ) : t -> t -> bool [@@zero_alloc]
+
 (** A calibrator contains a snapshot of machine-specific information that is used to
-    convert between TSC values and clock time.  This information needs to be calibrated
+    convert between TSC values and clock time. This information needs to be calibrated
     periodically such that it stays updated w.r.t. changes in the CPU's time-stamp-counter
-    frequency, which can vary depending on load, heat, etc.  (Also see the comment in the
+    frequency, which can vary depending on load, heat, etc. (Also see the comment in the
     [.ml] file.)
 
     Calibration at the rate of 0.1, 1 or 2 secs produces errors (measured as the
-    difference between [Time.now] and the reported time here) on the order of 1-2us.
-    Given the precision of 52-bit float mantissa values, this is very close to the least
-    error one can have on these values.  Calibration once per 10sec produces errors that
-    are +/-4us. Calibration once per minute produces errors that are +/-15us and
-    calibration once in 3mins produces errors +/-30us.  (It is worth remarking that the
-    error has a positive bias of 1us -- i.e., the error dances around the 1us mark, rather
-    than around 0. It is unclear where this bias is introduced, though it probably does
-    not matter for most applications.)
+    difference between [Time.now] and the reported time here) on the order of 1-2us. Given
+    the precision of 52-bit float mantissa values, this is very close to the least error
+    one can have on these values. Calibration once per 10sec produces errors that are
+    +/-4us. Calibration once per minute produces errors that are +/-15us and calibration
+    once in 3mins produces errors +/-30us. (It is worth remarking that the error has a
+    positive bias of 1us -- i.e., the error dances around the 1us mark, rather than
+    around 0. It is unclear where this bias is introduced, though it probably does not
+    matter for most applications.)
 
-    This module maintains an instance of [t] internal to the module.  The internal
-    instance of [t] can be updated via calls to [calibrate ()], i.e., without specifying
-    the [t] parameter.  In all the functions below that take an optional [Calibrator.t]
-    argument, the internal instance is used when no calibrator is explicitly specified.
-*)
+    This module maintains an instance of [t] internal to the module. The internal instance
+    of [t] can be updated via calls to [calibrate ()], i.e., without specifying the [t]
+    parameter. In all the functions below that take an optional [Calibrator.t] argument,
+    the internal instance is used when no calibrator is explicitly specified. *)
 module Calibrator : sig
     type tsc
     type t [@@deriving bin_io, sexp]
 
-    (** [create ()] creates an uninitialized calibrator instance.  Creating a calibrator
-      takes about 3ms.  One needs a recently calibrated [Calibrator.t] and the TSC value
-      from the same machine to meaningfully convert the TSC value to a [Time.t]. *)
+    (** [create ()] creates an uninitialized calibrator instance. Creating a calibrator
+        takes about 3ms. One needs a recently calibrated [Calibrator.t] and the TSC value
+        from the same machine to meaningfully convert the TSC value to a [Time.t]. *)
     val create : unit -> t
 
     (** [calibrate t] updates [t] by measuring the current value of the TSC and
-      [Time.now]. *)
+        [Time.now]. *)
     val calibrate : t -> unit
 
     (** Returns the estimated MHz of the CPU's time-stamp-counter based on the TSC and
-      [Time.now ()].  This function is undefined on 32-bit machines. *)
+        [Time.now ()]. This function is undefined on 32-bit machines. *)
     val cpu_mhz : (t -> float) Or_error.t
 
     (**/**)
@@ -148,15 +147,12 @@ val zero : t
 
     The first time this lazy value is forced, it spends approximately 3ms calibrating.
 
-    While the [Async] scheduler is running, this value is recalibrated regularly.
-    IF NOT USING THE ASYNC SCHEDULER, you must have some other means of making
-    sure recalibration occurs.
-*)
+    While the [Async] scheduler is running, this value is recalibrated regularly. IF NOT
+    USING THE ASYNC SCHEDULER, you must have some other means of making sure recalibration
+    occurs. *)
 val calibrator : Calibrator.t Lazy.t
 
-(**
-
-   It is guaranteed that repeated calls will return nondecreasing [Time.t] values. *)
+(** It is guaranteed that repeated calls will return nondecreasing [Time.t] values. *)
 val to_time : t -> calibrator:Calibrator.t -> Time_float.t
 
 val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t

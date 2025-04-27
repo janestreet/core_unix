@@ -24,7 +24,7 @@ depends: [
   "sexplib"
   "uopt"
   "base-threads"
-  "dune"                     {>= "3.11.0"}
+  "dune"                     {>= "3.17.0"}
   "spawn"                    {>= "v0.15"}
 ]
 available: arch != "arm32" & arch != "x86_32"

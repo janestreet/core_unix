@@ -87,6 +87,7 @@ type tsc = t [@@deriving bin_io, compare, sexp]
 
 include (Int63 : Comparisons.S with type t := t)
 
+let[@zero_alloc] ( = ) t1 t2 = Int63.( = ) t1 t2
 let diff t1 t2 = Int63.( - ) t1 t2
 let add t s = Int63.( + ) t s
 let of_int63 t = t
@@ -96,7 +97,7 @@ let zero = Int63.zero
 [%%ifdef JSC_ARCH_SIXTYFOUR]
 
 external rdtsc : unit -> (int64[@unboxed]) = "caml_rdtsc" "caml_rdtsc_unboxed"
-[@@noalloc]
+[@@noalloc] [@@builtin]
 
 (* noalloc on x86_64 only *)
 let[@inline] now () =
@@ -424,6 +425,9 @@ end
 
 module Span = struct
   include Int63
+
+  let[@inline] ( + ) x y = x + y
+  let[@inline] ( - ) x y = x - y
 
   module Private = struct
     let of_int63 t = t

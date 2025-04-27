@@ -7,19 +7,18 @@ end
 (** [pause span] sleeps for [span] time. *)
 val pause : Span.t -> unit
 
-(** [interruptible_pause span] sleeps for [span] time unless interrupted (e.g. by
-      delivery of a signal), in which case the remaining unslept portion of time is
-      returned. *)
+(** [interruptible_pause span] sleeps for [span] time unless interrupted (e.g. by delivery
+    of a signal), in which case the remaining unslept portion of time is returned. *)
 val interruptible_pause : Span.t -> [ `Ok | `Remaining of Span.t ]
 
 (** [pause_forever] sleeps indefinitely. *)
 val pause_forever : unit -> never_returns
 
 (** [format t fmt] formats the given time according to fmt, which follows the formatting
-      rules given in 'man strftime'.  The time is output in the given timezone. Here are
-      some commonly used control codes:
+    rules given in 'man strftime'. The time is output in the given timezone. Here are some
+    commonly used control codes:
 
-      {v
+    {v
       %Y - year (4 digits)
       %y - year (2 digits)
       %m - month
@@ -29,24 +28,23 @@ val pause_forever : unit -> never_returns
       %S - second
     v}
 
-      a common choice would be: %Y-%m-%d %H:%M:%S
+    a common choice would be: %Y-%m-%d %H:%M:%S
 
-      Although %Z and %z are interpreted as format strings, neither are correct in the
-      current implementation. %Z always refers to the local machine timezone, and does not
-      correctly detect whether DST is active. The effective local timezone can be
-      controlled by setting the "TZ" environment variable before calling [format]. %z
-      behaves unreliably and should be avoided.
+    Although %Z and %z are interpreted as format strings, neither are correct in the
+    current implementation. %Z always refers to the local machine timezone, and does not
+    correctly detect whether DST is active. The effective local timezone can be controlled
+    by setting the "TZ" environment variable before calling [format]. %z behaves
+    unreliably and should be avoided.
 
-      Not all strftime control codes are standard; the supported subset will depend on the
-      C libraries linked into a given executable.
-  *)
-val format : t -> string -> zone:Zone.t -> string
+    Not all strftime control codes are standard; the supported subset will depend on the C
+    libraries linked into a given executable. *)
+val format : ?locale:Core_unix.Locale.t -> t -> string -> zone:Zone.t -> string
 
 (** [parse string ~fmt ~zone] parses [string], according to [fmt], which follows the
-      formatting rules given in 'man strptime'.  The time is assumed to be in the given
-      timezone.
+    formatting rules given in 'man strptime'. The time is assumed to be in the given
+    timezone.
 
-      {v
+    {v
       %Y - year (4 digits)
       %y - year (2 digits)
       %m - month
@@ -56,10 +54,10 @@ val format : t -> string -> zone:Zone.t -> string
       %S - second
     v}
 
-      Raise if [allow_trailing_input] is false and [fmt] does not consume all of the
-      input. *)
+    Raise if [allow_trailing_input] is false and [fmt] does not consume all of the input. *)
 val parse
-  :  ?allow_trailing_input:bool (** default = false *)
+  :  ?locale:Core_unix.Locale.t
+  -> ?allow_trailing_input:bool (** default = false *)
   -> string
   -> fmt:string
   -> zone:Zone.t

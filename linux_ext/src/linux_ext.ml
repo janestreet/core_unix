@@ -211,6 +211,10 @@ module Null_toplevel = struct
   let settcpopt_bool = u "Linux_ext.settcpopt_bool"
   let settcpopt_string = u "Linux_ext.settcpopt_string"
   let peer_credentials = u "Linux_ext.peer_credentials"
+  let setfsuid = u "Linux_ext.setfsuid"
+  let setfsgid = u "Linux_ext.setfsgid"
+  let getfsuid = u "Linux_ext.getfsuid"
+  let getfsgid = u "Linux_ext.getfsgid"
 
   module Epoll = Epoll.Impl
 end
@@ -267,6 +271,38 @@ module Null : Linux_ext_intf.S = struct
     let read _ = assert false
     let write _ = assert false
     let to_file_descr t = t
+  end
+
+  module Fallocate = struct
+    module Flags = struct
+      (* As per include/uapi/linux/memfd.h *)
+
+      let i63 = Int63.of_int
+      let keep_size = i63 0x01
+      let punch_hole = i63 0x02
+      let collapse_range = i63 0x08
+      let zero_range = i63 0x10
+      let insert_range = i63 0x20
+      let unshare_range = i63 0x40
+
+      include Flags.Make (struct
+          let allow_intersecting = false
+          let should_print_error = true
+          let remove_zero_flags = false
+
+          let known =
+            [ keep_size, "keep_size"
+            ; punch_hole, "punch_hole"
+            ; collapse_range, "collapse_range"
+            ; zero_range, "zero_range"
+            ; insert_range, "insert_range"
+            ; unshare_range, "unshare_range"
+            ]
+          ;;
+        end)
+    end
+
+    let fallocate = Or_error.unimplemented "Linux_ext.Fallocate.fallocate"
   end
 
   module Timerfd = struct
@@ -427,6 +463,75 @@ end
 module Clock = Null.Clock
 
 [%%endif]
+[%%ifdef JSC_FALLOCATE]
+
+module Fallocate = struct
+  module Flags = struct
+    external keep_size : unit -> Int63.t = "core_linux_fallocate_FALLOC_FL_KEEP_SIZE"
+    external punch_hole : unit -> Int63.t = "core_linux_fallocate_FALLOC_FL_PUNCH_HOLE"
+
+    external collapse_range
+      :  unit
+      -> Int63.t
+      = "core_linux_fallocate_FALLOC_FL_COLLAPSE_RANGE"
+
+    external zero_range : unit -> Int63.t = "core_linux_fallocate_FALLOC_FL_ZERO_RANGE"
+
+    external insert_range
+      :  unit
+      -> Int63.t
+      = "core_linux_fallocate_FALLOC_FL_INSERT_RANGE"
+
+    external unshare_range
+      :  unit
+      -> Int63.t
+      = "core_linux_fallocate_FALLOC_FL_UNSHARE_RANGE"
+
+    let keep_size = keep_size ()
+    let punch_hole = punch_hole ()
+    let collapse_range = collapse_range ()
+    let zero_range = zero_range ()
+    let insert_range = insert_range ()
+    let unshare_range = unshare_range ()
+
+    include Flags.Make (struct
+        let allow_intersecting = false
+        let should_print_error = true
+        let remove_zero_flags = false
+
+        let known =
+          [ keep_size, "keep_size"
+          ; punch_hole, "punch_hole"
+          ; collapse_range, "collapse_range"
+          ; zero_range, "zero_range"
+          ; insert_range, "insert_range"
+          ; unshare_range, "unshare_range"
+          ]
+        ;;
+      end)
+  end
+
+  external fallocate
+    :  (int[@untagged])
+    -> mode:(int[@untagged])
+    -> offset:(int[@untagged])
+    -> size:(int[@untagged])
+    -> unit
+    = "caml_no_bytecode_impl" "core_linux_fallocate"
+  [@@noalloc]
+
+  let[@inline] fallocate fd ~mode ~offset ~size =
+    fallocate (File_descr.to_int fd) ~mode:(Flags.to_int_exn mode) ~offset ~size
+  ;;
+
+  let fallocate = Or_error.return fallocate
+end
+
+[%%else]
+
+module Fallocate = Null.Fallocate
+
+[%%endif]
 [%%ifdef JSC_TIMERFD]
 
 module Timerfd = struct
@@ -525,12 +630,7 @@ module Timerfd = struct
 
   let set_at t at =
     if Time_ns.( <= ) at Time_ns.epoch
-    then
-      failwiths
-        ~here:[%here]
-        "Timerfd.set_at got time before epoch"
-        at
-        [%sexp_of: Time_ns.t];
+    then failwiths "Timerfd.set_at got time before epoch" at [%sexp_of: Time_ns.t];
     timerfd_settime
       t
       ~absolute:true
@@ -546,7 +646,6 @@ module Timerfd = struct
     if Time_ns.Span.( <= ) interval Time_ns.Span.zero
     then
       failwiths
-        ~here:[%here]
         "Timerfd.set_repeating got invalid interval"
         interval
         [%sexp_of: Time_ns.Span.t];
@@ -561,15 +660,10 @@ module Timerfd = struct
   let set_repeating_at t at (interval : Time_ns.Span.t) =
     if Time_ns.( <= ) at Time_ns.epoch
     then
-      failwiths
-        ~here:[%here]
-        "Timerfd.set_repeating_at got time before epoch"
-        at
-        [%sexp_of: Time_ns.t];
+      failwiths "Timerfd.set_repeating_at got time before epoch" at [%sexp_of: Time_ns.t];
     if Time_ns.Span.( <= ) interval Time_ns.Span.zero
     then
       failwiths
-        ~here:[%here]
         "Timerfd.set_repeating_at got invalid interval"
         interval
         [%sexp_of: Time_ns.Span.t];
@@ -987,6 +1081,12 @@ let get_bind_to_interface fd =
   | name -> Bound_to_interface.Only name
 ;;
 
+external setfsuid : uid:int -> int = "core_linux_setfsuid"
+external setfsgid : gid:int -> int = "core_linux_setfsgid"
+
+let getfsuid () = setfsuid ~uid:(-1)
+let getfsgid () = setfsgid ~gid:(-1)
+
 module Epoll = Epoll.Impl
 
 let cores = Ok cores
@@ -1019,6 +1119,10 @@ let sendmsg_nonblocking_no_sigpipe = Ok sendmsg_nonblocking_no_sigpipe
 let settcpopt_bool = Ok settcpopt_bool
 let settcpopt_string = Ok settcpopt_string
 let peer_credentials = Ok peer_credentials
+let setfsuid = Ok setfsuid
+let setfsgid = Ok setfsgid
+let getfsuid = Ok getfsuid
+let getfsgid = Ok getfsgid
 
 module Extended_file_attributes = struct
   module Flags = struct

@@ -324,7 +324,7 @@ module%test _ = struct
   type t = int Set.t [@@deriving sexp]
 
   (** Turn an unsorted list of bounds into a sequence. First dedup, and then pair things
-        up nicely.  If there's an odd number of elements, drop the last one. *)
+      up nicely. If there's an odd number of elements, drop the last one. *)
   let make_intervals bounds =
     let[@tail_mod_cons] rec pair_up list =
       match list with

@@ -1,7 +1,7 @@
 (library
  (foreign_stubs
   (language c)
-  (names nss_stubs timespec core_unix_stubs core_unix_time_stubs)
+  (names nss_stubs timespec core_unix_stubs core_unix_time_stubs locale_stubs)
   (flags
    (:standard -D_LARGEFILE64_SOURCE)
    ()))

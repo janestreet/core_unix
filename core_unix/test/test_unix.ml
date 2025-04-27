@@ -84,7 +84,7 @@ let%expect_test "filename validation in [remove]" =
 ;;
 
 let%expect_test "expand ~base works" =
-  let base = lazy [ "A=1"; "B=2"; "C=3" ] in
+  let base = [ "A=1"; "B=2"; "C=3" ] in
   print_s [%sexp (Unix.Env.expand ~base (`Replace [ "C", "2" ]) : string list)];
   [%expect {| (C=2) |}];
   print_s
@@ -133,8 +133,7 @@ module%test _ = struct
     let sexp1 = sexp_of_t t in
     let sexp2 = Sexp.of_string string in
     if Sexp.( <> ) sexp1 sexp2
-    then
-      failwiths ~here:[%here] "unequal sexps" (sexp1, sexp2) [%sexp_of: Sexp.t * Sexp.t]
+    then failwiths "unequal sexps" (sexp1, sexp2) [%sexp_of: Sexp.t * Sexp.t]
   ;;
 
   let%test_unit _ = check rdonly "(rdonly)"
@@ -223,6 +222,25 @@ let%test_unit "strftime with long output" =
        "%c")
 ;;
 
+let%test_unit "strftime with locale" =
+  Locale.with_ "de_DE" (fun locale ->
+    [%test_result: string]
+      ~expect:"Di, 05 Jul 1907 04:03:08 GMT"
+      (strftime
+         ~locale
+         { tm_sec = 8
+         ; tm_min = 3
+         ; tm_hour = 4
+         ; tm_mday = 5
+         ; tm_mon = 6
+         ; tm_year = 7
+         ; tm_wday = 2
+         ; tm_yday = 9
+         ; tm_isdst = true
+         }
+         "%a, %d %b %Y %H:%M:%S GMT"))
+;;
+
 module Unix_tm_for_testing = struct
   type t = Unix.tm =
     { tm_sec : int
@@ -300,6 +318,32 @@ let%expect_test "strptime trailing input" =
     |}];
   require_does_raise (fun () -> strptime ~fmt:"%Y-%m-%d" "2012-05-23 10:14:23");
   [%expect {| (Failure "unix_strptime: did not consume entire input") |}]
+;;
+
+let%test_unit "strptime with locale" =
+  let res =
+    Locale.with_ "de_DE" (fun locale ->
+      strptime ~locale ~fmt:"%a, %d %b %Y %H:%M:%S GMT" "Mi, 23 Mai 2012 10:14:23 GMT")
+  in
+  let res =
+    (* fill in optional fields if they are missing *)
+    let tm_wday = if res.Unix.tm_wday = 0 then 3 else res.Unix.tm_wday in
+    let tm_yday = if res.Unix.tm_yday = 0 then 143 else res.Unix.tm_yday in
+    { res with Unix.tm_wday; tm_yday }
+  in
+  require_equal
+    (module Unix_tm_for_testing)
+    res
+    { Unix.tm_sec = 23
+    ; tm_min = 14
+    ; tm_hour = 10
+    ; tm_mday = 23
+    ; tm_mon = 4
+    ; tm_year = 2012 - 1900
+    ; tm_wday = 3
+    ; tm_yday = 143
+    ; tm_isdst = false
+    }
 ;;
 
 module _ = struct
@@ -403,7 +447,7 @@ module%test _ = struct
     List.iter all ~f:(fun t ->
       let x = to_int t in
       if Int.( <> ) (Int.ceil_pow2 x) x
-      then failwiths ~here:[%here] "Flag is not a power of 2" t sexp_of_t)
+      then failwiths "Flag is not a power of 2" t sexp_of_t)
   ;;
 
   let%test_unit _ =

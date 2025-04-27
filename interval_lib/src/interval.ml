@@ -453,15 +453,12 @@ module Int = struct
       let len = 1 + hi - lo in
       (* If [hi] and [lo] are far enough apart (e.g. if [lo <= 0] and
          [hi = Int.max_value]), [len] will overlow. *)
-      if len < 0
-      then failwiths ~here:[%here] "interval length not representable" t [%sexp_of: t];
+      if len < 0 then failwiths "interval length not representable" t [%sexp_of: t];
       len
   ;;
 
   let get t i =
-    let fail () =
-      failwiths ~here:[%here] "index out of bounds" (i, t) [%sexp_of: int * t]
-    in
+    let fail () = failwiths "index out of bounds" (i, t) [%sexp_of: int * t] in
     match t with
     | Empty -> fail ()
     | Interval (lo, hi) ->
@@ -536,15 +533,15 @@ module Int = struct
       let get = get
     end)
 
-  let binary_search ?pos ?len t ~compare which elt = exclave_
+  let%template binary_search ?pos ?len t ~compare which elt = exclave_
     let zero_based_pos = Option.map pos ~f:(fun x -> x - lbound_exn t) in
     let zero_based_result =
       For_binary_search.binary_search ?pos:zero_based_pos ?len t ~compare which elt
     in
-    Option.map_local zero_based_result ~f:(fun x -> x + lbound_exn t)
+    (Option.map [@mode local]) zero_based_result ~f:(fun x -> x + lbound_exn t)
   ;;
 
-  let binary_search_segmented ?pos ?len t ~segment_of which = exclave_
+  let%template binary_search_segmented ?pos ?len t ~segment_of which = exclave_
     let zero_based_pos = Option.map pos ~f:(fun x -> x - lbound_exn t) in
     let zero_based_result =
       For_binary_search.binary_search_segmented
@@ -554,7 +551,7 @@ module Int = struct
         ~segment_of
         which
     in
-    Option.map_local zero_based_result ~f:(fun x -> x + lbound_exn t)
+    (Option.map [@mode local]) zero_based_result ~f:(fun x -> x + lbound_exn t)
   ;;
 
   module Private = struct

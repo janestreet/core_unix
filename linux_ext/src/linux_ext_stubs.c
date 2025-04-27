@@ -19,6 +19,7 @@
 #include <time.h>
 #include <sched.h>
 #include <termios.h>
+#include <sys/fsuid.h>
 #include <sys/ioctl.h>
 #include <sys/syscall.h>
 #include <sys/sendfile.h>
@@ -488,6 +489,24 @@ CAMLprim value core_linux_peer_credentials(value v_fd) {
   CAMLreturn(res);
 }
 
+CAMLprim value core_linux_setfsuid(value v_uid) {
+  CAMLparam1(v_uid);
+  CAMLlocal1(res);
+
+  res = Val_int(setfsuid(Int_val(v_uid)));
+
+  CAMLreturn(res);
+}
+
+CAMLprim value core_linux_setfsgid(value v_gid) {
+  CAMLparam1(v_gid);
+  CAMLlocal1(res);
+
+  res = Val_int(setfsgid(Int_val(v_gid)));
+
+  CAMLreturn(res);
+}
+
 /** Core epoll methods **/
 
 #define EPOLL_FLAG(FLAG) DEFINE_INT63_CONSTANT(core_linux_epoll_##FLAG##_flag, FLAG)
@@ -679,6 +698,32 @@ CAMLprim value core_linux_timerfd_gettime(value v_fd) {
 }
 
 #endif /* JSC_TIMERFD */
+
+#ifdef JSC_FALLOCATE
+
+/** fallocate bindings */
+
+#define FALLOCATE_INT63(X)                                                               \
+  CAMLprim value core_linux_fallocate_##X(value __unused v_unit) {                       \
+    return caml_alloc_int63(X);                                                          \
+  }
+
+FALLOCATE_INT63(FALLOC_FL_KEEP_SIZE)
+FALLOCATE_INT63(FALLOC_FL_PUNCH_HOLE)
+FALLOCATE_INT63(FALLOC_FL_COLLAPSE_RANGE)
+FALLOCATE_INT63(FALLOC_FL_ZERO_RANGE)
+FALLOCATE_INT63(FALLOC_FL_INSERT_RANGE)
+FALLOCATE_INT63(FALLOC_FL_UNSHARE_RANGE)
+
+CAMLprim value core_linux_fallocate(int fd, int mode, off_t offset, off_t length) {
+  if (fallocate(fd, mode, offset, length) == -1) {
+    uerror("fallocate", Nothing);
+  }
+
+  return Val_unit;
+}
+
+#endif /* JSC_FALLOCATE */
 
 #ifdef JSC_MEMFD
 

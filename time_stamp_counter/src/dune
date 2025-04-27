@@ -9,7 +9,10 @@
  (preprocessor_deps config.h)
  (js_of_ocaml
   (javascript_files time_stamp_counter_stubs.js))
- (libraries core))
+ (libraries core)
+ (wasm_of_ocaml
+  (javascript_files time_stamp_counter_stubs.js)
+  (wasm_files time_stamp_counter_stubs.wat)))
 
 (rule
  (targets config.h)

@@ -47,7 +47,7 @@ let to_tm t ~zone : Unix.tm =
   }
 ;;
 
-let format (t : t) s ~zone = Unix.strftime (to_tm t ~zone) s
+let format ?locale (t : t) s ~zone = Unix.strftime ?locale (to_tm t ~zone) s
 
 let of_tm tm ~zone =
   (* Explicitly ignoring isdst, wday, yday (they are redundant with the other fields
@@ -73,6 +73,6 @@ let of_tm tm ~zone =
   of_date_ofday ~zone date ofday
 ;;
 
-let parse ?allow_trailing_input s ~fmt ~zone =
-  Unix.strptime ?allow_trailing_input ~fmt s |> of_tm ~zone
+let parse ?locale ?allow_trailing_input s ~fmt ~zone =
+  Unix.strptime ?locale ?allow_trailing_input ~fmt s |> of_tm ~zone
 ;;

@@ -39,10 +39,13 @@ external realpath : string -> string = "core_unix_realpath"
    cannot be interrupted by an OCaml thread context switch).
 *)
 let random_letter =
-  let prng_key = Domain.DLS.new_key Stdlib.Random.State.make_self_init in
+  let prng_key =
+    (Domain.DLS.new_key [@ocaml.alert "-unsafe_multidomain"])
+      Stdlib.Random.State.make_self_init
+  in
   let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" in
   fun () ->
-    let prng = Domain.DLS.get prng_key in
+    let prng = (Domain.DLS.get [@ocaml.alert "-unsafe_multidomain"]) prng_key in
     letters.[Stdlib.Random.State.int prng (String.length letters)]
 ;;
 

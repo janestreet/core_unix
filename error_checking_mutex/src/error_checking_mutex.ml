@@ -4,10 +4,9 @@ open! Core
 open! Import
 include Mutex
 
-(** [create] like {!Mutex.create}, but creates an error-checking mutex.
-    Locking a mutex twice from the same thread, unlocking an unlocked mutex,
-    or unlocking a mutex not held by the thread will result in a [Sys_error]
-    exception. *)
+(** [create] like {!Mutex.create}, but creates an error-checking mutex. Locking a mutex
+    twice from the same thread, unlocking an unlocked mutex, or unlocking a mutex not held
+    by the thread will result in a [Sys_error] exception. *)
 
 external create : unit -> Mutex.t = "unix_create_error_checking_mutex"
 

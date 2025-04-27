@@ -1,9 +1,9 @@
 (** Send log messages via the Unix Syslog interface.
 
     Syslog is great for system daemons that log free-form human readable status messages
-    or other debugging output, but not so great for archiving structured data.  Access to
-    read Syslog's messages may also be restricted.  [syslogd]'s logs are also not
-    necessarily kept forever.  For application level logging consider
+    or other debugging output, but not so great for archiving structured data. Access to
+    read Syslog's messages may also be restricted. [syslogd]'s logs are also not
+    necessarily kept forever. For application level logging consider
     {!Core_extended.Std.Logger} instead. *)
 
 open! Import
@@ -12,8 +12,8 @@ module Open_option : sig
   type t =
     | PID (** Include PID with each message *)
     | CONS
-    (** Write directly to system console if there is an error
-                  while sending to system logger *)
+    (** Write directly to system console if there is an error while sending to system
+        logger *)
     | ODELAY (** Delay opening of the connection until syslog is called *)
     | NDELAY (** No delay opening connection to syslog daemon *)
     | NOWAIT (** Do not wait for child processes while logging message *)
@@ -77,11 +77,11 @@ val setlogmask
 (** [openlog ~id ~options ~facility ()] opens a connection to the system logger (possibly
     delayed) using prefixed identifier [id], [options], and [facility].
 
-    WARNING: this function leaks the [id] argument, if provided.  There is no way around
-    that if syslog is called in a multi-threaded environment!  Therefore it shouldn't be
-    called too often.  What for, anyway?
+    WARNING: this function leaks the [id] argument, if provided. There is no way around
+    that if syslog is called in a multi-threaded environment! Therefore it shouldn't be
+    called too often. What for, anyway?
 
-    Calling [openlog] before [syslog] is optional.  If you forget, syslog will do it for
+    Calling [openlog] before [syslog] is optional. If you forget, syslog will do it for
     you with the defaults. *)
 val openlog
   :  ?id:string (** default is [Sys.argv.(0)] *)

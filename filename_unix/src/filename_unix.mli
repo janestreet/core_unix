@@ -3,14 +3,14 @@
 open! Core
 open! Import
 
-(** [realpath path] @return the canonicalized absolute pathname of [path].
+(** [realpath path]
+    @return the canonicalized absolute pathname of [path].
     @raise Unix_error on errors. *)
 val realpath : string -> string
 
-(** Same as {!temp_file}, but returns both the name of a fresh
-    temporary file, and an output channel opened (atomically) on
-    this file.  This function is more secure than [temp_file]: there
-    is no risk that the temporary file will be modified (e.g. replaced
+(** Same as {!temp_file}, but returns both the name of a fresh temporary file, and an
+    output channel opened (atomically) on this file. This function is more secure than
+    [temp_file]: there is no risk that the temporary file will be modified (e.g. replaced
     by a symbolic link) before the program opens it. *)
 val open_temp_file
   :  ?close_on_exec:bool (** default true *)
@@ -20,8 +20,8 @@ val open_temp_file
   -> string
   -> string * Out_channel.t
 
-(** Similar to {!open_temp_file}, but returns a Unix file descriptor
-    open in read&write mode instead of an [Out_channel.t]. *)
+(** Similar to {!open_temp_file}, but returns a Unix file descriptor open in read&write
+    mode instead of an [Out_channel.t]. *)
 val open_temp_file_fd
   :  ?close_on_exec:bool (** default false *)
   -> ?perm:int
@@ -34,17 +34,18 @@ val open_temp_file_fd
     temporary file. The temporary file is created in the directory specified by [in_dir],
     with permissions specified by [perm]. The base name of the temporary file is formed by
     concatenating [prefix], then ".tmp.", then 6 random alphanumeric characters, then
-    [suffix]. The function ensures that the temporary filename does not
-    already exist in the directory.
+    [suffix]. The function ensures that the temporary filename does not already exist in
+    the directory.
 
-    @param perm the permission of the temporary file. The default value is [0o600]
-    (readable and writable only by the file owner)
+    @param perm
+      the permission of the temporary file. The default value is [0o600] (readable and
+      writable only by the file owner)
 
-    @param in_dir the directory in which to create the temporary file. The default is
-    [temp_dir_name]
+    @param in_dir
+      the directory in which to create the temporary file. The default is [temp_dir_name]
 
-    Note that prefix and suffix will be changed when necessary to make the final filename
-    valid POSIX.*)
+      Note that prefix and suffix will be changed when necessary to make the final
+      filename valid POSIX. *)
 val temp_file : ?perm:int -> ?in_dir:string -> string -> string -> string
 
 (** [temp_dir] is the same as [temp_file] but creates a temporary directory and uses a

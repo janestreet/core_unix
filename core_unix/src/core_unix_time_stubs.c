@@ -113,7 +113,10 @@ static void assign_tm(struct tm *tm, value v_tm) {
   tm->tm_isdst = Bool_val(Field(v_tm, 8));
 }
 
-static value core_time_ns_format_tm(const struct tm *tm, value v_fmt) {
+CAMLprim value core_time_ns_strftime(value v_locale, value v_tm, value v_fmt) {
+  locale_t locale = (locale_t)Nativeint_val(v_locale);
+  struct tm tm = {0};
+  assign_tm(&tm, v_tm);
   size_t buf_len = 10 * caml_string_length(v_fmt) + 1;
   char *buf;
   while (1) {
@@ -126,7 +129,9 @@ static value core_time_ns_format_tm(const struct tm *tm, value v_fmt) {
        use a hack to distinguish zero-length output from failure. */
     buf[0] = '\x01';
     errno = 0;
-    size_t len = strftime(buf, buf_len, String_val(v_fmt), tm);
+    size_t len = locale == (locale_t)0
+                     ? strftime(buf, buf_len, String_val(v_fmt), &tm)
+                     : strftime_l(buf, buf_len, String_val(v_fmt), &tm, locale);
     if (len || !buf[0])
       break;
     if (errno && errno != ERANGE) {
@@ -157,12 +162,6 @@ CAMLprim value core_timegm(value v_tm) {
     caml_failwith("timegm");
 
   return caml_copy_double((double)res);
-}
-
-CAMLprim value core_time_ns_strftime(value v_tm, value v_fmt) {
-  struct tm tm = {0};
-  assign_tm(&tm, v_tm);
-  return core_time_ns_format_tm(&tm, v_fmt);
 }
 
 CAMLprim value core_time_ns_nanosleep(value v_seconds) {

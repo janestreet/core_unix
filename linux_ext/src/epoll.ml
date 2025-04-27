@@ -237,19 +237,13 @@ module Impl = struct
            ~num_ready_events:(check (fun num_ready -> assert (num_ready >= 0)))
            ~ready_events:ignore
        with
-       | exn ->
-         failwiths
-           ~here:[%here]
-           "Epoll.invariant failed"
-           (exn, t)
-           [%sexp_of: exn * in_use])
+       | exn -> failwiths "Epoll.invariant failed" (exn, t) [%sexp_of: exn * in_use])
   ;;
 
   let create ~num_file_descrs ~max_ready_events =
     if max_ready_events < 0
     then
       failwiths
-        ~here:[%here]
         "Epoll.create got nonpositive max_ready_events"
         max_ready_events
         [%sexp_of: int];

@@ -7,11 +7,12 @@ type ok_or_eof =
   | Eof
 [@@deriving compare, sexp_of]
 
-(** [Iobuf] has analogs of various [Bigstring] functions.  These analogs advance by the
+(** [Iobuf] has analogs of various [Bigstring] functions. These analogs advance by the
     amount written/read. *)
 val input : ([> write ], seek) t -> In_channel.t -> ok_or_eof
 
 val read : ([> write ], seek) t -> Unix.File_descr.t -> ok_or_eof
+val really_read : ([> write ], seek) t -> Unix.File_descr.t -> ok_or_eof
 
 val read_assume_fd_is_nonblocking
   :  ([> write ], seek) t
@@ -29,14 +30,14 @@ val recvfrom_assume_fd_is_nonblocking
   -> Unix.File_descr.t
   -> Unix.sockaddr
 
-(** [recvmmsg]'s context comprises data needed by the system call.  Setup can be
-    expensive, particularly for many buffers.
+(** [recvmmsg]'s context comprises data needed by the system call. Setup can be expensive,
+    particularly for many buffers.
 
     NOTE: Unlike most system calls involving iobufs, the lo offset is not respected.
     Instead, the iobuf is implicity [reset] (i.e., [lo <- lo_min] and [hi <- hi_max])
-    prior to reading and a [flip_lo] applied afterward.  This is to prevent the
+    prior to reading and a [flip_lo] applied afterward. This is to prevent the
     memory-unsafe case where an iobuf's lo pointer is advanced and [recvmmsg] attempts to
-    copy into memory exceeding the underlying [bigstring]'s capacity.  If any of the
+    copy into memory exceeding the underlying [bigstring]'s capacity. If any of the
     returned iobufs have had their underlying bigstring or limits changed (e.g., through a
     call to [set_bounds_and_buffer] or [narrow_lo]), the call will fail with [EINVAL]. *)
 module Recvmmsg_context : sig
@@ -44,13 +45,13 @@ module Recvmmsg_context : sig
     type t
 
     (** Do not change these [Iobuf]'s [buf]s or limits before calling
-      [recvmmsg_assume_fd_is_nonblocking]. *)
+        [recvmmsg_assume_fd_is_nonblocking]. *)
     val create : (read_write, seek) iobuf array -> t
   end
   with type ('rw, 'seek) iobuf := ('rw, 'seek) t
 
 (** [recvmmsg_assume_fd_is_nonblocking fd context] returns the number of [context] iobufs
-    read into (or [errno]).  [fd] must not block.  [THREAD_IO_CUTOFF] is ignored.
+    read into (or [errno]). [fd] must not block. [THREAD_IO_CUTOFF] is ignored.
 
     [EINVAL] is returned if an [Iobuf] passed to [Recvmmsg_context.create] has its [buf]
     or limits changed. *)
@@ -69,11 +70,12 @@ val sendto_nonblocking_no_sigpipe
       -> Unix.Syscall_result.Unit.t)
        Or_error.t
 
-(** Write from the iobuf to the specified channel without changing the iobuf
-    window.  Returns the number of bytes written. *)
+(** Write from the iobuf to the specified channel without changing the iobuf window.
+    Returns the number of bytes written. *)
 module Peek : sig
   val output : local_ ([> read ], _) t -> Out_channel.t -> int
   val write : local_ ([> read ], _) t -> Unix.File_descr.t -> int
+  val really_write : local_ ([> read ], _) t -> Unix.File_descr.t -> unit
   val write_assume_fd_is_nonblocking : local_ ([> read ], _) t -> Unix.File_descr.t -> int
 end
 
@@ -81,6 +83,7 @@ end
 val output : local_ ([> read ], seek) t -> Out_channel.t -> unit
 
 val write : local_ ([> read ], seek) t -> Unix.File_descr.t -> unit
+val really_write : local_ ([> read ], seek) t -> Unix.File_descr.t -> unit
 
 val write_assume_fd_is_nonblocking
   :  local_ ([> read ], seek) t

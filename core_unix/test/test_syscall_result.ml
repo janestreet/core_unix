@@ -10,13 +10,9 @@ let%test_unit "to_result doesn't allocate" =
       to Int.Private.length_preallocated_ms - 1
     do
       let t = Int.Private.of_int int in
-      let before_minor = Gc.minor_words () in
-      let before_major = Gc.major_words () in
-      let result = Int.to_result t in
-      let after_minor = Gc.minor_words () in
-      let after_major = Gc.major_words () in
-      [%test_result: int] ~expect:0 (after_minor - before_minor);
-      [%test_result: int] ~expect:0 (after_major - before_major);
+      let result =
+        Expect_test_helpers_core.require_no_allocation (fun () -> Int.to_result t)
+      in
       [%test_result: (int, Unix.Error.t) Result.t]
         result
         ~expect:
