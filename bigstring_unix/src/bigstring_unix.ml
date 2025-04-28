@@ -11,8 +11,12 @@ exception IOError of int * exn [@@deriving sexp]
 external init_stub : unit -> unit = "bigstring_init_stub"
 
 let () =
-  Callback.register_exception "Bigstring.End_of_file" End_of_file;
-  Callback.register_exception "Bigstring.IOError" (IOError (0, Exit));
+  (Callback.register_exception [@ocaml.alert "-unsafe_multidomain"])
+    "Bigstring.End_of_file"
+    End_of_file;
+  (Callback.register_exception [@ocaml.alert "-unsafe_multidomain"])
+    "Bigstring.IOError"
+    (IOError (0, Exit));
   init_stub ()
 ;;
 

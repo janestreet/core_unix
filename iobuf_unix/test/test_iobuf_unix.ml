@@ -325,8 +325,8 @@ let create_sample_file ~int_size ~be ~msgcount =
   filename
 ;;
 
-(** Loop through and check all messages in the given file match the expected
-    "MESSAGE %d" format *)
+(** Loop through and check all messages in the given file match the expected "MESSAGE %d"
+    format *)
 let check_msgs ?(int_size = 2) ?(be = false) file =
   let msg_number = ref 0 in
   let check_message r =

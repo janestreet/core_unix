@@ -17,5 +17,18 @@ let pause_forever = pause_forever
 let interruptible_pause = interruptible_pause
 let format = format
 let%bench "format" = format example "%F %T%z" ~zone:Zone.utc
+
+let%bench "format locale" =
+  format ~locale:(force Core_unix.Locale.posix) example "%F %T%z" ~zone:Zone.utc
+;;
+
 let parse = parse
 let%bench "parse" = parse example_formatted ~fmt:"%F %T%z" ~zone:Zone.utc
+
+let%bench "parse locale" =
+  parse
+    ~locale:(force Core_unix.Locale.posix)
+    example_formatted
+    ~fmt:"%F %T%z"
+    ~zone:Zone.utc
+;;

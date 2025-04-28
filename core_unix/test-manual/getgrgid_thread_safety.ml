@@ -1,11 +1,11 @@
 module Thread = Caml_threads.Thread
 
-(**
+(** {v
    This test reproduces a segfault in stdlib implementation of [getgrgid] in OCaml 4.07.
    Usually it segfaults in several seconds, but sometimes it can takes tens of seconds.
 
    getent group | cut -d ':' -f 3 | ./getgrgid_thread_safety.exe
-*)
+    v} *)
 
 module List = struct
   include List

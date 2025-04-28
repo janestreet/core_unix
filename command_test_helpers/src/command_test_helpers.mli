@@ -8,12 +8,11 @@ open! Import
     However, the [param] is evaluated, and side effects of that evaluation do occur.
 
     See [validate_command_line] below for a less accurate but generally safer test that
-    does not evaluate the param.  (Of course if your param is side-effect free, there's no
+    does not evaluate the param. (Of course if your param is side-effect free, there's no
     reason to shy away from this one.)
 
-    If the command-line fails to parse, an error will be printed.  If the command-line
-    parsing code exits for any reason (e.g. you passed "-help"), the exit code is printed.
-*)
+    If the command-line fails to parse, an error will be printed. If the command-line
+    parsing code exits for any reason (e.g. you passed "-help"), the exit code is printed. *)
 val parse_command_line
   :  ?path:string list
   -> ?summary:string
@@ -34,11 +33,10 @@ val parse_command_line_or_error
 
     [f args] will raise if [args] goes through an [Exec _].
 
-    This will trigger any side-effects caused by parsing the args but it does
-    guarentee the the args provided are completely valid.
+    This will trigger any side-effects caused by parsing the args but it does guarentee
+    the the args provided are completely valid.
 
-    [validate_command command] does not work in top-level expect tests.
-*)
+    [validate_command command] does not work in top-level expect tests. *)
 val validate_command : Command.t -> string list -> unit Or_error.t
 
 (** [validate_command_line shape] provides a function [f] s.t. [f args] is best-effort
@@ -55,20 +53,19 @@ val validate_command : Command.t -> string list -> unit Or_error.t
     2. [args] passes an acceptable number of anonymous arguments.
 
     3. [args] passes flags that exist, an acceptable number of times, and with arguments
-    where they are expected.
+       where they are expected.
 
     What we do not check:
 
     1. Whether argument have acceptable values. E.g., it falsely accepts floats where ints
-    are expected.
+       are expected.
 
     2. Side effects during argument parsing, including aborting further parsing of the
-    command line.  E.g., it does not handle [-help] or [escape] flags correctly.
+       command line. E.g., it does not handle [-help] or [escape] flags correctly.
 
-    3. Aliases excluded from help.  E.g., [--help].
+    3. Aliases excluded from help. E.g., [--help].
 
-    4. [full_flag_required].  We assume every flag can be passed by prefix.
-*)
+    4. [full_flag_required]. We assume every flag can be passed by prefix. *)
 val validate_command_line : Command.Shape.t -> (string list -> unit Or_error.t) Or_error.t
 
 (** [complete ?which_arg param ~args] prints the completion suggestions to stderr.
@@ -85,8 +82,7 @@ val validate_command_line : Command.Shape.t -> (string list -> unit Or_error.t) 
     of a [Param.map ~f]).
 
     [complete] will perform side effects of completion (e.g., due to the [complete] of
-    [Arg_type.create ~complete]).
-*)
+    [Arg_type.create ~complete]). *)
 val complete
   :  ?which_arg:int (** zero-indexed. Default: the last arg *)
   -> _ Command.Param.t

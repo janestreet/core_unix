@@ -1,26 +1,25 @@
-(** Mutual exclusion between processes using flock and lockf.  A file is considered locked
+(** Mutual exclusion between processes using flock and lockf. A file is considered locked
     only if both of these mechanisms work.
 
     These locks are advisory, meaning that they will not work with systems that don't also
     try to acquire the matching locks. Although lockf can work across systems (and, in our
     environment, does work across Linux systems), it is not guaranteed to do so across all
-    implementations.
-*)
+    implementations. *)
 
 open! Core
 
 (** [create ?close_on_exec ?message path] tries to create a file at [path] containing the
-    text [message], which defaults to the pid of the locking process.  It returns true on
+    text [message], which defaults to the pid of the locking process. It returns true on
     success, false on failure.
 
-    Note: there is no way to release the lock or the fd created inside!  It will only be
+    Note: there is no way to release the lock or the fd created inside! It will only be
     released when the process dies. If [close_on_exec] is [false], then the lock will not
     be released until children created via fork and exec also terminate. If not specified,
     [close_on_exec=true].
 
-    Note that by default, the lock file is not cleaned up for you when the process
-    exits. If you pass [unlink_on_exit:true], an [at_exit] handler will be set up to
-    remove the lock file on program termination.
+    Note that by default, the lock file is not cleaned up for you when the process exits.
+    If you pass [unlink_on_exit:true], an [at_exit] handler will be set up to remove the
+    lock file on program termination.
 
     The lock file is created with mode 664, so will not be world-writable even with
     umask 0. *)
@@ -42,8 +41,7 @@ val create_exn
 
 (** [blocking_create t] tries to create the lock. If another process holds the lock this
     function will retry periodically until it is released or until [timeout] expires. The
-    delay between retries is chosen uniformly at random between 0 and [max_retry_delay].
-*)
+    delay between retries is chosen uniformly at random between 0 and [max_retry_delay]. *)
 val blocking_create
   :  ?max_retry_delay:Time_float.Span.t (** defaults to [min(300ms, timeout / 3)] *)
   -> ?random:Random.State.t Lazy.t (** defaults to a system-dependent low-entropy seed *)
@@ -58,16 +56,15 @@ val blocking_create
     otherwise. Requires write permission for the lock file. *)
 val is_locked : string -> bool
 
-(** [get_pid path] reads the lock file at [path] and returns the pid in the file.  Returns
+(** [get_pid path] reads the lock file at [path] and returns the pid in the file. Returns
     [None] if the file cannot be read, or if the file contains a message that is not an
     int. *)
 val get_pid : string -> Pid.t option
 
 module Nfs = Nfs_lock
 
-(** This is the dumbest lock imaginable: we [mkdir] to lock and [rmdir] to unlock.
-    This gives you pretty good mutual exclusion, but it makes you vulnerable to
-    stale locks. *)
+(** This is the dumbest lock imaginable: we [mkdir] to lock and [rmdir] to unlock. This
+    gives you pretty good mutual exclusion, but it makes you vulnerable to stale locks. *)
 module Mkdir : sig
   type t
 
@@ -85,20 +82,18 @@ end
 module Symlink : sig
   type t
 
-  (** [metadata] should include some information to help the user identify
-      the lock holder. Usually it's the pid of the holder, but if you use this
-      across a fork or take the lock multiple times in the same program,
-      then some extra information could be useful.
-      This string will be saved as the target of a (usually dangling) symbolic link
-      at path [lock_path].
+  (** [metadata] should include some information to help the user identify the lock
+      holder. Usually it's the pid of the holder, but if you use this across a fork or
+      take the lock multiple times in the same program, then some extra information could
+      be useful. This string will be saved as the target of a (usually dangling) symbolic
+      link at path [lock_path].
 
-      [`Somebody_else_took_it] returns the metadata of the process who took it
-      or an error if that can't be determined (for example: they released the lock by the
-      time we tried to inspect it)
+      [`Somebody_else_took_it] returns the metadata of the process who took it or an error
+      if that can't be determined (for example: they released the lock by the time we
+      tried to inspect it)
 
-      Raises an exception if taking the lock fails for any reason other than somebody
-      else holding the lock.
-  *)
+      Raises an exception if taking the lock fails for any reason other than somebody else
+      holding the lock. *)
   val lock_exn
     :  lock_path:string
     -> metadata:string
@@ -107,28 +102,24 @@ module Symlink : sig
   val unlock_exn : t -> unit
 end
 
-(** This just uses [flock].
-    The main reason this module exists is that [create] won't let you release locks,
-    so we need a new interface.
+(** This just uses [flock]. The main reason this module exists is that [create] won't let
+    you release locks, so we need a new interface.
 
-    Another difference is that implementation is simpler because it omits some of
-    the features, such as
+    Another difference is that implementation is simpler because it omits some of the
+    features, such as
 
-    1. Unlinking on unlock.
-    That feature is unsafe. The unsafety comes from the fact that [open] and
-    [flock] are separated in time. Consider the following scenario:
-    - two processes [a] and [b] open the file
-    - [a] locks, unlinks and unlocks it (the fd stays open in [b])
-    - [b] locks, using the fd obtained earlier, and stays in critical section
-    - process [c] finds that there is no file, creates a new one, locks it and enters
-      critical section
-      You end up with [b] and [c] in the critical section together!
+    1. Unlinking on unlock. That feature is unsafe. The unsafety comes from the fact that
+       [open] and [flock] are separated in time. Consider the following scenario:
+       - two processes [a] and [b] open the file
+       - [a] locks, unlinks and unlocks it (the fd stays open in [b])
+       - [b] locks, using the fd obtained earlier, and stays in critical section
+       - process [c] finds that there is no file, creates a new one, locks it and enters
+         critical section You end up with [b] and [c] in the critical section together!
 
-    2. Writing pid or message in the file.
-    The file is shared between multiple processes so this feature seems hard to
-    think about, and it already led to weird code. Let's just remove it.
-    You can still find who holds the file open by inspecting output of [lslocks] or [lsof].
-    *)
+    2. Writing pid or message in the file. The file is shared between multiple processes
+       so this feature seems hard to think about, and it already led to weird code. Let's
+       just remove it. You can still find who holds the file open by inspecting output of
+       [lslocks] or [lsof]. *)
 module Flock : sig
   type t
 

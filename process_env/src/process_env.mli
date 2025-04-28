@@ -15,8 +15,7 @@ val parse_ssh_client
     current SSH client.
 
     Example: A user is physically using host A. The user sshes from host A to host B and
-    then from host B to host C. If checked on host C, the IP address will point to host B.
-    *)
+    then from host B to host C. If checked on host C, the IP address will point to host B. *)
 val ssh_client_var_name : string
 
 (**/**)

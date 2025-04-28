@@ -31,6 +31,17 @@ let read t fd =
     Eof
 ;;
 
+let really_read t fd =
+  let len = length t in
+  match Bigstring_unix.really_read fd (Expert.buf t) ~pos:(Expert.lo t) ~len with
+  | () ->
+    unsafe_advance t len;
+    Ok
+  | exception Bigstring_unix.IOError (n, End_of_file) ->
+    unsafe_advance t n;
+    Eof
+;;
+
 let read_assume_fd_is_nonblocking t fd =
   let nread =
     Bigstring_unix.read_assume_fd_is_nonblocking
@@ -85,7 +96,7 @@ module Recvmmsg_context = struct
       raise_s
         [%sexp
           "Recvmmsg_context.create: all buffers must be reset"
-          , (ts : (_, _) t_with_shallow_sexp array)]
+          , (ts : (_, _) With_shallow_sexp.t array)]
   ;;
 
   (* we retain a reference to the underlying bigstrings, in the event that callers
@@ -183,6 +194,10 @@ module Peek = struct
     Bigstring_unix.write fd (Expert.buf t) ~pos:(Expert.lo t) ~len:(length t)
   ;;
 
+  let really_write t fd =
+    Bigstring_unix.really_write fd (Expert.buf t) ~pos:(Expert.lo t) ~len:(length t)
+  ;;
+
   let write_assume_fd_is_nonblocking t fd =
     (* This is safe because of the invariant of [t] that the window is within the buffer
        (unless the user has violated the invariant with an unsafe operation). *)
@@ -202,6 +217,11 @@ let output t ch =
 let write t fd =
   let nwritten = Peek.write t fd in
   unsafe_advance t nwritten
+;;
+
+let really_write t fd =
+  Peek.really_write t fd;
+  unsafe_advance t (length t)
 ;;
 
 let write_assume_fd_is_nonblocking t fd =

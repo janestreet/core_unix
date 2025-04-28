@@ -20,6 +20,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <limits.h>
+#include <locale.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <signal.h>
@@ -482,6 +483,81 @@ CAMLprim value core_unix_statvfs_stub(value v_path) {
   Store_field(v_stat, 9, Val_long(s.f_flag));
   Store_field(v_stat, 10, Val_long(s.f_namemax));
   CAMLreturn(v_stat);
+}
+
+static value cst_to_constr(int n, int *tbl, int size, int deflt) {
+  int i;
+  for (i = 0; i < size; i++)
+    if (n == tbl[i])
+      return Val_int(i);
+  return Val_int(deflt);
+}
+
+static int file_kind_table[] = {S_IFREG, S_IFDIR, S_IFCHR, S_IFBLK,
+                                S_IFLNK, S_IFIFO, S_IFSOCK};
+
+static value file_kind_of_mode(mode_t st_mode) {
+  return cst_to_constr(st_mode & S_IFMT, file_kind_table,
+                       sizeof(file_kind_table) / sizeof(int), 0);
+}
+
+static value ns_precision_stat_of_struct_stat(struct stat s) {
+  CAMLparam0();
+  CAMLlocal1(v_stat);
+  v_stat = caml_alloc(12, 0);
+  Store_field(v_stat, 0, Val_int(s.st_dev));
+  Store_field(v_stat, 1, Val_int(s.st_ino));
+  Store_field(v_stat, 2, file_kind_of_mode(s.st_mode));
+  Store_field(v_stat, 3, Val_int(s.st_mode & 07777));
+  Store_field(v_stat, 4, Val_int(s.st_nlink));
+  Store_field(v_stat, 5, Val_int(s.st_uid));
+  Store_field(v_stat, 6, Val_int(s.st_gid));
+  Store_field(v_stat, 7, Val_int(s.st_rdev));
+  Store_field(v_stat, 8, Val_file_offset(s.st_size));
+  Store_field(v_stat, 9, caml_alloc_int63(timespec_to_int_ns(s.st_atim)));
+  Store_field(v_stat, 10, caml_alloc_int63(timespec_to_int_ns(s.st_mtim)));
+  Store_field(v_stat, 11, caml_alloc_int63(timespec_to_int_ns(s.st_ctim)));
+  CAMLreturn(v_stat);
+}
+
+CAMLprim value core_unix_ns_precision_stat(value v_path) {
+  CAMLparam1(v_path);
+  int ret;
+  struct stat s;
+  char *pathname = core_copy_to_c_string(v_path);
+  caml_release_runtime_system();
+  ret = stat(pathname, &s);
+  caml_acquire_runtime_system();
+  caml_stat_free(pathname);
+  if (ret != 0)
+    uerror("stat", v_path);
+  CAMLreturn(ns_precision_stat_of_struct_stat(s));
+}
+
+CAMLprim value core_unix_ns_precision_lstat(value v_path) {
+  CAMLparam1(v_path);
+  int ret;
+  struct stat s;
+  char *pathname = core_copy_to_c_string(v_path);
+  caml_release_runtime_system();
+  ret = lstat(pathname, &s);
+  caml_acquire_runtime_system();
+  caml_stat_free(pathname);
+  if (ret != 0)
+    uerror("lstat", v_path);
+  CAMLreturn(ns_precision_stat_of_struct_stat(s));
+}
+
+CAMLprim value core_unix_ns_precision_fstat(value v_fd) {
+  CAMLparam1(v_fd);
+  int ret;
+  struct stat s;
+  caml_release_runtime_system();
+  ret = fstat(Int_val(v_fd), &s);
+  caml_acquire_runtime_system();
+  if (ret != 0)
+    uerror("fstat", Nothing);
+  CAMLreturn(ns_precision_stat_of_struct_stat(s));
 }
 
 CAMLprim value core_unix_read_assume_fd_is_nonblocking_stub(value v_fd, value v_buf,
@@ -1481,24 +1557,18 @@ static value alloc_tm(const struct tm *tm) {
   return res;
 }
 
-CAMLprim value core_unix_strptime(value v_allow_trailing_input, value v_fmt, value v_s) {
-  // Not necessary for as long as we don't perform OCaml allocations prior to accessing
-  // an OCaml value:
-  // CAMLparam3(v_allow_trailing_input, v_fmt, v_s);
+CAMLprim value core_unix_strptime(value v_locale, value v_allow_trailing_input,
+                                  value v_fmt, value v_s) {
+  locale_t locale = (locale_t)Nativeint_val(v_locale);
   struct tm tm = {0};
-
-  char *end_of_consumed_input = strptime(String_val(v_s), String_val(v_fmt), &tm);
-
-  if (end_of_consumed_input == NULL)
+  char *end_of_consumed_input =
+      locale == (locale_t)0 ? strptime(String_val(v_s), String_val(v_fmt), &tm)
+                            : strptime_l(String_val(v_s), String_val(v_fmt), &tm, locale);
+  if (!end_of_consumed_input)
     caml_failwith("unix_strptime: match failed");
-
   if (!Bool_val(v_allow_trailing_input) &&
-      end_of_consumed_input < String_val(v_s) + caml_string_length(v_s))
+      end_of_consumed_input != String_val(v_s) + caml_string_length(v_s))
     caml_failwith("unix_strptime: did not consume entire input");
-
-  // Not necessary for as long as we don't perform OCaml allocations prior to accessing
-  // an OCaml value:
-  // CAMLreturn(alloc_tm(&tm));
   return alloc_tm(&tm);
 }
 
@@ -1852,4 +1922,140 @@ CAMLprim value core_unix_wait4(value flags, value pid_req) {
   Field(res, 0) = v_status;
   Field(res, 1) = v_rusage;
   CAMLreturn(res);
+}
+
+CAMLprim value core_unix_utimensat(value v_relative_to, value v_follow_symlinks,
+                                   value v_path, value v_access, value v_modif) {
+  CAMLparam5(v_relative_to, v_follow_symlinks, v_path, v_access, v_modif);
+  int retval;
+  char *path = core_copy_to_c_string(v_path);
+  int flags = 0;
+
+  struct timespec times[2];
+
+  int dirfd = AT_FDCWD;
+
+  if (v_relative_to != Val_int(0)) {
+    dirfd = Int_val(Field(v_relative_to, 0));
+  }
+
+  if (v_follow_symlinks == Val_int(0)) {
+    flags |= AT_SYMLINK_NOFOLLOW;
+  }
+
+  if (v_access == Val_int(0)) {
+    times[0].tv_nsec = UTIME_OMIT;
+  } else {
+    times[0] = timespec_of_int_ns(Int63_val(Field(v_access, 0)));
+  }
+  if (v_modif == Val_int(0)) {
+    times[1].tv_nsec = UTIME_OMIT;
+  } else {
+    times[1] = timespec_of_int_ns(Int63_val(Field(v_modif, 0)));
+  }
+
+  caml_release_runtime_system();
+  retval = utimensat(dirfd, path, times, flags);
+  caml_acquire_runtime_system();
+  caml_stat_free(path);
+
+  if (retval)
+    uerror("utimensat", v_path);
+
+  CAMLreturn(Val_unit);
+}
+
+/*
+  We need to allocate arrays for argv/envp. How big do these arrays have to be? In
+  principle I think the limit on linux is MAX_ARG_STRINGS which is...enormous.
+  https://elixir.bootlin.com/linux/v6.13.6/source/include/uapi/linux/binfmts.h#L16 says
+  int32 max.
+
+  I don't want to statically allocate that, nor do I want to build an
+  async-signal-safe allocator.
+
+  For now what I'll do is just stack-allocate and hope; if we stack overflow, the crash
+  should at least be clear.
+*/
+
+
+static char *const *fill_args(char **dest, size_t size, value v_args) {
+
+  for (size_t i = 0; i < size; ++i) {
+    value v = Field(v_args, i);
+    // The version of this in the compiler runtime checks caml_string_is_c_safe and throws
+    // an error if not.  This O strings are guaranteed to be null-terminated, but they
+    // are permitted to contain embedded null bytes. [caml_string_is_c_safe] checks that
+    // the string has no embedded null bytes aside from the terminator.
+    //
+    // For the moment, we're going to skip this because we can't really safely throw an
+    // exception there, and it seems pretty unlikely to cause problems.
+    char *str = (char *)String_val(v);
+    dest[i] = str;
+  }
+
+  dest[size] = NULL;
+
+  return dest;
+}
+
+/* We don't register any of the arguments with [CAMLparam*] in the [core_unix_exec*]
+   functions because the only way they ever allocate is by calling [caml_uerror], which
+   registers its own parameter, which is the only OCaml block that we would retain a
+   reference to. */
+
+CAMLprim value core_unix_execv(value v_prog, value v_args) {
+  const char *path = String_val(v_prog);
+
+  const size_t nargs = Wosize_val(v_args);
+  char *argv_storage[nargs + 1];
+  char *const *argv = fill_args(argv_storage, nargs, v_args);
+
+  execv(path, argv);
+
+  caml_uerror("execv", v_prog);
+}
+
+CAMLprim value core_unix_execve(value v_prog, value v_args, value v_env) {
+  const char *path = String_val(v_prog);
+
+  const size_t nargs = Wosize_val(v_args);
+  char *argv_storage[nargs + 1];
+  char *const *argv = fill_args(argv_storage, nargs, v_args);
+
+  const size_t nenv = Wosize_val(v_env);
+  char *env_storage[nenv + 1];
+  char *const *envp = fill_args(env_storage, nenv, v_env);
+
+  execve(path, argv, envp);
+
+  caml_uerror("execve", v_prog);
+}
+
+CAMLprim value core_unix_execvp(value v_prog, value v_args) {
+  const char *path = String_val(v_prog);
+
+  const size_t nargs = Wosize_val(v_args);
+  char *argv_storage[nargs + 1];
+  char *const *argv = fill_args(argv_storage, nargs, v_args);
+
+  execvp(path, argv);
+
+  caml_uerror("execvp", v_prog);
+}
+
+CAMLprim value core_unix_execvpe(value v_prog, value v_args, value v_env) {
+  const char *path = String_val(v_prog);
+
+  const size_t nargs = Wosize_val(v_args);
+  char *argv_storage[nargs + 1];
+  char *const *argv = fill_args(argv_storage, nargs, v_args);
+
+  const size_t nenv = Wosize_val(v_env);
+  char *env_storage[nenv + 1];
+  char *const *envp = fill_args(env_storage, nenv, v_env);
+
+  execvpe(path, argv, envp);
+
+  caml_uerror("execvpe", v_prog);
 }

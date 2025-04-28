@@ -1,11 +1,11 @@
-(** Extends {{!Core.Bigbuffer}[Core.Bigbuffer]}. *)
+(** Extends {{!Core.Bigbuffer} [Core.Bigbuffer]}. *)
 
 open! Core
 open! Import
 open! Core.Bigbuffer
 
 (** [add_channel b ic n] reads exactly [n] characters from the input channel [ic] and
-    stores them at the end of buffer [b].  Raises [End_of_file] if the channel contains
+    stores them at the end of buffer [b]. Raises [End_of_file] if the channel contains
     fewer than [n] characters. *)
 val add_channel : t -> In_channel.t -> int -> unit
 

@@ -84,8 +84,7 @@ let length q =
   wrap q run
 ;;
 
-(** Pops an event off of the queue, blocking until
-    something is available *)
+(** Pops an event off of the queue, blocking until something is available *)
 let pop q =
   let run q =
     wait_not_empty q;
@@ -94,8 +93,8 @@ let pop q =
   wrap q run
 ;;
 
-(** Pops an event off of the queue, blocking until something is available.
-    Returns pair of the element found and the length of remaining queue *)
+(** Pops an event off of the queue, blocking until something is available. Returns pair of
+    the element found and the length of remaining queue *)
 let lpop q =
   let run q =
     wait_not_empty q;

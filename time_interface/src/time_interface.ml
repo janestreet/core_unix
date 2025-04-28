@@ -1,5 +1,5 @@
-(** This module type is basically the intersection of the module types of [Core.Time]
-    and [Core.Time_ns].  We verify that that relation holds in check_std.ml. *)
+(** This module type is basically the intersection of the module types of [Core.Time] and
+    [Core.Time_ns]. We verify that that relation holds in check_std.ml. *)
 
 open! Core
 
@@ -101,7 +101,13 @@ module type S = sig
     -> unit
     -> t
 
-  val of_date_ofday : zone:Time_float.Zone.t -> Date.t -> Ofday.t -> t
+  val of_date_ofday
+    :  ?prefer:Time_float.Zone.Earlier_or_later.t
+    -> zone:Time_float.Zone.t
+    -> Date.t
+    -> Ofday.t
+    -> t
+
   val to_ofday : t -> zone:Time_float.Zone.t -> Ofday.t
   val to_date : t -> zone:Time_float.Zone.t -> Date.t
 

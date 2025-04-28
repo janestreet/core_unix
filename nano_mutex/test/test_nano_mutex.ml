@@ -42,7 +42,6 @@ let%test_unit _ =
       with
       | exn ->
         failwiths
-          ~here:[%here]
           "test failed"
           (num_threads, num_iterations, pause_for, exn)
           [%sexp_of: int * int * float * exn])
@@ -65,7 +64,7 @@ let%test_unit "does not allocate while lock/unlocking while another thread holds
       ()
   in
   Thread_safe_ivar.read thread_started;
-  Gc.For_testing.assert_no_allocation [%here] (fun () ->
+  Gc.For_testing.assert_no_allocation (fun () ->
     lock_exn t;
     unlock_exn t);
   Thread_safe_ivar.fill terminate_thread ();

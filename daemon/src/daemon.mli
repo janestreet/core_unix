@@ -1,4 +1,4 @@
-(** This module provides support for daemonizing a process.  It provides flexibility as to
+(** This module provides support for daemonizing a process. It provides flexibility as to
     where the standard file descriptors (stdin, stdout and stderr) are connected after
     daemonization has occurred. *)
 
@@ -9,8 +9,7 @@ module Fd_redirection : sig
   type t =
     [ `Dev_null
     | `Dev_null_skip_regular_files
-      (** Redirect to /dev/null unless already redirected to
-                                       a regular file. *)
+      (** Redirect to /dev/null unless already redirected to a regular file. *)
     | `Do_not_redirect
     | `File_append of string
     | `File_truncate of string
@@ -22,8 +21,8 @@ end
     The optional arguments have defaults as per [daemonize_wait], below.
 
     By default, output sent to stdout and stderr after daemonization will be silently
-    eaten.  This behaviour may be adjusted by using [redirect_stdout] and
-    [redirect_stderr].  See the documentation for [daemonize_wait] below.
+    eaten. This behaviour may be adjusted by using [redirect_stdout] and
+    [redirect_stderr]. See the documentation for [daemonize_wait] below.
 
     See [daemonize_wait] for a description of [allow_threads_to_have_been_created].
 
@@ -33,8 +32,7 @@ val daemonize
   -> ?redirect_stderr:Fd_redirection.t
   -> ?cd:string
   -> ?perm:int
-       (** permission to pass to [openfile] when using [`File_append] or
-                     [`File_truncate] *)
+       (** permission to pass to [openfile] when using [`File_append] or [`File_truncate] *)
   -> ?umask:int (** defaults to use existing umask *)
   -> ?allow_threads_to_have_been_created:bool (** defaults to false *)
   -> unit
@@ -43,14 +41,13 @@ val daemonize
 (** [daemonize_wait] makes the executing process a daemon, but delays full detachment from
     the calling shell/process until the returned "release" closure is called.
 
-    Any output to stdout/stderr before the "release" closure is called will get
-    sent out normally. After "release" is called, stdin is connected to /dev/null,
-    and stdout and stderr are connected as specified by [redirect_stdout] and
-    [redirect_stderr]. The default is the usual behavior whereby both of these
-    descriptors are connected to /dev/null. [daemonize_wait], however, will not
-    redirect stdout/stderr to /dev/null if they are already redirected to a regular
-    file by default, i.e., default redirection is [`Dev_null_skip_regular_files]. This
-    is to preserve behavior from earlier versions.)
+    Any output to stdout/stderr before the "release" closure is called will get sent out
+    normally. After "release" is called, stdin is connected to /dev/null, and stdout and
+    stderr are connected as specified by [redirect_stdout] and [redirect_stderr]. The
+    default is the usual behavior whereby both of these descriptors are connected to
+    /dev/null. [daemonize_wait], however, will not redirect stdout/stderr to /dev/null if
+    they are already redirected to a regular file by default, i.e., default redirection is
+    [`Dev_null_skip_regular_files]. This is to preserve behavior from earlier versions.)
 
     Note that calling [release] will adjust SIGPIPE handling, so you should not rely on
     the delivery of this signal during this time.
@@ -77,8 +74,7 @@ val daemonize_wait
   -> ?redirect_stderr:Fd_redirection.t (** default `Dev_null_skip_regular_files *)
   -> ?cd:string (** default / *)
   -> ?perm:int
-       (** permission to pass to [openfile] when using [`File_append] or
-                     [`File_truncate] *)
+       (** permission to pass to [openfile] when using [`File_append] or [`File_truncate] *)
   -> ?umask:int (** defaults to use existing umask *)
   -> ?allow_threads_to_have_been_created:bool (** defaults to false *)
   -> unit

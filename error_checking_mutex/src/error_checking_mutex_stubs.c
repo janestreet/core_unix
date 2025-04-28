@@ -4,6 +4,7 @@
 #include <pthread.h>
 
 #include "ocaml_utils.h"
+#include "ocaml_runtime_props.h"
 
 #define Mutex_val(v) (* ((pthread_mutex_t **) Data_custom_val(v)))
 
@@ -40,6 +41,10 @@ static void caml_mutex_finalize(value v_mtx)
   pthread_mutex_t *mtx = Mutex_val(v_mtx);
   pthread_mutex_destroy(mtx);
   caml_stat_free(mtx);
+#if OCAML_DEPENDENT_MEM_TRACKING
+  /* Note: does not actually free anything */
+  caml_free_dependent_memory(v_mtx, sizeof(pthread_mutex_t));
+#endif
 }
 
 static int caml_mutex_condition_compare(value v_mtx1, value v_mtx2)
@@ -79,6 +84,9 @@ CAMLprim value unix_create_error_checking_mutex(value __unused v_unit)
   v_res =
     caml_alloc_custom_mem(&caml_mutex_ops, sizeof(pthread_mutex_t *),
                           sizeof(pthread_mutex_t));
+#if OCAML_DEPENDENT_MEM_TRACKING
+  caml_alloc_dependent_memory(v_res, sizeof(pthread_mutex_t));
+#endif
   Mutex_val(v_res) = mtx;
   return v_res;
 }

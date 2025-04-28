@@ -20,7 +20,6 @@ module%test [@name "[Timerfd]"] _ = struct
     if Syscall_result.Unit.is_ok result
     then
       failwiths
-        ~here:[%here]
         "unsafe_timerfd_settime unexpectedly succeeded"
         result
         [%sexp_of: Syscall_result.Unit.t];
@@ -413,7 +412,7 @@ module%test [@name "getpriority and setpriority"] _ = struct
       | Some v -> v
     in
     let set_set_once set_once value `Locked =
-      Set_once.set_exn set_once [%here] value;
+      Set_once.set_exn set_once value;
       Caml_threads.Condition.broadcast condition
     in
     let thread_body () =
@@ -758,4 +757,17 @@ let%expect_test "TCP_CONGESTION" =
     (raised (Unix.Unix_error "Bad file descriptor" getsockopt ""))
     (raised (Unix.Unix_error "Bad file descriptor" setsockopt ""))
     |}]
+;;
+
+let%expect_test "fallocate" =
+  let open Linux_ext.Fallocate in
+  let fallocate = Or_error.ok_exn fallocate in
+  protectx (Filename_unix.temp_file "linux_ext" "") ~finally:Unix.unlink ~f:(fun fname ->
+    let fd = Unix.openfile fname ~mode:[ O_RDWR ] in
+    let print_size () = print_s [%sexp ((Core_unix.fstat fd).st_size : int64)] in
+    print_size ();
+    [%expect {| 0 |}];
+    fallocate fd ~mode:Flags.empty ~offset:0 ~size:4096;
+    print_size ();
+    [%expect {| 4096 |}])
 ;;
