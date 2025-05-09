@@ -42,6 +42,17 @@ let really_read t fd =
     Eof
 ;;
 
+let really_pread t fd ~offset =
+  let len = length t in
+  match Bigstring_unix.really_pread fd (Expert.buf t) ~offset ~pos:(Expert.lo t) ~len with
+  | () ->
+    unsafe_advance t len;
+    Ok
+  | exception Bigstring_unix.IOError (n, End_of_file) ->
+    unsafe_advance t n;
+    Eof
+;;
+
 let read_assume_fd_is_nonblocking t fd =
   let nread =
     Bigstring_unix.read_assume_fd_is_nonblocking

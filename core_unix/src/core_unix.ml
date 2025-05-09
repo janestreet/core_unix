@@ -2531,6 +2531,7 @@ module Inet_addr0 = struct
 
       include T1
       include Comparable.Make (T1)
+      module Table = Hashtbl.Make (T1)
     end
   end
 

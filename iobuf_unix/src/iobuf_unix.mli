@@ -13,6 +13,7 @@ val input : ([> write ], seek) t -> In_channel.t -> ok_or_eof
 
 val read : ([> write ], seek) t -> Unix.File_descr.t -> ok_or_eof
 val really_read : ([> write ], seek) t -> Unix.File_descr.t -> ok_or_eof
+val really_pread : ([> write ], seek) t -> Unix.File_descr.t -> offset:int -> ok_or_eof
 
 val read_assume_fd_is_nonblocking
   :  ([> write ], seek) t

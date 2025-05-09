@@ -1474,6 +1474,7 @@ module Inet_addr : sig
   end
 
   include Comparable.S with type t := t
+  module Table : Hashtbl.S with type key = t
 
   (** Conversion from the printable representation of an Internet address to its internal
       representation. The argument string consists of 4 numbers separated by periods
