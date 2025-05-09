@@ -210,7 +210,7 @@ let%expect_test "destruction" =
      ignore (bstr.{0} = 'x' : bool);
      false
    with
-   | Invalid_argument "index out of bounds" -> true);
+   | ((Invalid_argument "index out of bounds") [@warning "-52"]) -> true);
   "double destroy"
   @?
   try

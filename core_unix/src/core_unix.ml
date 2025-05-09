@@ -115,10 +115,11 @@ let read_assume_fd_is_nonblocking fd ?pos ?len buf =
 
 external unsafe_write_assume_fd_is_nonblocking
   :  File_descr.t
-  -> Bytes.t
+  -> Bytes.t @ shared
   -> pos:int
   -> len:int
   -> int
+  @@ portable
   = "core_unix_write_assume_fd_is_nonblocking_stub"
 
 let write_assume_fd_is_nonblocking fd ?pos ?len buf =
@@ -2567,6 +2568,7 @@ module Inet_addr0 = struct
 
       include T1
       include Comparable.Make (T1)
+      module Table = Hashtbl.Make (T1)
     end
   end
 

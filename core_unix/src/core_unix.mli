@@ -1474,6 +1474,7 @@ module Inet_addr : sig
   end
 
   include Comparable.S with type t := t
+  module Table : Hashtbl.S with type key = t
 
   (** Conversion from the printable representation of an Internet address to its internal
       representation. The argument string consists of 4 numbers separated by periods
@@ -2225,8 +2226,9 @@ val write_assume_fd_is_nonblocking
   :  File_descr.t
   -> ?pos:int
   -> ?len:int
-  -> Bytes.t
+  -> Bytes.t @ shared
   -> int
+  @@ portable
 
 (** [writev_assume_fd_is_nonblocking fd ?count iovecs] calls the system call [writev]
     ASSUMING THAT IT IS NOT GOING TO BLOCK using [count] I/O-vectors [iovecs].

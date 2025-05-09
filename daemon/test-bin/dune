@@ -1,8 +1,8 @@
 (rule
- (alias runtest)
  (deps daemonize_test.exe)
  (action
-  (bash ./daemonize_test.exe)))
+  (bash ./daemonize_test.exe))
+ (alias runtest))
 
 (executables
  (modes byte exe)
