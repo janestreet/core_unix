@@ -1,40 +1,34 @@
-#define _GNU_SOURCE
-
-#include <limits.h>
-#include <stdlib.h>
+#define _XOPEN_SOURCE 500
 #include "ocaml_utils.h"
 
-/* Pathname resolution */
+#if OCAML_VERSION >= 41300
 
-/* Seems like a sane approach to getting a reasonable bound for the
-   maximum path length */
-#ifdef PATH_MAX
-#define JANE_PATH_MAX ((PATH_MAX <= 0 || PATH_MAX > 65536) ? 65536 : PATH_MAX)
-#else
-#define JANE_PATH_MAX (65536)
-#endif
+CAMLprim value caml_unix_realpath(value);
 
-#ifdef __GLIBC__
 CAMLprim value core_unix_realpath(value v_path) {
-  const char *path = String_val(v_path);
-  char *res = realpath(path, NULL);
+  return caml_unix_realpath(v_path);
+}
+
+#elif !defined(_WIN32)
+
+CAMLprim value core_unix_realpath(value v_path)
+{
+  caml_unix_check_path(v_path, "realpath");
+  char *res = realpath(String_val(v_path), NULL);
   if (res == NULL)
-    uerror("realpath", v_path);
+    caml_uerror("realpath", v_path);
   else {
     value v_res = caml_copy_string(res);
     free(res);
     return v_res;
   }
 }
+
 #else
-CAMLprim value core_unix_realpath(value v_path) {
-  char *path = String_val(v_path);
-  /* [realpath] is inherently broken without GNU-extension, and this
-     seems like a reasonable thing to do if we do not build against
-     GLIBC. */
-  char resolved_path[JANE_PATH_MAX];
-  if (realpath(path, resolved_path) == NULL)
-    uerror("realpath", v_path);
-  return caml_copy_string(resolved_path);
+
+CAMLprim value core_unix_realpath(value __unused v_path) {
+{
+  caml_invalid_argument("realpath not implemented");
 }
+
 #endif
