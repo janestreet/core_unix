@@ -736,6 +736,27 @@ let%expect_test "double-dash built-in flags" =
     |}]
 ;;
 
+let%expect_test "flag does not create ambiguity with itself" =
+  let command =
+    Command.basic
+      ~summary:""
+      (let%map_open.Command message =
+         flag
+           "welcome-message"
+           ~aliases:[ "welcome-banner" ]
+           (required string)
+           ~doc:"MSG greeting message"
+       in
+       fun () -> print_endline message)
+  in
+  let run_test_command args =
+    run ~argv:("__exe_name__" :: args) command;
+    [%expect.output]
+  in
+  print_string (run_test_command [ "-welcome"; "hello world" ]);
+  [%expect {| hello world |}]
+;;
+
 let%expect_test "when_parsing_succeeds" =
   let command =
     Command.basic

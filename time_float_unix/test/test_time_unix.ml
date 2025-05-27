@@ -484,7 +484,9 @@ let%expect_test "time/span/ofday can be cast to their underlying type" =
 ;;
 
 let%expect_test "end-of-day constants" =
-  let zones = List.map !Time.Zone.likely_machine_zones ~f:Time.Zone.find_exn in
+  let zones =
+    List.map (Atomic.get Time.Zone.likely_machine_zones) ~f:Time.Zone.find_exn
+  in
   let test_round_trip zone date ofday ~expect =
     require_equal
       (module Date)
@@ -2488,7 +2490,7 @@ module%test [@name "Time.Stable"] _ = struct
       {|
       (raised (
         Of_sexp_error
-        "Time.t_of_sexp: (time.ml.Make.Time_of_string \"2000-01-01 00:00:00.000000\"\n  (time_float.ml.T.Time_string_not_absolute \"2000-01-01 00:00:00.000000\"))"
+        "Time.t_of_sexp: (time.ml.Make.Time_of_string \"2000-01-01 00:00:00.000000\"\n  (time_float.ml.Time_string_not_absolute \"2000-01-01 00:00:00.000000\"))"
         (invalid_sexp (2000-01-01 00:00:00.000000))))
       |}]
   ;;

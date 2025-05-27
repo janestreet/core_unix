@@ -163,7 +163,7 @@ module Error : sig
     | ELOOP (** Too many levels of symbolic links *)
     | EOVERFLOW (** File size or position not representable *)
     | EUNKNOWNERR of int (** Unknown error *)
-  [@@deriving compare, sexp]
+  [@@deriving compare ~localize, sexp]
 
   val of_system_int : errno:int -> t
 
@@ -234,8 +234,8 @@ val unsetenv : string -> unit
 
 (** The termination status of a process. *)
 module Exit : sig
-  type error = [ `Exit_non_zero of int ] [@@deriving compare, sexp]
-  type t = (unit, error) Result.t [@@deriving compare, sexp]
+  type error = [ `Exit_non_zero of int ] [@@deriving compare ~localize, sexp]
+  type t = (unit, error) Result.t [@@deriving compare ~localize, sexp]
 
   val to_string_hum : t -> string
   val code : t -> int
@@ -248,9 +248,9 @@ module Exit_or_signal : sig
     [ Exit.error
     | `Signal of Signal.t
     ]
-  [@@deriving compare, sexp]
+  [@@deriving compare ~localize, sexp]
 
-  type t = (unit, error) Result.t [@@deriving compare, sexp]
+  type t = (unit, error) Result.t [@@deriving compare ~localize, sexp]
 
   (** [of_unix] assumes that any signal numbers in the incoming value are OCaml internal
       signal numbers. *)
@@ -1399,7 +1399,7 @@ module Passwd : sig
     ; dir : string
     ; shell : string
     }
-  [@@deriving compare, fields ~getters, sexp]
+  [@@deriving compare ~localize, fields ~getters, sexp]
 
   val getbyname : string -> t option
   val getbyname_exn : string -> t
@@ -1458,7 +1458,7 @@ end
 (** {6 Internet addresses} *)
 
 module Inet_addr : sig
-  type t = Unix.inet_addr [@@deriving bin_io, compare, hash, sexp_of]
+  type t = Unix.inet_addr [@@deriving bin_io, compare ~localize, hash, sexp_of]
 
   val arg_type : t Core.Command.Arg_type.t
 
@@ -1470,7 +1470,7 @@ module Inet_addr : sig
 
   (** [Blocking_sexp] performs DNS lookup to resolve hostnames to IP addresses. *)
   module Blocking_sexp : sig
-    type t = Unix.inet_addr [@@deriving bin_io, compare, hash, sexp]
+    type t = Unix.inet_addr [@@deriving bin_io, compare ~localize, hash, sexp]
   end
 
   include Comparable.S with type t := t
@@ -1516,7 +1516,7 @@ module Inet_addr : sig
 
   module Stable : sig
     module V1 : sig
-      type nonrec t = t [@@deriving hash]
+      type nonrec t = t [@@deriving hash, compare ~localize]
 
       include
         Stable_with_witness
@@ -1611,7 +1611,7 @@ type socket_type = Unix.socket_type =
 type sockaddr = Unix.sockaddr =
   | ADDR_UNIX of string
   | ADDR_INET of Inet_addr.t * int
-[@@deriving bin_io, compare, sexp_of]
+[@@deriving bin_io, compare ~localize, sexp_of]
 
 val sockaddr_of_sexp : Sexp.t -> sockaddr
 [@@deprecated "[since 2015-10] Replace [sockaddr] by [sockaddr_blocking_sexp]"]
@@ -2419,7 +2419,7 @@ val wordexp
 (** {2 System information} *)
 
 module Utsname : sig
-  type t [@@deriving sexp_of, compare]
+  type t [@@deriving sexp_of, compare ~localize]
 
   val sysname : t -> string
   val nodename : t -> string

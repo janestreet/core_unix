@@ -25,7 +25,7 @@ module Category : sig
     | Monetary (** Monetary formatting. Corresponds to POSIX [LC_MONETARY]. *)
     | Numeric (** Numeric, non-monetary formatting. Corresponds to POSIX [LC_NUMERIC]. *)
     | Time (** Date and time formats. Corresponds to POSIX [LC_TIME]. *)
-  [@@deriving compare, enumerate, equal, hash, sexp, string]
+  [@@deriving compare ~localize, enumerate, equal ~localize, hash, sexp, string]
 
   val to_native : t -> int32
   val of_native : int32 -> t option
@@ -104,7 +104,7 @@ module Name : sig
   val native : string
 end
 
-type t [@@deriving compare, equal, hash, sexp]
+type t [@@deriving compare ~localize, equal ~localize, hash, sexp]
 
 val ( = ) : t -> t -> bool
 val ( <> ) : t -> t -> bool

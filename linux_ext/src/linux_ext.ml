@@ -250,7 +250,7 @@ module Null : Linux_ext_intf.S = struct
   end
 
   module Eventfd = struct
-    type t = File_descr.t [@@deriving compare, sexp_of]
+    type t = File_descr.t [@@deriving compare ~localize, sexp_of]
 
     module Flags = struct
       (* These (and flags below) are in octal to match the system header file
@@ -307,7 +307,7 @@ module Null : Linux_ext_intf.S = struct
 
   module Timerfd = struct
     module Clock = struct
-      type t = unit [@@deriving bin_io, compare, sexp]
+      type t = unit [@@deriving bin_io, compare ~localize, sexp]
 
       let realtime = ()
       let monotonic = ()
@@ -325,7 +325,7 @@ module Null : Linux_ext_intf.S = struct
         end)
     end
 
-    type t = File_descr.t [@@deriving compare, sexp_of]
+    type t = File_descr.t [@@deriving compare ~localize, sexp_of]
 
     let to_file_descr t = t
 
@@ -417,7 +417,7 @@ module _ = Null
    depending on the conditional compilation below. *)
 
 [%%import "config.h"]
-[%%ifdef JSC_POSIX_TIMERS]
+[%%if defined JSC_POSIX_TIMERS && defined JSC_LINUX_EXT]
 
 module Clock = struct
   type t
@@ -463,7 +463,7 @@ end
 module Clock = Null.Clock
 
 [%%endif]
-[%%ifdef JSC_FALLOCATE]
+[%%if defined JSC_FALLOCATE && defined JSC_LINUX_EXT]
 
 module Fallocate = struct
   module Flags = struct
@@ -532,16 +532,16 @@ end
 module Fallocate = Null.Fallocate
 
 [%%endif]
-[%%ifdef JSC_TIMERFD]
+[%%if defined JSC_TIMERFD && defined JSC_LINUX_EXT]
 
 module Timerfd = struct
   module Clock : sig
-    type t [@@deriving bin_io, compare, sexp]
+    type t [@@deriving bin_io, compare ~localize, sexp]
 
     val realtime : t
     val monotonic : t
   end = struct
-    type t = Int63.t [@@deriving bin_io, compare, sexp]
+    type t = Int63.t [@@deriving bin_io, compare ~localize, sexp]
 
     external realtime : unit -> Int63.t = "core_linux_timerfd_CLOCK_REALTIME"
 
@@ -569,7 +569,7 @@ module Timerfd = struct
       end)
   end
 
-  type t = File_descr.t [@@deriving compare, sexp_of]
+  type t = File_descr.t [@@deriving compare ~localize, sexp_of]
 
   let to_file_descr t = t
 
@@ -704,7 +704,7 @@ end
 module Timerfd = Null.Timerfd
 
 [%%endif]
-[%%ifdef JSC_MEMFD]
+[%%if defined JSC_MEMFD && defined JSC_LINUX_EXT]
 
 module Memfd = struct
   module Flags = struct
@@ -742,7 +742,7 @@ module Memfd = struct
       end)
   end
 
-  type t = File_descr.t [@@deriving compare, sexp_of]
+  type t = File_descr.t [@@deriving compare ~localize, sexp_of]
 
   external create
     :  flags:Flags.t
@@ -789,7 +789,7 @@ module Eventfd = struct
       end)
   end
 
-  type t = File_descr.t [@@deriving compare, sexp_of]
+  type t = File_descr.t [@@deriving compare ~localize, sexp_of]
 
   external create : Int32.t -> Flags.t -> t = "core_linux_eventfd"
   external read : t -> Int64.t = "core_linux_eventfd_read"
@@ -1183,6 +1183,16 @@ module Extended_file_attributes = struct
 end
 
 [%%else]
+
+(* Uncomment this if you need to suppress "unused <blah>" warnings.
+   Keeping commented out because this section is not checked by the CI, so is likely
+   to go stale / cause maintenance pains.  *)
+(* module _ = Thread
+module _ = Syscall_result
+
+let _ = isolated_cpus
+let _ = online_cpus
+   let _ = cpus_local_to_nic *)
 
 include Null_toplevel
 module Eventfd = Null.Eventfd

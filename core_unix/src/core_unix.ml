@@ -550,7 +550,7 @@ module Utsname = struct
         ; version : string
         ; machine : string
         }
-      [@@deriving fields ~getters, bin_io, sexp, compare, stable_witness]
+      [@@deriving fields ~getters, bin_io, sexp, compare ~localize, stable_witness]
     end
   end
 
@@ -730,7 +730,7 @@ module Error = struct
     | ELOOP (** Too many levels of symbolic links *)
     | EOVERFLOW (** File size or position not representable *)
     | EUNKNOWNERR of int (** Unknown error *)
-  [@@deriving compare, sexp]
+  [@@deriving compare ~localize, sexp]
 
   let of_system_int ~errno = Unix_error.of_errno errno
   let message = Unix.error_message
@@ -761,8 +761,8 @@ type process_status = Unix.process_status =
 [@@deriving sexp]
 
 module Exit = struct
-  type error = [ `Exit_non_zero of int ] [@@deriving compare, sexp]
-  type t = (unit, error) Result.t [@@deriving compare, sexp]
+  type error = [ `Exit_non_zero of int ] [@@deriving compare ~localize, sexp]
+  type t = (unit, error) Result.t [@@deriving compare ~localize, sexp]
 
   let to_string_hum = function
     | Ok () -> "exited normally"
@@ -795,9 +795,9 @@ module Exit_or_signal = struct
     [ Exit.error
     | `Signal of Signal.t
     ]
-  [@@deriving compare, sexp]
+  [@@deriving compare ~localize, sexp]
 
-  type t = (unit, error) Result.t [@@deriving compare, sexp]
+  type t = (unit, error) Result.t [@@deriving compare ~localize, sexp]
 
   let to_string_hum = function
     | (Ok () | Error #Exit.error) as e -> Exit.to_string_hum e
@@ -2363,7 +2363,7 @@ module Passwd = struct
     ; dir : string
     ; shell : string
     }
-  [@@deriving compare, fields ~getters, sexp]
+  [@@deriving compare ~localize, fields ~getters, sexp]
 
   let of_unix u =
     let module U = Unix in
@@ -2519,6 +2519,7 @@ module Inet_addr0 = struct
         (* Unix.inet_addr is represented as either a "struct in_addr" or a "struct
            in6_addr" stuffed into an O'Caml string, so polymorphic compare will work. *)
         let compare = Poly.compare
+        let compare__local = Poly.compare__local
         let hash_fold_t hash (t : t) = hash_fold_int hash (Hashtbl.hash t)
         let hash = Ppx_hash_lib.Std.Hash.of_fold hash_fold_t
       end
@@ -2687,7 +2688,7 @@ module Cidr = struct
           { address : int32 (* IPv4 only *)
           ; bits : int
           }
-        [@@deriving fields ~getters, bin_io, compare, hash, stable_witness]
+        [@@deriving fields ~getters, bin_io, compare ~localize, hash, stable_witness]
 
         let normalized_address ~base ~bits =
           if bits = 0
@@ -2874,7 +2875,7 @@ type socket_type = Unix.socket_type =
 type sockaddr = Unix.sockaddr =
   | ADDR_UNIX of string
   | ADDR_INET of Inet_addr.t * int
-[@@deriving compare, sexp_of, bin_io]
+[@@deriving compare ~localize, sexp_of, bin_io]
 
 type sockaddr_blocking_sexp = Unix.sockaddr =
   | ADDR_UNIX of string
@@ -3401,7 +3402,7 @@ module Ifaddr = struct
         | Running
         | Slave
         | Up
-      [@@deriving sexp, compare, enumerate]
+      [@@deriving sexp, compare ~localize, enumerate]
     end
 
     include T
