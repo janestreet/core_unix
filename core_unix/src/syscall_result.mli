@@ -14,13 +14,17 @@ open! Import
 type 'a t = private int
 (** exposed only as a performance hack *)
 
-module type S = Syscall_result_intf.S with type 'a syscall_result := 'a t
-module type Arg = Syscall_result_intf.Arg
+[%%template:
+[@@@mode.default m = (global, local)]
 
-module Make (M : Arg) () : S with type ok_value := M.t
-module Int : S with type ok_value := int
-module Unit : S with type ok_value := unit
-module File_descr : S with type ok_value := File_descr.t
+module type S = Syscall_result_intf.S [@mode m] with type 'a syscall_result := 'a t
+module type Arg = Syscall_result_intf.Arg [@mode m]
+
+module Make (M : Arg [@mode m]) () : S [@mode m] with type ok_value := M.t]
+
+module Int : S [@mode local] with type ok_value := int
+module Unit : S [@mode local] with type ok_value := unit
+module File_descr : S [@mode local] with type ok_value := File_descr.t
 
 val create_error : Unix_error.t -> _ t
 val unit : Unit.t

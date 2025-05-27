@@ -216,7 +216,7 @@ module type S = sig
       val semaphore : t
     end
 
-    type t = private File_descr.t [@@deriving compare, sexp_of]
+    type t = private File_descr.t [@@deriving compare ~localize, sexp_of]
 
     (** [create ?flags init] creates a new event file descriptor with [init] as the
         counter's initial value. With Linux 2.6.26 or earlier, [flags] must be [empty]. *)
@@ -288,7 +288,7 @@ module type S = sig
   module Timerfd : sig
     (** Clock used to mark the progress of a timer. *)
     module Clock : sig
-      type t [@@deriving bin_io, compare, sexp]
+      type t [@@deriving bin_io, compare ~localize, sexp]
 
       (** Settable system-wide clock. *)
       val realtime : t
@@ -309,7 +309,7 @@ module type S = sig
       val cloexec : t
     end
 
-    type t = private File_descr.t [@@deriving compare, sexp_of]
+    type t = private File_descr.t [@@deriving compare ~localize, sexp_of]
 
     val to_file_descr : t -> File_descr.t
 

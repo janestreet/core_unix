@@ -1,7 +1,7 @@
 open! Core
 open! Import
 
-type t = Unix.file_descr [@@deriving sexp]
+type t = Unix.file_descr [@@deriving compare ~localize, equal ~localize, sexp]
 
 include Equal.S with type t := t
 include Hashable.S_plain with type t := t

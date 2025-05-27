@@ -72,9 +72,9 @@ type error = Unix.error =
   | ELOOP
   | EOVERFLOW
   | EUNKNOWNERR of int
-[@@deriving sexp, compare]
+[@@deriving sexp, compare ~localize]
 
-type t = error [@@deriving sexp, compare]
+type t = error [@@deriving sexp, compare ~localize]
 
 external of_errno : int -> t = "core_unix_error_of_code"
 external to_errno : t -> int = "core_code_of_unix_error"

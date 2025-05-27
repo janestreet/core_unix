@@ -40,7 +40,7 @@ module Category = struct
     | Monetary
     | Numeric
     | Time
-  [@@deriving compare, enumerate, equal, hash, sexp, string]
+  [@@deriving compare ~localize, enumerate, equal ~localize, hash, sexp, string]
 
   let to_native = function
     | Ctype -> ctype
@@ -189,7 +189,7 @@ module Name = struct
 end
 
 module T = struct
-  type t = nativeint [@@deriving compare, equal, hash, sexp]
+  type t = nativeint [@@deriving compare ~localize, equal ~localize, hash, sexp]
 end
 
 include T

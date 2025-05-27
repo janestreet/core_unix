@@ -1,12 +1,15 @@
 open! Core
 open! Import
 
+[%%template
+[@@@mode.default m = (global, local)]
+
 module type S = sig
   type ok_value
   type 'a syscall_result
-  type t = ok_value syscall_result [@@deriving compare, sexp_of]
 
-  include Equal.S with type t := t
+  type t = ok_value syscall_result
+  [@@deriving (compare [@mode m]), (equal [@mode m]), sexp_of]
 
   val create_ok : ok_value -> t
   val create_error : Unix_error.t -> t
@@ -48,10 +51,10 @@ module type S = sig
 end
 
 module type Arg = sig
-  type t [@@deriving sexp_of, compare]
+  type t [@@deriving sexp_of, (compare [@mode m])]
 
   (** [to_int t] must be >= 0, otherwise [create_ok] will raise. *)
   val to_int : t -> int
 
   val of_int_exn : int -> t
-end
+end]

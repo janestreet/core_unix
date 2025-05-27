@@ -649,3 +649,13 @@ let%expect_test "makedev, major, minor" =
     ([%equal: int * int] (expected_major, expected_minor) (actual_major, actual_minor));
   [%expect {| true |}]
 ;;
+
+[%%expect_test
+  let "simple wrapper doesn't allocate" =
+    let key = "hello" in
+    let data = "world" in
+    Expect_test_helpers_core.require_no_allocation (fun () ->
+      putenv ~key ~data;
+      unsetenv key;
+      ignore (nice 0 : int))
+  ;;]

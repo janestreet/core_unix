@@ -1924,7 +1924,7 @@ module%test Time_ns = struct
   ;;
 
   let%expect_test "to_ofday random" =
-    List.iter !Time.Zone.likely_machine_zones ~f:(fun zone ->
+    List.iter (Atomic.get Time.Zone.likely_machine_zones) ~f:(fun zone ->
       let zone = Time.Zone.find_exn zone in
       for _ = 0 to 1_000 do
         check (to_ofday (random_nativeint_range ()) ~zone)
@@ -2080,7 +2080,9 @@ module _ = struct
 end
 
 let%expect_test "end-of-day constants" =
-  let zones = List.map !Time_ns.Zone.likely_machine_zones ~f:Time_ns.Zone.find_exn in
+  let zones =
+    List.map (Atomic.get Time_ns.Zone.likely_machine_zones) ~f:Time_ns.Zone.find_exn
+  in
   let test_round_trip zone date ofday ~expect =
     require_equal
       (module Date)
