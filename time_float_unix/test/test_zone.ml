@@ -134,32 +134,30 @@ let%expect_test "quickcheck string roundtrip" =
 ;;
 
 let test_roundtrip_conversion (zone_name, zone) =
-  quickcheck_m
-    (module Time)
-    ~f:(fun time ->
-      let time =
-        (* Round to some whole number of seconds *)
-        time
-        |> Time.to_span_since_epoch
-        |> Time.Span.to_int63_seconds_round_down_exn
-        |> Time.Span.of_int63_seconds
-        |> Time.of_span_since_epoch
+  quickcheck_m (module Time) ~f:(fun time ->
+    let time =
+      (* Round to some whole number of seconds *)
+      time
+      |> Time.to_span_since_epoch
+      |> Time.Span.to_int63_seconds_round_down_exn
+      |> Time.Span.of_int63_seconds
+      |> Time.of_span_since_epoch
+    in
+    let zone_date, zone_ofday =
+      let date, ofday = Time.to_date_ofday ~zone:(force Time.Zone.local) time in
+      Time.convert ~from_tz:(force Time.Zone.local) ~to_tz:zone date ofday
+    in
+    let round_trip_time =
+      let round_date, round_ofday =
+        Time.convert ~from_tz:zone ~to_tz:(force Time.Zone.local) zone_date zone_ofday
       in
-      let zone_date, zone_ofday =
-        let date, ofday = Time.to_date_ofday ~zone:(force Time.Zone.local) time in
-        Time.convert ~from_tz:(force Time.Zone.local) ~to_tz:zone date ofday
-      in
-      let round_trip_time =
-        let round_date, round_ofday =
-          Time.convert ~from_tz:zone ~to_tz:(force Time.Zone.local) zone_date zone_ofday
-        in
-        Time.of_date_ofday ~zone:(force Time.Zone.local) round_date round_ofday
-      in
-      require_equal
-        (module Time)
-        time
-        round_trip_time
-        ~if_false_then_print_s:(lazy [%message (zone_name : string) (zone : Time.Zone.t)]))
+      Time.of_date_ofday ~zone:(force Time.Zone.local) round_date round_ofday
+    in
+    require_equal
+      (module Time)
+      time
+      round_trip_time
+      ~if_false_then_print_s:(lazy [%message (zone_name : string) (zone : Time.Zone.t)]))
 ;;
 
 let load_some_other_time_zones =

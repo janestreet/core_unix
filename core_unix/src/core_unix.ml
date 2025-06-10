@@ -1040,13 +1040,11 @@ let wait_gen ~mode (type a) (f : waitpid_result -> a option) ~restart wait_on : 
   let pid, status =
     improve
       ~restart
-      (stack_
-        fun () ->
-          let x, ps = Unix.waitpid ~mode pid in
-          x, Exit_or_signal_or_stop.of_unix ps)
-      (stack_
-        fun () ->
-          [ "mode", sexp_of_list sexp_of_wait_flag mode; "pid", Int.sexp_of_t pid ])
+      (stack_ fun () ->
+        let x, ps = Unix.waitpid ~mode pid in
+        x, Exit_or_signal_or_stop.of_unix ps)
+      (stack_ fun () ->
+        [ "mode", sexp_of_list sexp_of_wait_flag mode; "pid", Int.sexp_of_t pid ])
   in
   let waitpid_result =
     if pid = 0
@@ -1114,9 +1112,8 @@ let wait4 ?(restart = true) ~mode wait_on =
     improve
       ~restart
       (stack_ fun () -> wait4 mode pid)
-      (stack_
-        fun () ->
-          [ "mode", sexp_of_list sexp_of_wait_flag mode; "pid", Int.sexp_of_t pid ])
+      (stack_ fun () ->
+        [ "mode", sexp_of_list sexp_of_wait_flag mode; "pid", Int.sexp_of_t pid ])
     [@nontail]
   in
   if x = 0 then None else Some ((Pid.of_int x, Exit_or_signal_or_stop.of_unix ps), rusage)
@@ -1311,8 +1308,8 @@ module Native_file = struct
   let lseek fd pos ~mode =
     improve
       (stack_ fun () -> Unix.lseek fd pos ~mode)
-      (stack_
-        fun () -> [ fd_r fd; "pos", Int.sexp_of_t pos; "mode", sexp_of_seek_command mode ])
+      (stack_ fun () ->
+        [ fd_r fd; "pos", Int.sexp_of_t pos; "mode", sexp_of_seek_command mode ])
     [@nontail]
   ;;
 
@@ -1403,8 +1400,8 @@ let flock_blocking fd command = assert (real_flock ~blocking:true fd command)
 let lseek fd pos ~mode =
   improve
     (stack_ fun () -> Unix.LargeFile.lseek fd pos ~mode)
-    (stack_
-      fun () -> [ fd_r fd; "pos", Int64.sexp_of_t pos; "mode", sexp_of_seek_command mode ])
+    (stack_ fun () ->
+      [ fd_r fd; "pos", Int64.sexp_of_t pos; "mode", sexp_of_seek_command mode ])
   [@nontail]
 ;;
 
@@ -1488,13 +1485,12 @@ let unix_link ~follow ~src ~dst =
 
 let link ?(force = false) ?follow ~target ~link_name () =
   improve
-    (stack_
-      fun () ->
-        if force
-        then (
-          try Unix.unlink link_name with
-          | Unix_error (Unix.ENOENT, _, _) -> ());
-        unix_link ~follow ~src:target ~dst:link_name)
+    (stack_ fun () ->
+      if force
+      then (
+        try Unix.unlink link_name with
+        | Unix_error (Unix.ENOENT, _, _) -> ());
+      unix_link ~follow ~src:target ~dst:link_name)
     (stack_ fun () -> [ "target", atom target; "link_name", atom link_name ]) [@nontail]
 ;;
 
@@ -1542,24 +1538,22 @@ let umask mode =
 let access filename ~perm =
   improve
     (stack_ fun () -> Unix.access filename ~perm)
-    (stack_
-      fun () ->
-        [ filename_r filename; "perm", sexp_of_list sexp_of_access_permission perm ])
+    (stack_ fun () ->
+      [ filename_r filename; "perm", sexp_of_list sexp_of_access_permission perm ])
   [@nontail]
 ;;
 
 let access filename perm =
-  Result.try_with
-    (stack_
-      fun () ->
-        access
-          filename
-          ~perm:
-            (List.map perm ~f:(function
-              | `Read -> Unix.R_OK
-              | `Write -> Unix.W_OK
-              | `Exec -> Unix.X_OK
-              | `Exists -> Unix.F_OK))) [@nontail]
+  Result.try_with (stack_ fun () ->
+    access
+      filename
+      ~perm:
+        (List.map perm ~f:(function
+          | `Read -> Unix.R_OK
+          | `Write -> Unix.W_OK
+          | `Exec -> Unix.X_OK
+          | `Exists -> Unix.F_OK)))
+  [@nontail]
 ;;
 
 let access_exn filename perm = Result.ok_exn (access filename perm)
@@ -1577,12 +1571,11 @@ let dup ?close_on_exec fd =
 let dup2 ?close_on_exec ~src ~dst () =
   improve
     (stack_ fun () -> Unix.dup2 ?cloexec:close_on_exec ~src ~dst)
-    (stack_
-      fun () ->
-        [ "src", File_descr.sexp_of_t src
-        ; "dst", File_descr.sexp_of_t dst
-        ; close_on_exec_r close_on_exec
-        ]) [@nontail]
+    (stack_ fun () ->
+      [ "src", File_descr.sexp_of_t src
+      ; "dst", File_descr.sexp_of_t dst
+      ; close_on_exec_r close_on_exec
+      ]) [@nontail]
 ;;
 
 let set_nonblock = unary_fd Unix.set_nonblock
@@ -2030,32 +2023,30 @@ let create_process_with_fds
   ()
   =
   improve
-    (stack_
-      fun () ->
-        let env_assignments = Env.expand env in
-        Execvp_emulation.run
-          ~prog
-          ~args
-          ?argv0
-          ?prog_search_path
-          ~working_dir
-          ~spawn:(fun ~prog ~argv ->
-            create_process_internal
-              ~working_dir
-              ~setpgid
-              ~prog
-              ~argv
-              ~env:env_assignments
-              ~stdin
-              ~stdout
-              ~stderr)
-          ())
-    (stack_
-      fun () ->
-        (match working_dir with
-         | None -> []
-         | Some working_dir -> [ "working_dir", atom working_dir ])
-        @ [ "prog", atom prog; "args", sexp_of_list atom args; "env", sexp_of_env env ])
+    (stack_ fun () ->
+      let env_assignments = Env.expand env in
+      Execvp_emulation.run
+        ~prog
+        ~args
+        ?argv0
+        ?prog_search_path
+        ~working_dir
+        ~spawn:(fun ~prog ~argv ->
+          create_process_internal
+            ~working_dir
+            ~setpgid
+            ~prog
+            ~argv
+            ~env:env_assignments
+            ~stdin
+            ~stdout
+            ~stderr)
+        ())
+    (stack_ fun () ->
+      (match working_dir with
+       | None -> []
+       | Some working_dir -> [ "working_dir", atom working_dir ])
+      @ [ "prog", atom prog; "args", sexp_of_list atom args; "env", sexp_of_env env ])
   [@nontail]
 ;;
 
@@ -2101,10 +2092,9 @@ end
 
 let open_process_full command ~env =
   improve
-    (stack_
-      fun () ->
-        let stdout, stdin, stderr = Unix.open_process_full command ~env in
-        { Process_channels.stdin; stdout; stderr })
+    (stack_ fun () ->
+      let stdout, stdin, stderr = Unix.open_process_full command ~env in
+      { Process_channels.stdin; stdout; stderr })
     (stack_ fun () -> [ "command", atom command; "env", sexp_of_array atom env ])
   [@nontail]
 ;;
@@ -2158,26 +2148,24 @@ type select_timeout =
 let select ?restart ~read ~write ~except ~timeout () =
   improve
     ?restart
-    (stack_
-      fun () ->
-        let timeout =
-          match timeout with
-          | `Never -> -1.
-          | `Immediately -> 0.
-          | `After span ->
-            if Time_ns.Span.( < ) span Time_ns.Span.zero
-            then 0.
-            else Time_ns.Span.to_sec span
-        in
-        let read, write, except = Unix.select ~read ~write ~except ~timeout in
-        { Select_fds.read; write; except })
-    (stack_
-      fun () ->
-        [ "read", sexp_of_list File_descr.sexp_of_t read
-        ; "write", sexp_of_list File_descr.sexp_of_t write
-        ; "except", sexp_of_list File_descr.sexp_of_t except
-        ; "timeout", [%sexp_of: select_timeout] timeout
-        ]) [@nontail]
+    (stack_ fun () ->
+      let timeout =
+        match timeout with
+        | `Never -> -1.
+        | `Immediately -> 0.
+        | `After span ->
+          if Time_ns.Span.( < ) span Time_ns.Span.zero
+          then 0.
+          else Time_ns.Span.to_sec span
+      in
+      let read, write, except = Unix.select ~read ~write ~except ~timeout in
+      { Select_fds.read; write; except })
+    (stack_ fun () ->
+      [ "read", sexp_of_list File_descr.sexp_of_t read
+      ; "write", sexp_of_list File_descr.sexp_of_t write
+      ; "except", sexp_of_list File_descr.sexp_of_t except
+      ; "timeout", [%sexp_of: select_timeout] timeout
+      ]) [@nontail]
 ;;
 
 let pause = Unix.pause
@@ -2455,21 +2443,18 @@ module Passwd = struct
   let pwdb_lock = Error_checking_mutex.create ()
 
   let getpwents () =
-    Error_checking_mutex.critical_section
-      pwdb_lock
-      ~f:
-        (stack_
-          fun () ->
-            Low_level.setpwent ();
-            Exn.protect
-              ~f:(fun () ->
-                let rec loop acc =
-                  match Low_level.getpwent_exn () with
-                  | exception End_of_file -> List.rev acc
-                  | ent -> loop (ent :: acc)
-                in
-                loop [])
-              ~finally:(fun () -> Low_level.endpwent ())) [@nontail]
+    Error_checking_mutex.critical_section pwdb_lock ~f:(stack_ fun () ->
+      Low_level.setpwent ();
+      Exn.protect
+        ~f:(fun () ->
+          let rec loop acc =
+            match Low_level.getpwent_exn () with
+            | exception End_of_file -> List.rev acc
+            | ent -> loop (ent :: acc)
+          in
+          loop [])
+        ~finally:(fun () -> Low_level.endpwent ()))
+    [@nontail]
   ;;
 end
 
@@ -2926,13 +2911,12 @@ let addr_r addr = "addr", sexp_of_sockaddr addr
 let socket_or_pair f ?close_on_exec ~domain ~kind ~protocol () =
   improve
     (stack_ fun () -> f ?cloexec:close_on_exec ~domain ~kind ~protocol)
-    (stack_
-      fun () ->
-        [ "domain", sexp_of_socket_domain domain
-        ; "kind", sexp_of_socket_type kind
-        ; "protocol", Int.sexp_of_t protocol
-        ; close_on_exec_r close_on_exec
-        ]) [@nontail]
+    (stack_ fun () ->
+      [ "domain", sexp_of_socket_domain domain
+      ; "kind", sexp_of_socket_type kind
+      ; "protocol", Int.sexp_of_t protocol
+      ; close_on_exec_r close_on_exec
+      ]) [@nontail]
 ;;
 
 let socket = socket_or_pair Unix.socket
@@ -3010,11 +2994,10 @@ type shutdown_command = Unix.shutdown_command =
 
 let shutdown fd ~mode =
   improve
-    (stack_
-      fun () ->
-        try Unix.shutdown fd ~mode with
-        (* the error below is benign, it means that the other side disconnected *)
-        | Unix.Unix_error (Unix.ENOTCONN, _, _) -> ())
+    (stack_ fun () ->
+      try Unix.shutdown fd ~mode with
+      (* the error below is benign, it means that the other side disconnected *)
+      | Unix.Unix_error (Unix.ENOTCONN, _, _) -> ())
     (stack_ fun () -> [ fd_r fd; "mode", sexp_of_shutdown_command mode ]) [@nontail]
 ;;
 
@@ -3030,13 +3013,12 @@ type msg_flag = Unix.msg_flag =
 let recv_send f fd ~buf ~pos ~len ~mode =
   improve
     (stack_ fun () -> f fd ~buf ~pos ~len ~mode)
-    (stack_
-      fun () ->
-        [ fd_r fd
-        ; "pos", Int.sexp_of_t pos
-        ; len_r len
-        ; "mode", sexp_of_list sexp_of_msg_flag mode
-        ]) [@nontail]
+    (stack_ fun () ->
+      [ fd_r fd
+      ; "pos", Int.sexp_of_t pos
+      ; len_r len
+      ; "mode", sexp_of_list sexp_of_msg_flag mode
+      ]) [@nontail]
 ;;
 
 let recv = recv_send Unix.recv
@@ -3047,14 +3029,13 @@ let send_substring = recv_send Unix.send_substring
 let sendto fd ~buf ~pos ~len ~mode ~addr =
   improve
     (stack_ fun () -> Unix.sendto fd ~buf ~pos ~len ~mode ~addr)
-    (stack_
-      fun () ->
-        [ fd_r fd
-        ; "pos", Int.sexp_of_t pos
-        ; len_r len
-        ; "mode", sexp_of_list sexp_of_msg_flag mode
-        ; "addr", sexp_of_sockaddr addr
-        ]) [@nontail]
+    (stack_ fun () ->
+      [ fd_r fd
+      ; "pos", Int.sexp_of_t pos
+      ; len_r len
+      ; "mode", sexp_of_list sexp_of_msg_flag mode
+      ; "addr", sexp_of_sockaddr addr
+      ]) [@nontail]
 ;;
 
 [%%if ocaml_version >= (4, 05, 0)]
@@ -3072,14 +3053,13 @@ let unix_sendto_substring fd ~buf ~pos ~len ~mode addr =
 let sendto_substring fd ~buf ~pos ~len ~mode ~addr =
   improve
     (stack_ fun () -> unix_sendto_substring fd ~buf ~pos ~len ~mode addr)
-    (stack_
-      fun () ->
-        [ fd_r fd
-        ; "pos", Int.sexp_of_t pos
-        ; len_r len
-        ; "mode", sexp_of_list sexp_of_msg_flag mode
-        ; "addr", sexp_of_sockaddr addr
-        ]) [@nontail]
+    (stack_ fun () ->
+      [ fd_r fd
+      ; "pos", Int.sexp_of_t pos
+      ; len_r len
+      ; "mode", sexp_of_list sexp_of_msg_flag mode
+      ; "addr", sexp_of_sockaddr addr
+      ]) [@nontail]
 ;;
 
 [%%if ocaml_version >= (4, 12, 0)]
@@ -3262,12 +3242,11 @@ type getaddrinfo_option = Unix.getaddrinfo_option =
 let getaddrinfo host service opts =
   improve
     (stack_ fun () -> Unix.getaddrinfo host service opts)
-    (stack_
-      fun () ->
-        [ "host", atom host
-        ; "service", atom service
-        ; "opts", sexp_of_list sexp_of_getaddrinfo_option opts
-        ]) [@nontail]
+    (stack_ fun () ->
+      [ "host", atom host
+      ; "service", atom service
+      ; "opts", sexp_of_list sexp_of_getaddrinfo_option opts
+      ]) [@nontail]
 ;;
 
 type name_info = Unix.name_info =
@@ -3286,21 +3265,19 @@ type getnameinfo_option = Unix.getnameinfo_option =
 
 let getnameinfo addr opts =
   improve
-    (stack_
-      fun () ->
-        try Unix.getnameinfo addr opts with
-        | Stdlib.Not_found ->
-          raise
-            (Not_found_s
-               [%message
-                 "Unix.getnameinfo: not found"
-                   (addr : sockaddr)
-                   (opts : getnameinfo_option list)]))
-    (stack_
-      fun () ->
-        [ "addr", sexp_of_sockaddr addr
-        ; "opts", sexp_of_list sexp_of_getnameinfo_option opts
-        ]) [@nontail]
+    (stack_ fun () ->
+      try Unix.getnameinfo addr opts with
+      | Stdlib.Not_found ->
+        raise
+          (Not_found_s
+             [%message
+               "Unix.getnameinfo: not found"
+                 (addr : sockaddr)
+                 (opts : getnameinfo_option list)]))
+    (stack_ fun () ->
+      [ "addr", sexp_of_sockaddr addr
+      ; "opts", sexp_of_list sexp_of_getnameinfo_option opts
+      ]) [@nontail]
 ;;
 
 module Terminal_io = struct
@@ -3357,9 +3334,8 @@ module Terminal_io = struct
   let tcsetattr t fd ~mode =
     improve
       (stack_ fun () -> Unix.tcsetattr fd ~mode t)
-      (stack_
-        fun () -> [ fd_r fd; "mode", sexp_of_setattr_when mode; "termios", sexp_of_t t ])
-    [@nontail]
+      (stack_ fun () ->
+        [ fd_r fd; "mode", sexp_of_setattr_when mode; "termios", sexp_of_t t ]) [@nontail]
   ;;
 
   let tcsendbreak fd ~duration =

@@ -421,15 +421,13 @@ let%expect_test "norollover" =
 ;;
 
 let%expect_test "quickcheck tests of string roundtrip" =
-  quickcheck_m
-    (module Time)
-    ~f:(fun time ->
-      require_similar_time [%here] time (Time.of_string (Time.to_string time));
-      require_similar_time
-        [%here]
-        time
-        (Time.of_filename_string ~zone (Time.to_filename_string time ~zone));
-      require_similar_time [%here] time (Time.t_of_sexp (Time.sexp_of_t time)))
+  quickcheck_m (module Time) ~f:(fun time ->
+    require_similar_time [%here] time (Time.of_string (Time.to_string time));
+    require_similar_time
+      [%here]
+      time
+      (Time.of_filename_string ~zone (Time.to_filename_string time ~zone));
+    require_similar_time [%here] time (Time.t_of_sexp (Time.sexp_of_t time)))
 ;;
 
 let%expect_test "to_string,of_string2" =
