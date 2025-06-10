@@ -21,6 +21,9 @@
 #include <errno.h>
 #include <limits.h>
 #include <locale.h>
+#ifdef __APPLE__
+#include <xlocale.h>
+#endif
 #include <net/if.h>
 #include <netinet/in.h>
 #include <signal.h>
@@ -514,9 +517,15 @@ static value ns_precision_stat_of_struct_stat(struct stat s) {
   Store_field(v_stat, 6, Val_int(s.st_gid));
   Store_field(v_stat, 7, Val_int(s.st_rdev));
   Store_field(v_stat, 8, Val_file_offset(s.st_size));
+#ifdef __APPLE__
+  Store_field(v_stat, 9, caml_alloc_int63(timespec_to_int_ns(s.st_atimespec)));
+  Store_field(v_stat, 10, caml_alloc_int63(timespec_to_int_ns(s.st_mtimespec)));
+  Store_field(v_stat, 11, caml_alloc_int63(timespec_to_int_ns(s.st_ctimespec)));
+#else
   Store_field(v_stat, 9, caml_alloc_int63(timespec_to_int_ns(s.st_atim)));
   Store_field(v_stat, 10, caml_alloc_int63(timespec_to_int_ns(s.st_mtim)));
   Store_field(v_stat, 11, caml_alloc_int63(timespec_to_int_ns(s.st_ctim)));
+#endif
   CAMLreturn(v_stat);
 }
 
@@ -1561,9 +1570,14 @@ CAMLprim value core_unix_strptime(value v_locale, value v_allow_trailing_input,
                                   value v_fmt, value v_s) {
   locale_t locale = (locale_t)Nativeint_val(v_locale);
   struct tm tm = {0};
+#ifdef __APPLE__
+  // On macOS, strptime_l may not be available or reliable
+  char *end_of_consumed_input = strptime(String_val(v_s), String_val(v_fmt), &tm);
+#else
   char *end_of_consumed_input =
       locale == (locale_t)0 ? strptime(String_val(v_s), String_val(v_fmt), &tm)
                             : strptime_l(String_val(v_s), String_val(v_fmt), &tm, locale);
+#endif
   if (!end_of_consumed_input)
     caml_failwith("unix_strptime: match failed");
   if (!Bool_val(v_allow_trailing_input) &&
@@ -2055,7 +2069,32 @@ CAMLprim value core_unix_execvpe(value v_prog, value v_args, value v_env) {
   char *env_storage[nenv + 1];
   char *const *envp = fill_args(env_storage, nenv, v_env);
 
+#ifdef __APPLE__
+  // macOS doesn't have execvpe, so we need to search PATH manually
+  if (strchr(path, '/') != NULL) {
+    // Path contains '/', use execve directly
+    execve(path, argv, envp);
+  } else {
+    // Search PATH for the executable
+    char *path_env = getenv("PATH");
+    if (path_env) {
+      char *path_copy = strdup(path_env);
+      char *dir = strtok(path_copy, ":");
+      while (dir != NULL) {
+        char full_path[PATH_MAX];
+        snprintf(full_path, sizeof(full_path), "%s/%s", dir, path);
+        execve(full_path, argv, envp);
+        // If execve succeeds, it doesn't return
+        dir = strtok(NULL, ":");
+      }
+      free(path_copy);
+    }
+    // If we get here, execve failed for all paths
+    errno = ENOENT;
+  }
+#else
   execvpe(path, argv, envp);
+#endif
 
   caml_uerror("execvpe", v_prog);
 }

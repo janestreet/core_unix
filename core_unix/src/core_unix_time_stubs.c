@@ -4,6 +4,10 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <locale.h>
+#ifdef __APPLE__
+#include <xlocale.h>
+#endif
 #include <caml/mlvalues.h>
 #include <caml/alloc.h>
 #include <caml/custom.h>

@@ -5,6 +5,9 @@
 #include <langinfo.h>
 #include <locale.h>
 #include <string.h>
+#ifdef __APPLE__
+#include <xlocale.h>
+#endif
 #include <caml/alloc.h>
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
@@ -124,8 +127,38 @@ CAMLprim value unix_getlocalename(int32_t category, intnat i_locale) {
       if (!result || !*result)
         uerror("nl_langinfo_l", Nothing);
       return caml_copy_string(result);
-#elif defined __APPLE__ || defined __FreeBSD__ || defined __NetBSD__ ||                  \
-    defined __OpenBSD__
+#elif defined __APPLE__
+      // macOS has different locale mask values and uses querylocale
+      int mask;
+      switch (category) {
+      case LC_COLLATE:
+        mask = LC_COLLATE_MASK;
+        break;
+      case LC_CTYPE:
+        mask = LC_CTYPE_MASK;
+        break;
+      case LC_MESSAGES:
+        mask = LC_MESSAGES_MASK;
+        break;
+      case LC_MONETARY:
+        mask = LC_MONETARY_MASK;
+        break;
+      case LC_NUMERIC:
+        mask = LC_NUMERIC_MASK;
+        break;
+      case LC_TIME:
+        mask = LC_TIME_MASK;
+        break;
+      default:
+        caml_invalid_argument("invalid locale category");
+        break;
+      }
+      errno = 0;
+      const char *result = querylocale(mask, locale);
+      if (!result || !*result)
+        uerror("querylocale", Nothing);
+      return caml_copy_string(result);
+#elif defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__
       // Here we rely on LC_*_MASK == 1 << LC_* for the standard categories *, which we
       // static assert on:
       static_assert(LC_CTYPE_MASK == 1 << LC_CTYPE, "");
