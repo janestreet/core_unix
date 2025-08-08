@@ -548,7 +548,7 @@ val fcntl_getfl : File_descr.t -> Open_flags.t
 val fcntl_setfl : File_descr.t -> Open_flags.t -> unit
 
 (** Close a file descriptor. *)
-val close : ?restart:bool (** defaults to false *) -> File_descr.t -> unit
+val close : File_descr.t -> unit
 
 (** [with_file file ~mode ~perm ~f] opens [file], and applies [f] to the resulting file
     descriptor. When [f] finishes (or raises), [with_file] closes the descriptor and
@@ -1289,12 +1289,35 @@ val mktime : tm -> float * tm
     'man strftime' for format options. *)
 val strftime : ?locale:Locale.t -> tm -> string -> string
 
-(** Given a format string, convert a corresponding string to a date and time See 'man
+(** Convert a date and time, specified by the [tm] argument, into a formatted string in
+    the given locale. See 'man strftime' for format options.
+
+    The main reason to use this instead of [strftime] is because it's more thread-safe,
+    hence our ability to expose it as [portable]. However, it's not completely thread
+    safe: one must not free the provided locale for the duration of the call. *)
+val strftime_l : locale:Locale.t -> tm -> string -> string
+
+(** Given a format string, convert a corresponding string to a date and time. See 'man
     strptime' for format options.
 
     Raise if [allow_trailing_input] is false and [fmt] does not consume all of the input. *)
 val strptime
   :  ?locale:Locale.t
+  -> ?allow_trailing_input:bool (** default = false *)
+  -> fmt:string
+  -> string
+  -> Unix.tm
+
+(** Given a format string, convert a corresponding string to a date and time in the given
+    locale. See 'man strptime' for format options.
+
+    Raise if [allow_trailing_input] is false and [fmt] does not consume all of the input.
+
+    The main reason to use this instead of [strptime] is because it's more thread-safe,
+    hence our ability to expose it as [portable]. However, it's not completely thread
+    safe: one must not free the provided locale for the duration of the call. *)
+val strptime_l
+  :  locale:Locale.t
   -> ?allow_trailing_input:bool (** default = false *)
   -> fmt:string
   -> string
@@ -1473,7 +1496,8 @@ module Inet_addr : sig
     type t = Unix.inet_addr [@@deriving bin_io, compare ~localize, hash, sexp]
   end
 
-  include Comparable.S with type t := t
+  include%template Comparable.S [@mode local] with type t := t
+
   module Table : Hashtbl.S with type key = t
 
   (** Conversion from the printable representation of an Internet address to its internal
@@ -1580,8 +1604,9 @@ module Cidr : sig
   val is_subset : t -> of_:t -> bool
 
   module Stable : sig
-    module V1 :
+    module%template V1 :
       Stable_comparable.With_stable_witness.V1
+      [@mode local]
       with type t = t
       with type comparator_witness = comparator_witness
   end

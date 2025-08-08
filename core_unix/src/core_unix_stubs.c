@@ -10,6 +10,7 @@
 #if defined(__APPLE__)
 #define _POSIX_SOURCE
 #include <sys/socket.h>
+#include <xlocale.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/socket.h>
 #endif
@@ -514,9 +515,15 @@ static value ns_precision_stat_of_struct_stat(struct stat s) {
   Store_field(v_stat, 6, Val_int(s.st_gid));
   Store_field(v_stat, 7, Val_int(s.st_rdev));
   Store_field(v_stat, 8, Val_file_offset(s.st_size));
+#ifdef __APPLE__
+  Store_field(v_stat, 9, caml_alloc_int63(timespec_to_int_ns(s.st_atimespec)));
+  Store_field(v_stat, 10, caml_alloc_int63(timespec_to_int_ns(s.st_mtimespec)));
+  Store_field(v_stat, 11, caml_alloc_int63(timespec_to_int_ns(s.st_ctimespec)));
+#else
   Store_field(v_stat, 9, caml_alloc_int63(timespec_to_int_ns(s.st_atim)));
   Store_field(v_stat, 10, caml_alloc_int63(timespec_to_int_ns(s.st_mtim)));
   Store_field(v_stat, 11, caml_alloc_int63(timespec_to_int_ns(s.st_ctim)));
+#endif
   CAMLreturn(v_stat);
 }
 
@@ -1557,19 +1564,39 @@ static value alloc_tm(const struct tm *tm) {
   return res;
 }
 
-CAMLprim value core_unix_strptime(value v_locale, value v_allow_trailing_input,
-                                  value v_fmt, value v_s) {
-  locale_t locale = (locale_t)Nativeint_val(v_locale);
+/* Thread-safe to the extent its callback argument is. */
+value core_unix_strptime_gen(locale_t locale, value v_allow_trailing_input, value v_fmt,
+                             value v_s,
+                             char *f_strptime(const char *, const char *, struct tm *,
+                                              locale_t)) {
   struct tm tm = {0};
   char *end_of_consumed_input =
-      locale == (locale_t)0 ? strptime(String_val(v_s), String_val(v_fmt), &tm)
-                            : strptime_l(String_val(v_s), String_val(v_fmt), &tm, locale);
+      f_strptime(String_val(v_s), String_val(v_fmt), &tm, locale);
   if (!end_of_consumed_input)
     caml_failwith("unix_strptime: match failed");
   if (!Bool_val(v_allow_trailing_input) &&
       end_of_consumed_input != String_val(v_s) + caml_string_length(v_s))
     caml_failwith("unix_strptime: did not consume entire input");
   return alloc_tm(&tm);
+}
+
+char *strptime_callback(const char *s, const char *fmt, struct tm *tm, locale_t locale) {
+  /* Ignore the locale, it's always 0. */
+  (void)locale;
+  return strptime(s, fmt, tm);
+}
+
+CAMLprim value core_unix_strptime(value v_allow_trailing_input, value v_fmt, value v_s) {
+  return core_unix_strptime_gen((locale_t)0, v_allow_trailing_input, v_fmt, v_s,
+                                strptime_callback);
+}
+
+/* Its OCaml binding promises that this function is thread-safe. */
+CAMLprim value core_unix_strptime_l(value v_locale, value v_allow_trailing_input,
+                                    value v_fmt, value v_s) {
+
+  locale_t locale = (locale_t)Nativeint_val(v_locale);
+  return core_unix_strptime_gen(locale, v_allow_trailing_input, v_fmt, v_s, strptime_l);
 }
 
 CAMLprim value core_unix_remove(value v_path) {
@@ -2055,7 +2082,30 @@ CAMLprim value core_unix_execvpe(value v_prog, value v_args, value v_env) {
   char *env_storage[nenv + 1];
   char *const *envp = fill_args(env_storage, nenv, v_env);
 
+#ifdef __APPLE__
+  // macOS doesn't have execvpe, so we need to search PATH manually
+  if (strchr(path, '/') != NULL) {
+    execve(path, argv, envp);
+  } else {
+    char *path_env = getenv("PATH");
+    if (path_env) {
+      char *path_copy = strdup(path_env);
+      char *dir = strtok(path_copy, ":");
+      // We just keep on calling execve in a loop until one succeeds. If the file doesn't
+      // exist in that directory, execve will fail and we'll try the next one.
+      while (dir != NULL) {
+        char full_path[PATH_MAX];
+        snprintf(full_path, sizeof(full_path), "%s/%s", dir, path);
+        execve(full_path, argv, envp);
+        dir = strtok(NULL, ":");
+      }
+      free(path_copy);
+    }
+    errno = ENOENT;
+  }
+#else
   execvpe(path, argv, envp);
+#endif
 
   caml_uerror("execvpe", v_prog);
 }

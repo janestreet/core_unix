@@ -82,8 +82,8 @@ let () =
 
 let ewma ~alpha ~old ~add = ((1. -. alpha) *. old) +. (alpha *. add)
 
-type t = Int63.t [@@deriving bin_io, compare, sexp, typerep]
-type tsc = t [@@deriving bin_io, compare, sexp]
+type t = Int63.t [@@deriving bin_io, compare ~localize, sexp, typerep]
+type tsc = t [@@deriving bin_io, compare ~localize, sexp]
 
 include (Int63 : Comparisons.S with type t := t)
 
@@ -94,7 +94,7 @@ let of_int63 t = t
 let to_int63 t = t
 let zero = Int63.zero
 
-[%%ifdef JSC_ARCH_SIXTYFOUR]
+[%%ifdef JSC_ARCH_AMD64]
 
 external rdtsc : unit -> (int64[@unboxed]) = "caml_rdtsc" "caml_rdtsc_unboxed"
 [@@noalloc] [@@builtin]
@@ -434,7 +434,7 @@ module Span = struct
     let to_int63 t = t
   end
 
-  [%%ifdef JSC_ARCH_SIXTYFOUR]
+  [%%ifdef JSC_ARCH_AMD64]
 
   let to_ns t ~(calibrator : Calibrator.t) =
     (Float.int63_round_nearest_exn [@inlined hint])

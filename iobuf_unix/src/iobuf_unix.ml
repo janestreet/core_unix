@@ -9,7 +9,7 @@ module Syscall_result = Unix.Syscall_result
 type ok_or_eof =
   | Ok
   | Eof
-[@@deriving compare, sexp_of]
+[@@deriving compare ~localize, sexp_of]
 
 let input t ch =
   match Bigstring_unix.input ch (Expert.buf t) ~pos:(Expert.lo t) ~len:(length t) with

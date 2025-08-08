@@ -10,7 +10,7 @@
  (libraries core error_checking_mutex core_kernel.flags sexplib.unix
    signal_unix spawn ppx_stable_witness.stable_witness unix)
  (preprocess
-  (pps ppx_jane ppx_optcomp))
+  (pps ppx_jane ppx_optcomp -require-template-extension))
  (preprocessor_deps config.h))
 
 (rule

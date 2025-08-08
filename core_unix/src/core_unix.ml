@@ -1208,13 +1208,16 @@ let openfile ?(perm = 0o644) ~mode filename =
     [@nontail]
 ;;
 
-let close ?restart = unary_fd ?restart Unix.close
-
-let with_close fd ~f =
-  protect ~f:(fun () -> f fd) ~finally:(fun () -> close fd) [@nontail]
+let close =
+  (* On Linux and, according to man pages 'many other implementations', the fd is freed
+     before [close] can return, so retrying on EINTR would be incorrect: we might be
+     closing an fd that was just allocated by another thread. *)
+  unary_fd ~restart:false Unix.close
 ;;
 
-let with_file ?perm file ~mode ~f = with_close (openfile file ~mode ?perm) ~f
+let with_file ?perm file ~mode ~f =
+  Exn.protectx (openfile file ~mode ?perm) ~f ~finally:close [@nontail]
+;;
 
 let read_write f ?restart ?pos ?len fd ~buf =
   let (pos : int), (len : int) =
@@ -2232,16 +2235,27 @@ type tm = Unix.tm =
 let time = Unix.time
 let gettimeofday = Unix.gettimeofday
 
-let locale_to_native = function
-  | None -> Locale.Expert.native_zero
-  | Some locale -> Locale.Expert.to_native locale
+external strftime : Unix.tm -> string -> string = "core_time_ns_strftime"
+
+external strftime_l
+  :  locale:nativeint
+  -> Unix.tm
+  -> string
+  -> string
+  = "core_time_ns_strftime_l"
+
+let strftime ?locale tm s =
+  match locale with
+  | None -> strftime tm s
+  | Some locale -> strftime_l ~locale:(Locale.Expert.to_native locale) tm s
 ;;
 
-external strftime : nativeint -> Unix.tm -> string -> string = "core_time_ns_strftime"
-
-let strftime ?locale tm s = strftime (locale_to_native locale) tm s
+let strftime_l ~locale tm s = strftime_l ~locale:(Locale.Expert.to_native locale) tm s
 
 external localtime : float -> Unix.tm = "core_localtime"
+
+(* NOTE: While [Unix.gmtime] is not thread-safe due to a call to [gmtime],
+   `core_unix_time_stubs.c` defines [core_gmtime] to use [gmtime_r] instead. *)
 external gmtime : float -> Unix.tm = "core_gmtime"
 external timegm : Unix.tm -> float = "core_timegm" (* the inverse of gmtime *)
 
@@ -2270,15 +2284,29 @@ let utimensat ?relative_to ?(follow_symlinks = true) ~path ~access ~modif () =
 ;;
 
 external strptime
-  :  nativeint
-  -> allow_trailing_input:bool
+  :  allow_trailing_input:bool
   -> fmt:string
   -> string
   -> Unix.tm
   = "core_unix_strptime"
 
+external strptime_l
+  :  locale:nativeint
+  -> allow_trailing_input:bool
+  -> fmt:string
+  -> string
+  -> Unix.tm
+  = "core_unix_strptime_l"
+
 let strptime ?locale ?(allow_trailing_input = false) ~fmt s =
-  strptime (locale_to_native locale) ~allow_trailing_input ~fmt s
+  match locale with
+  | None -> strptime ~allow_trailing_input ~fmt s
+  | Some locale ->
+    strptime_l ~locale:(Locale.Expert.to_native locale) ~allow_trailing_input ~fmt s
+;;
+
+let strptime_l ~locale ?(allow_trailing_input = false) ~fmt s =
+  strptime_l ~locale:(Locale.Expert.to_native locale) ~allow_trailing_input ~fmt s
 ;;
 
 type interval_timer = Unix.interval_timer =
@@ -2531,7 +2559,9 @@ module Inet_addr0 = struct
       end
 
       include T1
-      include Comparable.Make (T1)
+
+      include%template Comparable.Make [@mode local] (T1)
+
       module Table = Hashtbl.Make (T1)
     end
   end
@@ -2688,7 +2718,8 @@ module Cidr = struct
           { address : int32 (* IPv4 only *)
           ; bits : int
           }
-        [@@deriving fields ~getters, bin_io, compare ~localize, hash, stable_witness]
+        [@@deriving
+          fields ~getters, bin_io ~localize, compare ~localize, hash, stable_witness]
 
         let normalized_address ~base ~bits =
           if bits = 0

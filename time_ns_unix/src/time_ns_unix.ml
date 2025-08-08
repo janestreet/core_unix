@@ -48,6 +48,7 @@ let to_tm t ~zone : Unix.tm =
 ;;
 
 let format ?locale (t : t) s ~zone = Unix.strftime ?locale (to_tm t ~zone) s
+let format_with_locale (t : t) s ~zone ~locale = Unix.strftime_l (to_tm t ~zone) s ~locale
 
 let of_tm tm ~zone =
   (* Explicitly ignoring isdst, wday, yday (they are redundant with the other fields
@@ -75,4 +76,8 @@ let of_tm tm ~zone =
 
 let parse ?locale ?allow_trailing_input s ~fmt ~zone =
   Unix.strptime ?locale ?allow_trailing_input ~fmt s |> of_tm ~zone
+;;
+
+let parse_with_locale ?allow_trailing_input s ~fmt ~zone ~locale =
+  Unix.strptime_l ~locale ?allow_trailing_input ~fmt s |> of_tm ~zone
 ;;

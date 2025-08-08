@@ -4,6 +4,10 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <locale.h>
+#ifdef __APPLE__
+#include <xlocale.h>
+#endif
 #include <caml/mlvalues.h>
 #include <caml/alloc.h>
 #include <caml/custom.h>
@@ -113,8 +117,10 @@ static void assign_tm(struct tm *tm, value v_tm) {
   tm->tm_isdst = Bool_val(Field(v_tm, 8));
 }
 
-CAMLprim value core_time_ns_strftime(value v_locale, value v_tm, value v_fmt) {
-  locale_t locale = (locale_t)Nativeint_val(v_locale);
+/* Thread-safe if its function argument is. */
+CAMLprim value core_time_ns_strftime_gen(locale_t locale, value v_tm, value v_fmt,
+                                         size_t f_strftime(char *, size_t, const char *,
+                                                           const struct tm *, locale_t)) {
   struct tm tm = {0};
   assign_tm(&tm, v_tm);
   size_t buf_len = 10 * caml_string_length(v_fmt) + 1;
@@ -129,9 +135,7 @@ CAMLprim value core_time_ns_strftime(value v_locale, value v_tm, value v_fmt) {
        use a hack to distinguish zero-length output from failure. */
     buf[0] = '\x01';
     errno = 0;
-    size_t len = locale == (locale_t)0
-                     ? strftime(buf, buf_len, String_val(v_fmt), &tm)
-                     : strftime_l(buf, buf_len, String_val(v_fmt), &tm, locale);
+    size_t len = f_strftime(buf, buf_len, String_val(v_fmt), &tm, locale);
     if (len || !buf[0])
       break;
     if (errno && errno != ERANGE) {
@@ -144,6 +148,23 @@ CAMLprim value core_time_ns_strftime(value v_locale, value v_tm, value v_fmt) {
   value v_str = caml_copy_string(buf);
   free(buf);
   return v_str;
+}
+
+size_t strftime_callback(char *buf, size_t buf_len, const char *fmt, const struct tm *tm,
+                         locale_t locale) {
+  /* Ignore locale, it should always be 0. */
+  (void)locale;
+  return strftime(buf, buf_len, fmt, tm);
+}
+
+CAMLprim value core_time_ns_strftime(value v_tm, value v_fmt) {
+  return core_time_ns_strftime_gen((locale_t)0, v_tm, v_fmt, strftime_callback);
+}
+
+/* Its OCaml binding promises that this function is thread-safe. */
+CAMLprim value core_time_ns_strftime_l(value v_locale, value v_tm, value v_fmt) {
+  locale_t locale = (locale_t)Nativeint_val(v_locale);
+  return core_time_ns_strftime_gen(locale, v_tm, v_fmt, strftime_l);
 }
 
 /*

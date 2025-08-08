@@ -25,17 +25,24 @@ let of_tm tm ~zone =
   of_date_ofday ~zone date ofday
 ;;
 
-let format t s ~zone =
+let to_tm t ~zone =
   let epoch_time =
     Zone.date_and_ofday_of_absolute_time zone t
     |> Date_and_ofday.to_synthetic_span_since_epoch
     |> Span.to_sec
   in
-  Unix.strftime (Unix.gmtime epoch_time) s
+  Unix.gmtime epoch_time
 ;;
+
+let format t s ~zone = Unix.strftime (to_tm t ~zone) s
+let format_with_locale t s ~zone ~locale = Unix.strftime_l ~locale (to_tm t ~zone) s
 
 let parse ?allow_trailing_input s ~fmt ~zone =
   Unix.strptime ?allow_trailing_input ~fmt s |> of_tm ~zone
+;;
+
+let parse_with_locale ?allow_trailing_input s ~fmt ~zone ~locale =
+  Unix.strptime_l ~locale ?allow_trailing_input ~fmt s |> of_tm ~zone
 ;;
 
 let pause_for span =

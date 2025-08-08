@@ -1,7 +1,7 @@
 open! Core
 open! Import
 
-let threads_have_been_created = ref false
+let threads_have_been_created = Atomic.make false
 
 include Caml_threads.Thread [@@ocaml.alert "-deprecated"]
 
@@ -13,7 +13,7 @@ let create_should_raise = ref false
 
 let create ~on_uncaught_exn f arg =
   if !create_should_raise then raise_s [%message "Core_thread.create requested to raise"];
-  threads_have_been_created := true;
+  Atomic.set threads_have_been_created true;
   let f arg : unit =
     let exit =
       match on_uncaught_exn with
@@ -25,7 +25,7 @@ let create ~on_uncaught_exn f arg =
   create f arg
 ;;
 
-let threads_have_been_created () = !threads_have_been_created
+let threads_have_been_created () = Atomic.get threads_have_been_created
 let wait_signal sigs = wait_signal (List.map ~f:Signal.to_caml_int sigs)
 
 let sigmask cmd sigs =

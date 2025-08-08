@@ -44,8 +44,9 @@ let random_letter =
       Stdlib.Random.State.make_self_init
   in
   let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" in
+  let get = Obj.magic_portable (Domain.DLS.get [@ocaml.alert "-unsafe_multidomain"]) in
   fun () ->
-    let prng = (Domain.DLS.get [@ocaml.alert "-unsafe_multidomain"]) prng_key in
+    let prng = get prng_key in
     letters.[Stdlib.Random.State.int prng (String.length letters)]
 ;;
 

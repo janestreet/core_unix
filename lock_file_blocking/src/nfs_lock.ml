@@ -40,7 +40,7 @@ module Info = struct
       ; message : string
       ; start_time : Time_float.Stable.With_utc_sexp.V2.t option [@sexp.option]
       }
-    [@@deriving compare, sexp, fields ~getters]
+    [@@deriving compare ~localize, sexp, fields ~getters]
   end
 
   include T
@@ -357,8 +357,8 @@ let maybe_unlink_old_attempts path =
   if am_running_test || Float.( < ) (Random.float 1.0) 0.05 then unlink_old_attempts path
 ;;
 
-let create_v2_exn ?(message = "") path =
-  try
+let create_v2_internal_exn ?(exn = `Hum) ?(message = "") path =
+  match
     maybe_unlink_old_attempts path;
     let info = Info.create ~message in
     let attempt_path = attempt_path ~path ~info in
@@ -372,8 +372,17 @@ let create_v2_exn ?(message = "") path =
     protect
       ~finally:(fun () -> unlink_if_exists attempt_path)
       ~f:(fun () ->
-        Out_channel.with_file ~fail_if_exists:true attempt_path ~f:(fun ch ->
-          Out_channel.output_string ch (Info.to_string info));
+        let fd =
+          Unix.openfile
+            attempt_path
+            ~mode:Unix.[ O_WRONLY; O_CREAT; O_TRUNC; O_EXCL ]
+            ~perm:0o666
+        in
+        Exn.protectx fd ~finally:Unix.close ~f:(fun fd ->
+          let data = Info.to_string info in
+          assert (
+            Unix.write_substring fd ~buf:data ~pos:0 ~len:(String.length data)
+            = String.length data));
         (* [link] will fail if the target path already exists, so if it succeeds then we
            know that we must have succeeded in taking the lock. *)
         Unix.link ~target:attempt_path ~link_name:(lock_path path) ());
@@ -392,23 +401,55 @@ let create_v2_exn ?(message = "") path =
       try unlock_self_exn path with
       | _ -> ())
   with
-  | e ->
-    failwithf
-      "Lock_file.Nfs.create_exn: unable to lock '%s' - %s"
-      path
-      (Exn.to_string e)
-      ()
+  | exception (Unix.Unix_error ((EACCES | EPERM | EROFS), _, _) as e) ->
+    (match exn with
+     | `Mach -> raise e
+     | `Hum ->
+       failwithf
+         "Lock_file.Nfs.create_exn: unable to lock '%s' - %s"
+         path
+         (Exn.to_string e)
+         ())
+  | exception e ->
+    Error
+      (`Retriable
+        (Failure
+           (sprintf
+              "Lock_file.Nfs.create_exn: unable to lock '%s' - %s"
+              path
+              (Exn.to_string e))))
+  | () -> Ok ()
 ;;
 
-let create_v2 ?message path = Or_error.try_with (fun () -> create_v2_exn ?message path)
+let create_v2_exn ?message ?exn path =
+  match create_v2_internal_exn ?message ?exn path with
+  | Error (`Retriable exn) -> raise exn
+  | Ok res -> res
+;;
+
+let create_v2 ?message ?exn path =
+  match create_v2_internal_exn ?message ?exn path with
+  | Error (`Retriable exn) -> Error (Error.of_exn exn)
+  | exception exn -> Error (Error.of_exn exn)
+  | Ok res -> Ok res
+;;
 
 (* default timeout is to wait indefinitely *)
 let blocking_create ?timeout ?message path =
-  repeat_with_timeout ?timeout (fun path -> create_exn ?message path) path
+  repeat_with_timeout
+    ?timeout
+    (fun path ->
+      match create_exn ?message path with
+      | exception exn -> Error (`Retriable exn)
+      | res -> Ok res)
+    path
 ;;
 
-let blocking_create_v2 ?timeout ?message path =
-  repeat_with_timeout ?timeout (fun path -> create_v2_exn ?message path) path
+let blocking_create_v2 ?timeout ?message ?exn path =
+  repeat_with_timeout
+    ?timeout
+    (fun path -> create_v2_internal_exn ?message ?exn path)
+    path
 ;;
 
 let critical_section ?message path ~timeout ~f =

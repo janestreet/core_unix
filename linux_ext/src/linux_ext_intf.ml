@@ -202,7 +202,7 @@ module type S = sig
 
   module Eventfd : sig
     module Flags : sig
-      type t = private Int63.t [@@deriving sexp_of]
+      type t [@@deriving sexp_of]
 
       include Flags.S with type t := t
 

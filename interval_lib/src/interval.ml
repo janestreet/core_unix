@@ -562,8 +562,10 @@ module Int = struct
 
       module Elt = Int
 
+      let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
+      let iter_until = `Define_using_fold_until
       let iter = `Custom iter
-      let fold = fold
+      let fold = `Custom fold
       let length = `Custom length
     end)
 
@@ -577,6 +579,7 @@ module Int = struct
   let to_array = For_container.to_array
   let fold_result = For_container.fold_result
   let fold_until = For_container.fold_until
+  let iter_until = For_container.iter_until
 
   let min_elt t ~(compare : _ -> _ -> _) =
     if not (phys_equal compare Int.compare)

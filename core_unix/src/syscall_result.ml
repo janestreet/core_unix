@@ -137,6 +137,7 @@ module%template [@mode m = (global, local)] Make (M : Arg [@mode m]) () = struct
   end
 end
 
+[%%template
 module Int = Make [@mode local] (Int) ()
 
 module Unit =
@@ -149,7 +150,7 @@ module Unit =
     end)
     ()
 
-module File_descr = Make [@mode local] (File_descr) ()
+module File_descr = Make [@mode local] (File_descr) ()]
 
 let unit = Unit.create_ok ()
 let ignore_ok_value t = Core.Int.min t 0

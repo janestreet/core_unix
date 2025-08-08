@@ -29,8 +29,9 @@ let repeat_with_timeout ?max_retry_delay ?(random = random) ?timeout lockf path 
   match timeout with
   | None ->
     let rec loop () =
-      try lockf path with
-      | _ ->
+      match lockf path with
+      | Ok res -> res
+      | Error (`Retriable _e) ->
         wait_at_most max_retry_delay random;
         loop ()
     in
@@ -38,8 +39,9 @@ let repeat_with_timeout ?max_retry_delay ?(random = random) ?timeout lockf path 
   | Some timeout ->
     let start_time = Time_float.now () in
     let rec loop () =
-      try lockf path with
-      | e ->
+      match lockf path with
+      | Ok res -> res
+      | Error (`Retriable e) ->
         let since_start = Time_float.abs_diff start_time (Time_float.now ()) in
         if Time_float.Span.(since_start > timeout)
         then

@@ -212,9 +212,23 @@ let%expect_test "Locale.posix" =
   [%expect {| C |}]
 ;;
 
+let%expect_test "Locale.Portable.posix" =
+  let locale = Portable_lazy.force Locale.Portable.posix in
+  print_endline (Locale.to_string_hum locale);
+  [%expect {| C |}]
+;;
+
 let%expect_test "Locale.native" =
   Unix.putenv ~key:"LC_ALL" ~data:"de_DE.UTF-8";
   let locale = force Locale.native in
+  Unix.unsetenv "LC_ALL";
+  print_endline (Locale.to_string_hum locale);
+  [%expect {| de_DE.UTF-8 |}]
+;;
+
+let%expect_test "Locale.Portable.native" =
+  Unix.putenv ~key:"LC_ALL" ~data:"de_DE.UTF-8";
+  let locale = Portable_lazy.force Locale.Portable.native in
   Unix.unsetenv "LC_ALL";
   print_endline (Locale.to_string_hum locale);
   [%expect {| de_DE.UTF-8 |}]

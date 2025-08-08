@@ -341,5 +341,10 @@ module Expert = struct
   let native_global = global_value
 end
 
+module Portable = struct
+  let posix = Portable_lazy.from_fun posix
+  let native = Portable_lazy.from_fun native
+end
+
 let posix = lazy (posix ())
 let native = lazy (native ())

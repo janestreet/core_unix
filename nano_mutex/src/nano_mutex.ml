@@ -49,7 +49,7 @@ end = struct
 end
 
 module Thread_id_option : sig
-  type t [@@deriving equal, sexp_of] [@@immediate]
+  type t [@@deriving equal ~localize, sexp_of] [@@immediate]
 
   val none : t
   val some : int -> t
@@ -67,7 +67,7 @@ end = struct
   (* The atomicity of some sections marked "BEGIN/END ATOMIC" later in this file require
      [equal] to be implemented such that the OCaml compiler will not insert safepoints in
      its prelude.  We write out the definition rather than deriving it for this reason. *)
-  let[@inline] equal (t1 : int) t2 = t1 = t2
+  let%template[@inline] equal (t1 : int) t2 = t1 = t2 [@@mode m = (global, local)]
 end
 
 (* We represent a nano mutex using an OCaml record.  The [id_of_thread_holding_lock] field

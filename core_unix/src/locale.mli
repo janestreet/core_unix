@@ -123,6 +123,21 @@ val posix : t Lazy.t
     users. *)
 val native : t Lazy.t
 
+(** Versions of {!posix} and {!native} that can be constructed from multiple domains. *)
+module Portable : sig
+  (** A singleton locale created with {!Expert.posix} to avoid having to repeatedly
+      construct it. As a result, the destructive operations like {!Expert.modify} and
+      {!Expert.free} must not be called on this locale, as it would interfere with other
+      users. *)
+  val posix : t Portable_lazy.t
+
+  (** A singleton locale created with {!Expert.native} to avoid having to repeatedly
+      construct it. As a result, the destructive operations like {!Expert.modify} and
+      {!Expert.free} must not be called on this locale, as it would interfere with other
+      users. *)
+  val native : t Portable_lazy.t
+end
+
 (** Returns a string representation of the setting of a single category within a locale,
     in an implementation-defined format that is accepted by {!Expert.create}. *)
 val to_string : t -> Category.t -> string
