@@ -742,7 +742,7 @@ end
 
 let putenv ~key ~data =
   improve
-    (fun () -> Unix.putenv key data)
+    (fun () -> (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) key data)
     (fun () -> [ "key", atom key; "data", atom data ]) [@nontail]
 ;;
 
@@ -2546,8 +2546,7 @@ module Inet_addr0 = struct
 
         (* Unix.inet_addr is represented as either a "struct in_addr" or a "struct
            in6_addr" stuffed into an O'Caml string, so polymorphic compare will work. *)
-        let compare = Poly.compare
-        let compare__local = Poly.compare__local
+        let%template[@mode m = (global, local)] compare = (Poly.compare [@mode m])
         let hash_fold_t hash (t : t) = hash_fold_int hash (Hashtbl.hash t)
         let hash = Ppx_hash_lib.Std.Hash.of_fold hash_fold_t
       end
@@ -2812,7 +2811,7 @@ module Cidr = struct
       else None)
   ;;
 
-  include Identifiable.Make_using_comparator (struct
+  include%template Identifiable.Make_using_comparator [@mode local] (struct
       let module_name = "Core_unix.Cidr"
 
       include Stable.V1.T0

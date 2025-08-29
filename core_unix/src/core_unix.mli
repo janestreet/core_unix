@@ -1561,7 +1561,7 @@ module Cidr : sig
 
   (** [of_string] Generates a Cidr.t based on a string like ["10.0.0.0/8"]. Addresses are
       not expanded, i.e. ["10/8"] is invalid. *)
-  include Identifiable.S with type t := t
+  include%template Identifiable.S [@mode local] with type t := t
 
   include Invariant.S with type t := t
 

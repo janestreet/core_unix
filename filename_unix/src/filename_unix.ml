@@ -32,6 +32,8 @@ let arg_type = create_arg_type Fn.id
 
 external realpath : string -> string = "core_unix_realpath"
 
+module DLS = Basement.Stdlib_shim.Domain.Safe.DLS
+
 (* We want [random_letter ()] to be thread-safe.
 
    This is thread safe because [Stdlib.Random.State.int] is (the only updates to
@@ -39,15 +41,12 @@ external realpath : string -> string = "core_unix_realpath"
    cannot be interrupted by an OCaml thread context switch).
 *)
 let random_letter =
-  let prng_key =
-    (Domain.DLS.new_key [@ocaml.alert "-unsafe_multidomain"])
-      Stdlib.Random.State.make_self_init
-  in
+  let prng_key = DLS.new_key Stdlib.Random.State.make_self_init in
   let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" in
-  let get = Obj.magic_portable (Domain.DLS.get [@ocaml.alert "-unsafe_multidomain"]) in
   fun () ->
-    let prng = get prng_key in
-    letters.[Stdlib.Random.State.int prng (String.length letters)]
+    DLS.access (fun access ->
+      let prng = DLS.get access prng_key in
+      letters.[Stdlib.Random.State.int prng (String.length letters)])
 ;;
 
 let retry ~in_dir ~prefix ~suffix f =

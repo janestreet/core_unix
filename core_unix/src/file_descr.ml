@@ -36,3 +36,9 @@ include Hashable.Make_plain_and_derive_hash_fold_t (M)
 let%template equal t1 t2 = (Int.equal [@mode m]) (to_int t1) (to_int t2)
 [@@mode m = (global, local)]
 ;;
+
+external unbox_int32 : int32 -> int32 = "%identity"
+external box_int32 : int32 -> int32 = "%identity"
+
+let to_i32 t = unbox_int32 (Int.to_int32_trunc (to_int t))
+let of_i32 t = of_int (Int.of_int32_trunc (box_int32 t))
