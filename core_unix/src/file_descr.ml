@@ -28,7 +28,8 @@ module M = struct
 end
 
 include M
-include Hashable.Make_plain_and_derive_hash_fold_t (M)
+
+include%template Hashable.Make_plain_and_derive_hash_fold_t [@mode portable] (M)
 
 (* Given that [to_int] and [of_int] are set to "%identity", this is considerably more
    direct.  It's unfortunate, but despite [Caml_unix] using [type t = int] in the

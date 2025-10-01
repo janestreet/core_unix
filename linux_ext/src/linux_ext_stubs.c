@@ -92,8 +92,8 @@ CAMLprim value core_linux_sysinfo(value __unused v_unit) {
 
 /**/
 
-static int linux_tcpopt_bool[] = {TCP_CORK, TCP_QUICKACK};
-static int linux_tcpopt_string[] = {TCP_CONGESTION};
+static const int linux_tcpopt_bool[] = {TCP_CORK, TCP_QUICKACK};
+static const int linux_tcpopt_string[] = {TCP_CONGESTION};
 
 enum option_type {
   TYPE_BOOL = 0,
@@ -205,7 +205,7 @@ CAMLprim value core_linux_settcpopt_string_stub(value v_socket, value v_optname,
 
 /**/
 
-static int nonblocking_no_sigpipe_flag = MSG_DONTWAIT | MSG_NOSIGNAL;
+static const int nonblocking_no_sigpipe_flag = MSG_DONTWAIT | MSG_NOSIGNAL;
 
 CAMLprim value core_linux_send_nonblocking_no_sigpipe_stub(value v_fd, value v_pos,
                                                            value v_len, value v_buf) {

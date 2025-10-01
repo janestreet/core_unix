@@ -1,10 +1,9 @@
 open! Core
-open! Iobuf
 open! Iobuf_unix
 module Unix = Core_unix
 module Thread = Core_thread
 
-type nonrec ('d, 'w) t = ('d, 'w) Hexdump.t [@@deriving sexp_of]
+type nonrec ('d, 'w) t = ('d, 'w) Iobuf.Hexdump.t [@@deriving sexp_of]
 
 let%test_unit _ =
   let to_bigstring_shared_via_iovec ?pos ?len iobuf =
@@ -30,7 +29,7 @@ let%expect_test "fillf_float.Ok" =
   let t = Iobuf.create ~len:32 in
   assert (Poly.equal (Expert.fillf_float t ~c_format:"%f" Float.pi) `Ok);
   Iobuf.flip_lo t;
-  print_endline (to_string t);
+  print_endline (Iobuf.to_string t);
   [%expect {| 3.141593 |}]
 ;;
 
@@ -38,7 +37,7 @@ let%expect_test "fillf_float.Truncated" =
   let t = Iobuf.create ~len:5 in
   assert (Poly.equal (Expert.fillf_float t ~c_format:"%f" Float.pi) `Truncated);
   Iobuf.flip_lo t;
-  print_endline (to_string t);
+  print_endline (Iobuf.to_string t);
   [%expect {| |}]
 ;;
 
@@ -54,13 +53,13 @@ module Io_test (Ch : sig
 
     val create_in : string -> in_
     val close_in : in_ -> unit
-    val read : ([> write ], seek) Iobuf.t -> in_ -> ok_or_eof
+    val read : ([> write ], Iobuf.seek) Iobuf.t -> in_ -> ok_or_eof
 
     type out_
 
     val create_out : Unix.File_descr.t -> out_
     val close_out : out_ -> unit
-    val write : ([> read ], seek) Iobuf.t -> out_ -> unit
+    val write : ([> read ], Iobuf.seek) Iobuf.t -> out_ -> unit
     val peek_write : ([> read ], _) Iobuf.t -> out_ -> int
   end) =
 struct
@@ -72,24 +71,24 @@ struct
         ~finally:(fun () -> Unix.unlink file)
         ~f:(fun () ->
           let ch = Ch.create_out fd in
-          Poke.stringo t string ~pos;
-          advance t pos;
-          resize t ~len;
+          Iobuf.Poke.stringo t string ~pos;
+          Iobuf.advance t pos;
+          Iobuf.resize t ~len;
           Ch.write t ch;
           Ch.close_out ch;
-          reset t;
-          for pos = 0 to length t - 1 do
-            Poke.char t '\000' ~pos
+          Iobuf.reset t;
+          for pos = 0 to Iobuf.length t - 1 do
+            Iobuf.Poke.char t '\000' ~pos
           done;
           let ch = Ch.create_in file in
-          advance t pos;
-          let lo = Lo_bound.window t in
+          Iobuf.advance t pos;
+          let lo = Iobuf.Lo_bound.window t in
           (match Ch.read t ch with
            | Ok -> assert (len > 0 || Iobuf.is_empty t)
            | Eof -> assert (len = 0 && not (Iobuf.is_empty t)));
-          bounded_flip_lo t lo;
-          [%test_result: string] (to_string t) ~expect:string;
-          reset t;
+          Iobuf.bounded_flip_lo t lo;
+          [%test_result: string] (Iobuf.to_string t) ~expect:string;
+          Iobuf.reset t;
           (match Ch.read t ch with
            | Eof -> ()
            | Ok -> assert false);
@@ -104,9 +103,9 @@ struct
         ~finally:(fun () -> Unix.unlink file)
         ~f:(fun () ->
           let ch = Ch.create_out fd in
-          Poke.stringo t string ~pos;
-          advance t pos;
-          resize t ~len;
+          Iobuf.Poke.stringo t string ~pos;
+          Iobuf.advance t pos;
+          Iobuf.resize t ~len;
           let written = Ch.peek_write (Iobuf.no_seek (Iobuf.read_only t)) ch in
           [%test_result: int] written ~expect:len;
           Ch.close_out ch;
@@ -158,18 +157,18 @@ let%test_unit _ =
     protect
       ~finally:(fun () -> Unix.unlink file)
       ~f:(fun () ->
-        (sub_shared t ~pos |> fun t -> Fill.stringo t string);
-        (sub_shared t ~pos ~len:n
+        (Iobuf.sub_shared t ~pos |> fun t -> Iobuf.Fill.stringo t string);
+        (Iobuf.sub_shared t ~pos ~len:n
          |> fun t ->
          let len_before = Iobuf.length t in
          write_assume_fd_is_nonblocking t fd;
          [%test_result: int] (len_before - Iobuf.length t) ~expect:n);
         Unix.close fd;
         iter_examples ~f:(fun t _ ~pos ->
-          if length t - pos >= String.length string
+          if Iobuf.length t - pos >= String.length string
           then (
             let fd = Unix.openfile ~mode:[ Unix.O_RDONLY ] file in
-            (sub_shared t ~pos
+            (Iobuf.sub_shared t ~pos
              |> fun t ->
              let len_before = Iobuf.length t in
              match
@@ -178,8 +177,8 @@ let%test_unit _ =
              | Ok () | Error (EAGAIN | EINTR | EWOULDBLOCK) ->
                [%test_result: int] (len_before - Iobuf.length t) ~expect:n
              | Error e -> raise (Unix.Unix_error (e, "read", "")));
-            (sub_shared t ~pos ~len:n
-             |> fun t -> assert (String.equal (to_string t) string));
+            (Iobuf.sub_shared t ~pos ~len:n
+             |> fun t -> assert (String.equal (Iobuf.to_string t) string));
             Unix.close fd))))
 ;;
 
@@ -189,21 +188,21 @@ let pwrite_assume_fd_is_nonblocking = pwrite_assume_fd_is_nonblocking
 let%test_unit _ =
   let s = "000000000011111111112222222222" in
   let n = String.length s in
-  let t = of_string s in
+  let t = Iobuf.of_string s in
   let file, fd = Unix.mkstemp "iobuf_test" in
   protect
     ~finally:(fun () -> Unix.unlink file)
     ~f:(fun () ->
-      (sub_shared t ~pos:0 ~len:n
+      (Iobuf.sub_shared t ~pos:0 ~len:n
        |> fun t ->
        pwrite_assume_fd_is_nonblocking t fd ~offset:10;
        assert (Iobuf.is_empty t));
-      (sub_shared t ~pos:0 ~len:10
+      (Iobuf.sub_shared t ~pos:0 ~len:10
        |> fun t ->
        pread_assume_fd_is_nonblocking t fd ~offset:20;
        assert (Iobuf.is_empty t));
-      (sub_shared t ~pos:0 ~len:10
-       |> fun t -> assert (String.equal (to_string t) "1111111111"));
+      (Iobuf.sub_shared t ~pos:0 ~len:10
+       |> fun t -> assert (String.equal (Iobuf.to_string t) "1111111111"));
       Unix.close fd)
 ;;
 
@@ -231,7 +230,7 @@ let sendto_and_recvfrom recvfrom recv_fd sendto ~sendto_name =
           (fun () ->
             let send_fd = Unix.(socket ~domain:PF_INET ~kind:SOCK_DGRAM ~protocol:0 ()) in
             iter_examples ~f:(fun t string ~pos:_ ->
-              Fill.stringo t string;
+              Iobuf.Fill.stringo t string;
               Iobuf.flip_lo t;
               retry_until_ready (fun () ->
                 Unix.Syscall_result.Unit.ok_or_unix_error_exn
@@ -281,7 +280,7 @@ let create_sample_file ~int_size ~be ~msgcount =
   let bstr = Bigstring.create 512 in
   (* Sometimes use a bigstring buffer, sometimes a char queue, to test the latter and
      [read_to_fd] symmetrically to [write_from_fd] below. *)
-  let t = create ~len:512 in
+  let t = Iobuf.create ~len:512 in
   let filename, fd = Unix.mkstemp "iobuftest" in
   for i = 0 to msgcount - 1 do
     let s = sprintf "MESSAGE %d" i in
@@ -308,18 +307,18 @@ let create_sample_file ~int_size ~be ~msgcount =
     else (
       let fill_int =
         match int_size with
-        | 2 -> if be then Fill.int16_be_trunc else Fill.int16_le_trunc
-        | 4 -> if be then Fill.int32_be_trunc else Fill.int32_le_trunc
-        | 8 -> if be then Fill.int64_be else Fill.int64_le
+        | 2 -> if be then Iobuf.Fill.int16_be_trunc else Iobuf.Fill.int16_le_trunc
+        | 4 -> if be then Iobuf.Fill.int32_be_trunc else Iobuf.Fill.int32_le_trunc
+        | 8 -> if be then Iobuf.Fill.int64_be else Iobuf.Fill.int64_le
         | _ -> failwithf "Unknown int size %d" int_size ()
       in
       fill_int t len;
-      Fill.stringo t s;
-      flip_lo t;
+      Iobuf.Fill.stringo t s;
+      Iobuf.flip_lo t;
       write_assume_fd_is_nonblocking t fd;
       [%test_pred: (_, _) t] (fun buf -> Iobuf.is_empty buf) t;
       (* no short writes *)
-      reset t)
+      Iobuf.reset t)
   done;
   Unix.close fd;
   filename
@@ -330,37 +329,37 @@ let create_sample_file ~int_size ~be ~msgcount =
 let check_msgs ?(int_size = 2) ?(be = false) file =
   let msg_number = ref 0 in
   let check_message r =
-    let msg = Consume.stringo r in
+    let msg = Iobuf.Consume.stringo r in
     let s = sprintf "MESSAGE %d" !msg_number in
     assert (String.equal s msg);
     msg_number := !msg_number + 1
   in
   let fd = Unix.openfile file ~perm:0o600 ~mode:[ Unix.O_RDONLY ] in
-  let t = create ~len:512 in
+  let t = Iobuf.create ~len:512 in
   let rec drain_messages () =
-    let init_len = length t in
+    let init_len = Iobuf.length t in
     if init_len > int_size
     then (
       let consume_int =
         match int_size with
-        | 2 -> if be then Consume.int16_be else Consume.int16_le
-        | 4 -> if be then Consume.int32_be else Consume.int32_le
-        | 8 -> if be then Consume.int64_be_exn else Consume.int64_le_exn
+        | 2 -> if be then Iobuf.Consume.int16_be else Iobuf.Consume.int16_le
+        | 4 -> if be then Iobuf.Consume.int32_be else Iobuf.Consume.int32_le
+        | 8 -> if be then Iobuf.Consume.int64_be_exn else Iobuf.Consume.int64_le_exn
         | _ -> failwithf "Unknown int size %d" int_size ()
       in
       let needed = consume_int t in
-      if length t < needed
+      if Iobuf.length t < needed
       then (
-        rewind t;
-        advance t (length t - init_len);
-        assert (length t = init_len))
+        Iobuf.rewind t;
+        Iobuf.advance t (Iobuf.length t - init_len);
+        assert (Iobuf.length t = init_len))
       else (
-        check_message (sub_shared t ~len:needed);
-        advance t needed;
+        check_message (Iobuf.sub_shared t ~len:needed);
+        Iobuf.advance t needed;
         drain_messages ()))
   in
   let rec loop_file () =
-    let len_before = length t in
+    let len_before = Iobuf.length t in
     (match
        read_assume_fd_is_nonblocking t fd |> Unix.Syscall_result.Unit.to_result
        (* doesn't allocate *)
@@ -368,11 +367,11 @@ let check_msgs ?(int_size = 2) ?(be = false) file =
      | Error (EAGAIN | EINTR | EWOULDBLOCK) -> ()
      | Error e -> raise (Unix.Unix_error (e, "read", ""))
      | Ok () -> ());
-    if len_before > length t
+    if len_before > Iobuf.length t
     then (
-      flip_lo t;
+      Iobuf.flip_lo t;
       drain_messages ();
-      compact t;
+      Iobuf.compact t;
       loop_file ())
   in
   loop_file ();

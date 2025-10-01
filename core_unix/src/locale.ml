@@ -130,7 +130,7 @@ module Category_set = struct
     ]
   ;;
 
-  include Flags.Make (struct
+  include%template Flags.Make (struct
       let known = known
       let remove_zero_flags = false
       let allow_intersecting = false
@@ -193,8 +193,9 @@ module T = struct
 end
 
 include T
-include Comparable.Make (T)
-include Hashable.Make (T)
+
+include%template Comparable.Make [@mode portable] (T)
+include%template Hashable.Make [@mode portable] (T)
 
 external global_value
   :  unit

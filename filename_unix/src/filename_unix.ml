@@ -7,7 +7,9 @@ let create_arg_type ?key of_string =
     let completions =
       (* `compgen -f` handles some fiddly things nicely, e.g. completing "foo" and
          "foo/" appropriately. *)
-      let command = sprintf "bash -c 'compgen -f %s'" part in
+      let command =
+        Sys.concat_quoted [ "bash"; "-c"; Sys.concat_quoted [ "compgen"; "-f"; part ] ]
+      in
       let chan_in = Unix.open_process_in command in
       let completions = In_channel.input_lines chan_in in
       ignore (Unix.close_process_in chan_in);
@@ -44,9 +46,9 @@ let random_letter =
   let prng_key = DLS.new_key Stdlib.Random.State.make_self_init in
   let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" in
   fun () ->
-    DLS.access (fun access ->
-      let prng = DLS.get access prng_key in
-      letters.[Stdlib.Random.State.int prng (String.length letters)])
+    (* See above, plus we do not yield or borrow the state. *)
+    let prng = Obj.magic_uncontended (DLS.get prng_key) in
+    letters.[Stdlib.Random.State.int prng (String.length letters)]
 ;;
 
 let retry ~in_dir ~prefix ~suffix f =

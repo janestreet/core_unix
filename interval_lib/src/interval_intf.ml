@@ -316,7 +316,7 @@ module type%template Interval = sig
           include Comparable.Make_binable (T)
         end
       ]} *)
-  module
+  module%template.portable
     [@mode m = (global, local)] Make (Bound : sig
       type t
       [@@deriving (bin_io [@mode m]), (compare [@mode m]), (equal [@mode m]), hash, sexp]
@@ -376,7 +376,7 @@ module type%template Interval = sig
 
     https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
-    module
+    module%template.portable
       [@mode m = (global, local)] Make (Bound : sig
         type t [@@deriving (bin_io [@mode m]), sexp, hash]
 

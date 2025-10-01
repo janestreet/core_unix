@@ -89,14 +89,14 @@ let%expect_test "side effects" =
   let state = ref "" in
   let complete _env ~part:_ =
     state := set_by_complete;
-    Unix.putenv ~key:var ~data:set_by_complete;
+    (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) ~key:var ~data:set_by_complete;
     []
   in
   let param =
     let%map_open.Command () = anon ("_" %: Arg_type.create ~complete (const ())) in
     print_cr [%message "This shouldn't have run."];
     state := "set by param";
-    Unix.putenv ~key:var ~data:"set by param"
+    (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) ~key:var ~data:"set by param"
   in
   Command_test_helpers.complete param ~args:[ "" ];
   require_compare_equal (module String) !state set_by_complete;

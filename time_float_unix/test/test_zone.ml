@@ -193,13 +193,13 @@ let%expect_test "random test against Unix.localtime" =
         (* goes through the dance of setting the env variable, then calling localtime, then
            setting the TZ back.  We call localtime on 1000. each time to reset the internal
            state of localtime, which matters when we convert indeterminate times. *)
-        Unix.putenv ~key:"TZ" ~data:zone_name;
+        (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) ~key:"TZ" ~data:zone_name;
         ignore (Unix.localtime 1000. : Unix.tm);
         let unix_time, _ = Unix.mktime tm in
         let localtime = Unix.localtime unix_time in
         let localtime_date_string = Unix.strftime localtime "%Y-%m-%d" in
         let localtime_ofday_string = Unix.strftime localtime "%H:%M:%S.000000" in
-        Unix.unsetenv "TZ";
+        (Unix.unsetenv [@ocaml.alert "-unsafe_multidomain"]) "TZ";
         ignore (Unix.localtime 1000. : Unix.tm);
         let our_date, our_ofday =
           Time.to_date_ofday (Time.of_span_since_epoch (Time.Span.of_sec unix_time)) ~zone

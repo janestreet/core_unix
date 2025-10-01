@@ -224,11 +224,15 @@ val environment : unit -> string array
     environment. [key] is the name of the environment variable, and [data] its new
     associated value. *)
 val putenv : key:string -> data:string -> unit
+[@@alert
+  unsafe_multidomain "Mutating the environment makes reading the environment unsafe."]
 
 (** [unsetenv name] deletes the variable [name] from the environment.
 
     EINVAL [name] contained an ’=’ or an '\000' character. *)
 val unsetenv : string -> unit
+[@@alert
+  unsafe_multidomain "Mutating the environment makes reading the environment unsafe."]
 
 (** {6 Process handling} *)
 
@@ -321,6 +325,24 @@ module Pgid : sig
 
   (** Raises [Invalid_arg] if the value is not strictly positive. *)
   val of_pid : int -> t
+end
+
+module Scheduler : sig
+  module Policy : sig
+    type t =
+      | Fifo
+      | Round_robin
+      | Other
+    [@@deriving sexp]
+  end
+
+  (** See [man sched_setscheduler].
+
+      The [priority] supplied here is *not* the nice value of a process. It is the
+      "static" priority (1 .. 99) used in conjunction with real-time processes. If you
+      want to set the nice value of a normal process, use [Linux_ext.setpriority] or
+      [Core_unix.nice]. *)
+  val set : pid:Pid.t option -> policy:Policy.t -> priority:int -> unit
 end
 
 (** [exec ~prog ~argv ?search_path ?env] execs [prog] with [argv]. If [use_path = true]
@@ -2010,52 +2032,51 @@ val getnameinfo : sockaddr -> getnameinfo_option list -> name_info
     [termios] man page for a complete description. *)
 
 module Terminal_io : sig
-  type t = Unix.terminal_io =
+  type t =
     { (*_ Input modes: *)
-      mutable c_ignbrk : bool (** Ignore the break condition. *)
-    ; mutable c_brkint : bool (** Signal interrupt on break condition. *)
-    ; mutable c_ignpar : bool (** Ignore characters with parity errors. *)
-    ; mutable c_parmrk : bool (** Mark parity errors. *)
-    ; mutable c_inpck : bool (** Enable parity check on input. *)
-    ; mutable c_istrip : bool (** Strip 8th bit on input characters. *)
-    ; mutable c_inlcr : bool (** Map NL to CR on input. *)
-    ; mutable c_igncr : bool (** Ignore CR on input. *)
-    ; mutable c_icrnl : bool (** Map CR to NL on input. *)
-    ; mutable c_ixon : bool (** Recognize XON/XOFF characters on input. *)
-    ; mutable c_ixoff : bool (** Emit XON/XOFF chars to control input flow. *)
+      c_ignbrk : bool (** Ignore the break condition. *)
+    ; c_brkint : bool (** Signal interrupt on break condition. *)
+    ; c_ignpar : bool (** Ignore characters with parity errors. *)
+    ; c_parmrk : bool (** Mark parity errors. *)
+    ; c_inpck : bool (** Enable parity check on input. *)
+    ; c_istrip : bool (** Strip 8th bit on input characters. *)
+    ; c_inlcr : bool (** Map NL to CR on input. *)
+    ; c_igncr : bool (** Ignore CR on input. *)
+    ; c_icrnl : bool (** Map CR to NL on input. *)
+    ; c_ixon : bool (** Recognize XON/XOFF characters on input. *)
+    ; c_ixoff : bool (** Emit XON/XOFF chars to control input flow. *)
     ; (*_ Output modes: *)
-      mutable c_opost : bool (** Enable output processing. *)
+      c_opost : bool (** Enable output processing. *)
     ; (*_ Control modes: *)
-      mutable c_obaud : int (** Output baud rate (0 means close connection). *)
-    ; mutable c_ibaud : int (** Input baud rate. *)
-    ; mutable c_csize : int (** Number of bits per character (5-8). *)
-    ; mutable c_cstopb : int (** Number of stop bits (1-2). *)
-    ; mutable c_cread : bool (** Reception is enabled. *)
-    ; mutable c_parenb : bool (** Enable parity generation and detection. *)
-    ; mutable c_parodd : bool (** Specify odd parity instead of even. *)
-    ; mutable c_hupcl : bool (** Hang up on last close. *)
-    ; mutable c_clocal : bool (** Ignore modem status lines. *)
+      c_obaud : int (** Output baud rate (0 means close connection). *)
+    ; c_ibaud : int (** Input baud rate. *)
+    ; c_csize : int (** Number of bits per character (5-8). *)
+    ; c_cstopb : int (** Number of stop bits (1-2). *)
+    ; c_cread : bool (** Reception is enabled. *)
+    ; c_parenb : bool (** Enable parity generation and detection. *)
+    ; c_parodd : bool (** Specify odd parity instead of even. *)
+    ; c_hupcl : bool (** Hang up on last close. *)
+    ; c_clocal : bool (** Ignore modem status lines. *)
     ; (*_ Local modes: *)
-      mutable c_isig : bool (** Generate signal on INTR, QUIT, SUSP. *)
-    ; mutable c_icanon : bool
-    (** Enable canonical processing (line buffering and editing) *)
-    ; mutable c_noflsh : bool (** Disable flush after INTR, QUIT, SUSP. *)
-    ; mutable c_echo : bool (** Echo input characters. *)
-    ; mutable c_echoe : bool (** Echo ERASE (to erase previous character). *)
-    ; mutable c_echok : bool (** Echo KILL (to erase the current line). *)
-    ; mutable c_echonl : bool (** Echo NL even if c_echo is not set. *)
+      c_isig : bool (** Generate signal on INTR, QUIT, SUSP. *)
+    ; c_icanon : bool (** Enable canonical processing (line buffering and editing) *)
+    ; c_noflsh : bool (** Disable flush after INTR, QUIT, SUSP. *)
+    ; c_echo : bool (** Echo input characters. *)
+    ; c_echoe : bool (** Echo ERASE (to erase previous character). *)
+    ; c_echok : bool (** Echo KILL (to erase the current line). *)
+    ; c_echonl : bool (** Echo NL even if c_echo is not set. *)
     ; (*_ Control characters: *)
-      mutable c_vintr : char (** Interrupt character (usually ctrl-C). *)
-    ; mutable c_vquit : char (** Quit character (usually ctrl-\). *)
-    ; mutable c_verase : char (** Erase character (usually DEL or ctrl-H). *)
-    ; mutable c_vkill : char (** Kill line character (usually ctrl-U). *)
-    ; mutable c_veof : char (** End-of-file character (usually ctrl-D). *)
-    ; mutable c_veol : char (** Alternate end-of-line char. (usually none). *)
-    ; mutable c_vmin : int
+      c_vintr : char (** Interrupt character (usually ctrl-C). *)
+    ; c_vquit : char (** Quit character (usually ctrl-\). *)
+    ; c_verase : char (** Erase character (usually DEL or ctrl-H). *)
+    ; c_vkill : char (** Kill line character (usually ctrl-U). *)
+    ; c_veof : char (** End-of-file character (usually ctrl-D). *)
+    ; c_veol : char (** Alternate end-of-line char. (usually none). *)
+    ; c_vmin : int
     (** Minimum number of characters to read before the read request is satisfied. *)
-    ; mutable c_vtime : int (** Maximum read wait (in 0.1s units). *)
-    ; mutable c_vstart : char (** Start character (usually ctrl-Q). *)
-    ; mutable c_vstop : char (** Stop character (usually ctrl-S). *)
+    ; c_vtime : int (** Maximum read wait (in 0.1s units). *)
+    ; c_vstart : char (** Start character (usually ctrl-Q). *)
+    ; c_vstop : char (** Stop character (usually ctrl-S). *)
     }
   [@@deriving sexp_of]
 
@@ -2511,25 +2532,6 @@ val set_mcast_loop : File_descr.t -> bool -> unit
     This uses [setsockopt] with [IP_MULTICAST_IF] and applies to multicast traffic. For
     non-multicast applications, see {!Linux_ext.bind_to_interface}. *)
 val set_mcast_ifname : File_descr.t -> string -> unit
-
-module Scheduler : sig
-  module Policy : sig
-    type t =
-      [ `Fifo
-      | `Round_robin
-      | `Other
-      ]
-    [@@deriving sexp]
-  end
-
-  (** See [man sched_setscheduler].
-
-      The [priority] supplied here is *not* the nice value of a process. It is the
-      "static" priority (1 .. 99) used in conjunction with real-time processes. If you
-      want to set the nice value of a normal process, use [Linux_ext.setpriority] or
-      [Core_unix.nice]. *)
-  val set : pid:Pid.t option -> policy:Policy.t -> priority:int -> unit
-end
 
 module Priority : sig
   val nice : int -> int

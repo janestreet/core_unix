@@ -157,13 +157,16 @@ let cpu_list_of_file_exn file =
   | Some cpu_list -> cpu_list_of_string_exn cpu_list
 ;;
 
-let isolated_cpus =
-  Memo.unit (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/isolated")
+let memo fn =
+  let memoized_fn = Base.Portable_lazy.from_fun fn in
+  fun () -> Portable_lazy.force memoized_fn
 ;;
 
-let online_cpus =
-  Memo.unit (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/online")
+let isolated_cpus =
+  memo (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/isolated")
 ;;
+
+let online_cpus = memo (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/online")
 
 let cpus_local_to_nic ~ifname =
   cpu_list_of_file_exn (sprintf "/sys/class/net/%s/device/local_cpulist" ifname)
@@ -524,7 +527,7 @@ module Fallocate = struct
     fallocate (File_descr.to_int fd) ~mode:(Flags.to_int_exn mode) ~offset ~size
   ;;
 
-  let fallocate = Or_error.return fallocate
+  let fallocate = Ok fallocate
 end
 
 [%%else]
@@ -755,7 +758,7 @@ module Memfd = struct
     let create ?(flags = Flags.empty) ?(initial_size = 0) name =
       create ~flags ~initial_size ~name
     in
-    Or_error.return create
+    Ok create
   ;;
 
   let to_file_descr t = t
@@ -797,7 +800,7 @@ module Eventfd = struct
 
   let create =
     let create ?(flags = Flags.empty) init = create init flags in
-    Or_error.return create
+    Ok create
   ;;
 
   let to_file_descr t = t
@@ -1023,7 +1026,7 @@ let setpriority ?pid priority = raw_setpriority ~pid:(pid_to_int_or_zero pid) pr
 let getpriority ?pid () = raw_getpriority ~pid:(pid_to_int_or_zero pid)
 
 let cores =
-  Memo.unit (fun () ->
+  memo (fun () ->
     match Option.bind (Core_unix.sysconf NPROCESSORS_ONLN) ~f:Int64.to_int with
     | None ->
       (* Fall back to our own implementation on the off-chance that the C library for some

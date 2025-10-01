@@ -104,12 +104,14 @@ module Name : sig
   val native : string
 end
 
-type t [@@deriving compare ~localize, equal ~localize, hash, sexp]
+include sig
+  type t [@@deriving compare ~localize, equal ~localize, hash, sexp]
 
-val ( = ) : t -> t -> bool
-val ( <> ) : t -> t -> bool
+  val ( = ) : t -> t -> bool
+  val ( <> ) : t -> t -> bool
 
-include Hashable.S_plain with type t := t
+  include Hashable.S_plain with type t := t
+end
 
 (** A singleton locale created with {!Expert.posix} to avoid having to repeatedly
     construct it. As a result, the destructive operations like {!Expert.modify} and
