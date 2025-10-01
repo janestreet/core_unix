@@ -8,7 +8,7 @@ include Mutex
     twice from the same thread, unlocking an unlocked mutex, or unlocking a mutex not held
     by the thread will result in a [Sys_error] exception. *)
 
-external create : unit -> Mutex.t = "unix_create_error_checking_mutex"
+external create : unit -> Mutex.t @@ portable = "unix_create_error_checking_mutex"
 
 let create = create
 let phys_equal = Stdlib.( == )

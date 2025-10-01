@@ -170,6 +170,40 @@ module%test [@name "[Nfs-v2]"] _ = struct
       unlock_exn path;
       [%expect ""])
   ;;
+
+  let%expect_test "early return on permission error" =
+    Filesystem_core.within_temp_dir (fun () ->
+      (* chdir to make the error messages more predictable
+         (although we still need to erase the file paths from them...) *)
+      Unix.chmod "." ~perm:0o555;
+      let path = "./lock" in
+      let hex32 = lazy (Re.compile (Re.seq [ Re.repn Re.xdigit 32 (Some 32) ])) in
+      let rewrite_hex32 string =
+        Re.replace_string (force hex32) ~by:"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" string
+      in
+      let sexp_rewrite_atoms ~f =
+        let rec go (sexp : Sexp.t) : Sexp.t =
+          match sexp with
+          | Atom s -> Atom (f s)
+          | List l -> List (List.map ~f:go l)
+        in
+        go
+      in
+      let tst f =
+        let res = Result.try_with f in
+        print_s
+          ([%sexp (res : (unit, exn) Result.t)] |> sexp_rewrite_atoms ~f:rewrite_hex32)
+      in
+      let () = tst (fun () -> blocking_create_v2 ~exn:`Mach path) in
+      [%expect
+        {|
+        (Error (
+          Unix.Unix_error
+          "Permission denied"
+          open
+          "((filename ./lock.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.lock-attempt) (mode (O_WRONLY O_CREAT O_TRUNC O_EXCL)) (perm 0o666))"))
+        |}])
+  ;;
 end
 
 open Expect_test_helpers_core

@@ -4,7 +4,7 @@ open! Import
 [%%template
 [@@@mode.default m = (global, local)]
 
-module type S = sig
+module type S = sig @@ portable
   type ok_value
   type 'a syscall_result
 
@@ -50,8 +50,8 @@ module type S = sig
   end
 end
 
-module type Arg = sig
-  type t [@@deriving sexp_of, (compare [@mode m])]
+module type Arg = sig @@ portable
+  type t : immutable_data [@@deriving sexp_of, (compare [@mode m])]
 
   (** [to_int t] must be >= 0, otherwise [create_ok] will raise. *)
   val to_int : t -> int

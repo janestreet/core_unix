@@ -51,6 +51,19 @@ let lock = flock ~exclusive:true
 
 [%%endif]
 
+let is_locked path =
+  try
+    let fd = Unix.openfile path ~mode:[ Unix.O_RDONLY; Unix.O_CLOEXEC ] ~perm:0o664 in
+    let flocked = flock fd ~exclusive:true in
+    let lockfed = lockf fd ~mode:Unix.F_TEST in
+    Unix.close fd;
+    (* releases any locks from [flock] and/or [lockf] *)
+    if flocked && lockfed then false else true
+  with
+  | Unix.Unix_error (ENOENT, _, _) -> false
+  | e -> raise e
+;;
+
 let create
   ?(message = Pid.to_string (Unix.getpid ()))
   ?(close_on_exec = true)
@@ -69,14 +82,12 @@ let create
   try
     if lock fd
     then (
-      let pid_when_lock_file_was_created = Unix.getpid () in
       if unlink_on_exit
       then
         at_exit (fun () ->
-          (* Do not unlink if we are in a different process than the one
-             that created the lock file (e.g. a forked child)
-          *)
-          if Pid.( = ) pid_when_lock_file_was_created (Unix.getpid ())
+          Unix.close fd;
+          (* Do not unlink if (e.g. a forked child, or our parent) still holds this lock *)
+          if not (is_locked path)
           then (
             try Unix.unlink path with
             | _ -> ()));
@@ -122,21 +133,11 @@ let blocking_create
     ?max_retry_delay
     ?random
     ?timeout
-    (fun path -> create_exn ?message ?close_on_exec ?unlink_on_exit path)
+    (fun path ->
+      match create_exn ?message ?close_on_exec ?unlink_on_exit path with
+      | exception exn -> Error (`Retriable exn)
+      | res -> Ok res)
     path
-;;
-
-let is_locked path =
-  try
-    let fd = Unix.openfile path ~mode:[ Unix.O_RDONLY ] ~perm:0o664 in
-    let flocked = flock fd ~exclusive:true in
-    let lockfed = lockf fd ~mode:Unix.F_TEST in
-    Unix.close fd;
-    (* releases any locks from [flock] and/or [lockf] *)
-    if flocked && lockfed then false else true
-  with
-  | Unix.Unix_error (ENOENT, _, _) -> false
-  | e -> raise e
 ;;
 
 let get_pid path =
@@ -201,17 +202,17 @@ module Flock = struct
     Option.iter lock_owner_uid ~f:(fun uid -> Core_unix.fchown fd ~uid ~gid:(-1));
     match flock ~exclusive fd with
     | false ->
-      Core_unix.close ~restart:true fd;
+      Core_unix.close fd;
       `Somebody_else_took_it
     | true -> `We_took_it { fd; unlocked = false }
     | exception exn ->
-      Core_unix.close ~restart:true fd;
+      Core_unix.close fd;
       raise exn
   ;;
 
   let unlock_exn t =
     if t.unlocked then raise_s [%sexp "Lock_file_blocking.Flock.unlock_exn called twice"];
     t.unlocked <- true;
-    Core_unix.close ~restart:true t.fd
+    Core_unix.close t.fd
   ;;
 end

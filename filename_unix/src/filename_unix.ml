@@ -7,7 +7,9 @@ let create_arg_type ?key of_string =
     let completions =
       (* `compgen -f` handles some fiddly things nicely, e.g. completing "foo" and
          "foo/" appropriately. *)
-      let command = sprintf "bash -c 'compgen -f %s'" part in
+      let command =
+        Sys.concat_quoted [ "bash"; "-c"; Sys.concat_quoted [ "compgen"; "-f"; part ] ]
+      in
       let chan_in = Unix.open_process_in command in
       let completions = In_channel.input_lines chan_in in
       ignore (Unix.close_process_in chan_in);
@@ -30,7 +32,9 @@ let create_arg_type ?key of_string =
 
 let arg_type = create_arg_type Fn.id
 
-external realpath : string -> string = "core_unix_realpath"
+external realpath : string -> string @@ portable = "core_unix_realpath"
+
+module DLS = Basement.Stdlib_shim.Domain.Safe.DLS
 
 (* We want [random_letter ()] to be thread-safe.
 
@@ -39,13 +43,11 @@ external realpath : string -> string = "core_unix_realpath"
    cannot be interrupted by an OCaml thread context switch).
 *)
 let random_letter =
-  let prng_key =
-    (Domain.DLS.new_key [@ocaml.alert "-unsafe_multidomain"])
-      Stdlib.Random.State.make_self_init
-  in
+  let prng_key = DLS.new_key Stdlib.Random.State.make_self_init in
   let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" in
   fun () ->
-    let prng = (Domain.DLS.get [@ocaml.alert "-unsafe_multidomain"]) prng_key in
+    (* See above, plus we do not yield or borrow the state. *)
+    let prng = Obj.magic_uncontended (DLS.get prng_key) in
     letters.[Stdlib.Random.State.int prng (String.length letters)]
 ;;
 

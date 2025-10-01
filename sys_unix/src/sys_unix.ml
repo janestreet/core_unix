@@ -95,6 +95,7 @@ external executing_bytecode
   -> unit
   -> unit
   -> bool
+  @@ portable
   = "executing_bytecode" "not_executing_bytecode"
 [@@noalloc]
 
@@ -103,7 +104,7 @@ let execution_mode () =
 ;;
 
 (* returns size, in bits, of an [int] type in C *)
-external c_int_size : unit -> int = "c_int_size" [@@noalloc]
+external c_int_size : unit -> int @@ portable = "c_int_size" [@@noalloc]
 
 let home_directory () =
   match getenv "HOME" with

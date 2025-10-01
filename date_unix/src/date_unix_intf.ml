@@ -1,7 +1,7 @@
 open! Core
 module Unix = Core_unix
 
-module type Date_unix = sig
+module type Date_unix = sig @@ portable
   type t := Core.Date.t
 
   (** This formats a date using the format patterns available in [strftime]. *)

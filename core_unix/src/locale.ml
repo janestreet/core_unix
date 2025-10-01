@@ -130,7 +130,7 @@ module Category_set = struct
     ]
   ;;
 
-  include Flags.Make (struct
+  include%template Flags.Make (struct
       let known = known
       let remove_zero_flags = false
       let allow_intersecting = false
@@ -193,8 +193,9 @@ module T = struct
 end
 
 include T
-include Comparable.Make (T)
-include Hashable.Make (T)
+
+include%template Comparable.Make [@mode portable] (T)
+include%template Hashable.Make [@mode portable] (T)
 
 external global_value
   :  unit
@@ -211,11 +212,13 @@ external all : unit -> (int32[@unboxed]) = "unix_LC_ALL_bytecode" "unix_LC_ALL"
 external freelocale
   :  (nativeint[@unboxed])
   -> unit
+  @@ portable
   = "unix_freelocale_bytecode" "unix_freelocale"
 
 external duplocale
   :  (nativeint[@unboxed])
   -> (nativeint[@unboxed])
+  @@ portable
   = "unix_duplocale_bytecode" "unix_duplocale"
 
 external newlocale
@@ -223,11 +226,13 @@ external newlocale
   -> string
   -> (nativeint[@unboxed])
   -> (nativeint[@unboxed])
+  @@ portable
   = "unix_newlocale_bytecode" "unix_newlocale"
 
 external uselocale
   :  (nativeint[@unboxed])
   -> (nativeint[@unboxed])
+  @@ portable
   = "unix_uselocale_bytecode" "unix_uselocale"
 
 external getlocalename
@@ -339,6 +344,11 @@ module Expert = struct
   let set_current = set_current
   let native_zero = zero_value
   let native_global = global_value
+end
+
+module Portable = struct
+  let posix = Portable_lazy.from_fun posix
+  let native = Portable_lazy.from_fun native
 end
 
 let posix = lazy (posix ())

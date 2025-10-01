@@ -76,5 +76,5 @@ type error = Unix.error =
 
 type t = error [@@deriving sexp, compare ~localize]
 
-external of_errno : int -> t = "core_unix_error_of_code"
-external to_errno : t -> int = "core_code_of_unix_error"
+external of_errno : int -> t @@ portable = "core_unix_error_of_code"
+external to_errno : t -> int @@ portable = "core_code_of_unix_error"

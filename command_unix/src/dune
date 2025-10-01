@@ -2,6 +2,6 @@
  (name command_unix)
  (public_name core_unix.command_unix)
  (libraries core core_thread core_unix sys_unix time_float_unix
-   core_kernel.version_util)
+   core_kernel.version_util_compat)
  (preprocess
   (pps ppx_jane)))

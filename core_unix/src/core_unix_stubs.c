@@ -10,6 +10,7 @@
 #if defined(__APPLE__)
 #define _POSIX_SOURCE
 #include <sys/socket.h>
+#include <xlocale.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/socket.h>
 #endif
@@ -21,9 +22,6 @@
 #include <errno.h>
 #include <limits.h>
 #include <locale.h>
-#ifdef __APPLE__
-#include <xlocale.h>
-#endif
 #include <net/if.h>
 #include <netinet/in.h>
 #include <signal.h>
@@ -488,7 +486,7 @@ CAMLprim value core_unix_statvfs_stub(value v_path) {
   CAMLreturn(v_stat);
 }
 
-static value cst_to_constr(int n, int *tbl, int size, int deflt) {
+static value cst_to_constr(int n, const int *tbl, int size, int deflt) {
   int i;
   for (i = 0; i < size; i++)
     if (n == tbl[i])
@@ -496,8 +494,8 @@ static value cst_to_constr(int n, int *tbl, int size, int deflt) {
   return Val_int(deflt);
 }
 
-static int file_kind_table[] = {S_IFREG, S_IFDIR, S_IFCHR, S_IFBLK,
-                                S_IFLNK, S_IFIFO, S_IFSOCK};
+static const int file_kind_table[] = {S_IFREG, S_IFDIR, S_IFCHR, S_IFBLK,
+                                      S_IFLNK, S_IFIFO, S_IFSOCK};
 
 static value file_kind_of_mode(mode_t st_mode) {
   return cst_to_constr(st_mode & S_IFMT, file_kind_table,
@@ -1486,7 +1484,7 @@ CAMLprim value core_unix_mcast_set_loop(value v_socket, value v_loop) {
 /* Scheduling */
 
 #if defined(_POSIX_PRIORITY_SCHEDULING) && (_POSIX_PRIORITY_SCHEDULING + 0 > 0)
-static int sched_policy_table[] = {SCHED_FIFO, SCHED_RR, SCHED_OTHER};
+static const int sched_policy_table[] = {SCHED_FIFO, SCHED_RR, SCHED_OTHER};
 
 CAMLprim value core_unix_sched_setscheduler(value v_pid, value v_policy,
                                             value v_priority) {
@@ -1530,7 +1528,7 @@ CAMLprim value core_unix_unsetenv(value var) {
   return Val_unit;
 }
 
-static int mman_mcl_flags_table[] = {MCL_CURRENT, MCL_FUTURE};
+static const int mman_mcl_flags_table[] = {MCL_CURRENT, MCL_FUTURE};
 
 CAMLprim value core_unix_mlockall(value v_flags) {
   CAMLparam1(v_flags);
@@ -1566,24 +1564,39 @@ static value alloc_tm(const struct tm *tm) {
   return res;
 }
 
-CAMLprim value core_unix_strptime(value v_locale, value v_allow_trailing_input,
-                                  value v_fmt, value v_s) {
-  locale_t locale = (locale_t)Nativeint_val(v_locale);
+/* Thread-safe to the extent its callback argument is. */
+value core_unix_strptime_gen(locale_t locale, value v_allow_trailing_input, value v_fmt,
+                             value v_s,
+                             char *f_strptime(const char *, const char *, struct tm *,
+                                              locale_t)) {
   struct tm tm = {0};
-#ifdef __APPLE__
-  // On macOS, strptime_l may not be available or reliable
-  char *end_of_consumed_input = strptime(String_val(v_s), String_val(v_fmt), &tm);
-#else
   char *end_of_consumed_input =
-      locale == (locale_t)0 ? strptime(String_val(v_s), String_val(v_fmt), &tm)
-                            : strptime_l(String_val(v_s), String_val(v_fmt), &tm, locale);
-#endif
+      f_strptime(String_val(v_s), String_val(v_fmt), &tm, locale);
   if (!end_of_consumed_input)
     caml_failwith("unix_strptime: match failed");
   if (!Bool_val(v_allow_trailing_input) &&
       end_of_consumed_input != String_val(v_s) + caml_string_length(v_s))
     caml_failwith("unix_strptime: did not consume entire input");
   return alloc_tm(&tm);
+}
+
+char *strptime_callback(const char *s, const char *fmt, struct tm *tm, locale_t locale) {
+  /* Ignore the locale, it's always 0. */
+  (void)locale;
+  return strptime(s, fmt, tm);
+}
+
+CAMLprim value core_unix_strptime(value v_allow_trailing_input, value v_fmt, value v_s) {
+  return core_unix_strptime_gen((locale_t)0, v_allow_trailing_input, v_fmt, v_s,
+                                strptime_callback);
+}
+
+/* Its OCaml binding promises that this function is thread-safe. */
+CAMLprim value core_unix_strptime_l(value v_locale, value v_allow_trailing_input,
+                                    value v_fmt, value v_s) {
+
+  locale_t locale = (locale_t)Nativeint_val(v_locale);
+  return core_unix_strptime_gen(locale, v_allow_trailing_input, v_fmt, v_s, strptime_l);
 }
 
 CAMLprim value core_unix_remove(value v_path) {
@@ -1724,7 +1737,7 @@ static value alloc_ifaddrs(struct ifaddrs *ifap, value family_variant) {
 #endif
 
 /* THE ORDERING OF THESE CONSTANTS MUST MATCH core_unix.ml!!! */
-static uint32_t iff_table[] = {
+static const uint32_t iff_table[] = {
     IFF_ALLMULTI, IFF_AUTOMEDIA,  IFF_BROADCAST,   IFF_DEBUG,
     IFF_DYNAMIC,  IFF_LOOPBACK,   IFF_MASTER,      IFF_MULTICAST,
     IFF_NOARP,    IFF_NOTRAILERS, IFF_POINTOPOINT, IFF_PORTSEL,
@@ -1915,7 +1928,7 @@ static value alloc_process_status(int pid, int status) {
   return res;
 }
 
-static int wait_flag_table[] = {WNOHANG, WUNTRACED};
+static const int wait_flag_table[] = {WNOHANG, WUNTRACED};
 CAMLprim value core_unix_wait4(value flags, value pid_req) {
   CAMLparam0();
   CAMLlocal3(v_status, v_rusage, res);
@@ -2072,24 +2085,22 @@ CAMLprim value core_unix_execvpe(value v_prog, value v_args, value v_env) {
 #ifdef __APPLE__
   // macOS doesn't have execvpe, so we need to search PATH manually
   if (strchr(path, '/') != NULL) {
-    // Path contains '/', use execve directly
     execve(path, argv, envp);
   } else {
-    // Search PATH for the executable
     char *path_env = getenv("PATH");
     if (path_env) {
       char *path_copy = strdup(path_env);
       char *dir = strtok(path_copy, ":");
+      // We just keep on calling execve in a loop until one succeeds. If the file doesn't
+      // exist in that directory, execve will fail and we'll try the next one.
       while (dir != NULL) {
         char full_path[PATH_MAX];
         snprintf(full_path, sizeof(full_path), "%s/%s", dir, path);
         execve(full_path, argv, envp);
-        // If execve succeeds, it doesn't return
         dir = strtok(NULL, ":");
       }
       free(path_copy);
     }
-    // If we get here, execve failed for all paths
     errno = ENOENT;
   }
 #else

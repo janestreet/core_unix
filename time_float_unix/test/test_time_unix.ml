@@ -133,7 +133,11 @@ module%test [@name "format"] _ = struct
   let test_time time =
     print_endline (Time.to_string_abs time ~zone:Zone.utc);
     List.iter zones ~f:(fun zone ->
-      print_endline (format time ~zone "%F %T" ^ " -- " ^ Time.Zone.name zone))
+      let locale = force Core_unix.Locale.native in
+      let without_locale = Time.format time ~zone "%F %T" in
+      let with_locale = Time.format_with_locale ~locale time ~zone "%F %T" in
+      [%test_eq: string] without_locale with_locale;
+      print_endline (without_locale ^ " -- " ^ Time.Zone.name zone))
   ;;
 
   let time1 = of_string_abs "2015-01-01 10:00:00 Europe/London"
@@ -291,7 +295,14 @@ module%test [@name "parse"] _ = struct
   let%test_unit _ =
     [%test_result: t]
       ~expect:unix_epoch_t
-      (parse ~zone:Zone.utc ~fmt:"%Y-%m-%d %H:%M:%S" "1970-01-01 00:00:00")
+      (parse ~zone:Zone.utc ~fmt:"%Y-%m-%d %H:%M:%S" "1970-01-01 00:00:00");
+    [%test_result: t]
+      ~expect:unix_epoch_t
+      (parse_with_locale
+         ~zone:Zone.utc
+         ~fmt:"%Y-%m-%d %H:%M:%S"
+         ~locale:(force Core_unix.Locale.native)
+         "1970-01-01 00:00:00")
   ;;
 
   let%test_unit _ =
@@ -300,6 +311,13 @@ module%test [@name "parse"] _ = struct
       (parse
          ~zone:(Zone.find_exn "Asia/Hong_Kong")
          ~fmt:"%Y-%m-%d %H:%M:%S"
+         "1970-01-01 08:00:00");
+    [%test_result: t]
+      ~expect:unix_epoch_t
+      (parse_with_locale
+         ~zone:(Zone.find_exn "Asia/Hong_Kong")
+         ~fmt:"%Y-%m-%d %H:%M:%S"
+         ~locale:(force Core_unix.Locale.native)
          "1970-01-01 08:00:00")
   ;;
 end

@@ -25,6 +25,25 @@ let pause_forever = pause_forever
 let of_tm = of_tm
 let%bench "of_tm" = of_tm epoch_tm ~zone:Zone.utc
 let format = format
+let format_with_locale = format_with_locale
 let%bench "format" = format example "%F %T%z" ~zone:Zone.utc
+
+let%bench "format_with_locale" =
+  format_with_locale
+    example
+    "%F %T%z"
+    ~zone:Zone.utc
+    ~locale:(force Core_unix.Locale.posix)
+;;
+
 let parse = parse
+let parse_with_locale = parse_with_locale
 let%bench "parse" = parse example_formatted ~fmt:"%F %T%z" ~zone:Zone.utc
+
+let%bench "parse_with_locale" =
+  parse_with_locale
+    example_formatted
+    ~fmt:"%F %T%z"
+    ~zone:Zone.utc
+    ~locale:(force Core_unix.Locale.posix)
+;;

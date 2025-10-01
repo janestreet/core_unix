@@ -248,11 +248,12 @@ let validate_command_line = Validate_command_line.f
 
 let with_env ~var ~value ~f =
   let prev = Sys.getenv var in
-  Unix.putenv ~key:var ~data:value;
+  (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) ~key:var ~data:value;
   Exn.protect ~f ~finally:(fun () ->
     match prev with
-    | None -> Unix.unsetenv var
-    | Some value -> Unix.putenv ~key:var ~data:value)
+    | None -> (Unix.unsetenv [@ocaml.alert "-unsafe_multidomain"]) var
+    | Some value ->
+      (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) ~key:var ~data:value)
 ;;
 
 let complete_command ?complete_subcommands ?which_arg cmd ~args =

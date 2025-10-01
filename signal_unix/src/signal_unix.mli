@@ -1,3 +1,5 @@
+@@ portable
+
 (** Signal handlers. *)
 
 open! Core

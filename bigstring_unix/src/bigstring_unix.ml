@@ -41,8 +41,9 @@ external unsafe_read
   -> Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> int
+  @@ portable
   = "bigstring_read_stub"
 
 let read ?min_len fd ?(pos = 0) ?len bstr =
@@ -59,8 +60,9 @@ external unsafe_pread
   -> offset:int
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> int
+  @@ portable
   = "bigstring_pread_bytecode" "bigstring_pread_stub"
 
 let pread ?min_len fd ~offset ?(pos = 0) ?len bstr =
@@ -76,8 +78,9 @@ external unsafe_pread_assume_fd_is_nonblocking_stub
   -> offset:int
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> int
+  @@ portable
   = "bigstring_pread_assume_fd_is_nonblocking_stub"
 
 let pread_assume_fd_is_nonblocking fd ~offset ?(pos = 0) ?len bstr =
@@ -101,16 +104,18 @@ external unsafe_really_recv
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> unit
+  @@ portable
   = "bigstring_really_recv_stub"
 
 external unsafe_recv_peek_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> int
+  @@ portable
   = "bigstring_recv_peek_assume_fd_is_nonblocking_stub"
 
 let really_recv sock ?(pos = 0) ?len bstr =
@@ -128,8 +133,9 @@ external unsafe_recvfrom_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> int * Unix.sockaddr
+  @@ portable
   = "bigstring_recvfrom_assume_fd_is_nonblocking_stub"
 
 let recvfrom_assume_fd_is_nonblocking sock ?(pos = 0) ?len bstr =
@@ -142,8 +148,9 @@ external unsafe_read_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> Syscall_result.Int.t
+  @@ portable
   = "bigstring_read_assume_fd_is_nonblocking_stub"
 
 let read_assume_fd_is_nonblocking fd ?(pos = 0) ?len bstr =
@@ -157,8 +164,9 @@ external unsafe_input
   -> In_channel.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> int
+  @@ portable
   = "bigstring_input_stub"
 
 let input ?min_len ic ?(pos = 0) ?len bstr =
@@ -181,8 +189,9 @@ external unsafe_really_write
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> unit
+  @@ portable
   = "bigstring_really_write_stub"
 
 let really_write fd ?(pos = 0) ?len bstr =
@@ -196,8 +205,9 @@ external unsafe_pwrite_assume_fd_is_nonblocking
   -> offset:int
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> int
+  @@ portable
   = "bigstring_pwrite_assume_fd_is_nonblocking_stub"
 
 let pwrite_assume_fd_is_nonblocking fd ~offset ?(pos = 0) ?len bstr =
@@ -219,8 +229,9 @@ external unsafe_really_send_no_sigpipe
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> unit
+  @@ portable
   = "bigstring_really_send_no_sigpipe_stub"
 
 let really_send_no_sigpipe fd ?(pos = 0) ?len bstr =
@@ -233,8 +244,9 @@ external unsafe_send_nonblocking_no_sigpipe
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> Syscall_result.Int.t
+  @@ portable
   = "bigstring_send_nonblocking_no_sigpipe_stub"
 [@@noalloc]
 
@@ -248,9 +260,10 @@ external unsafe_sendto_nonblocking_no_sigpipe
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> Unix.sockaddr
   -> Syscall_result.Int.t
+  @@ portable
   = "bigstring_sendto_nonblocking_no_sigpipe_stub"
 
 let sendto_nonblocking_no_sigpipe fd ?(pos = 0) ?len bstr sockaddr =
@@ -280,8 +293,9 @@ external unsafe_write
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> int
+  @@ portable
   = "bigstring_write_stub"
 
 let write fd ?(pos = 0) ?len bstr =
@@ -294,8 +308,9 @@ external unsafe_write_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> int
+  @@ portable
   = "bigstring_write_assume_fd_is_nonblocking_stub"
 
 let write_assume_fd_is_nonblocking fd ?(pos = 0) ?len bstr =
@@ -306,9 +321,10 @@ let write_assume_fd_is_nonblocking fd ?(pos = 0) ?len bstr =
 
 external unsafe_writev
   :  Unix.File_descr.t
-  -> t Unix.IOVec.t array
+  -> t Unix.IOVec.t array @ shared
   -> int
   -> int
+  @@ portable
   = "bigstring_writev_stub"
 
 let get_iovec_count loc iovecs = function
@@ -327,9 +343,10 @@ let writev fd ?count iovecs =
 
 external unsafe_writev_assume_fd_is_nonblocking
   :  Unix.File_descr.t
-  -> t Unix.IOVec.t array
+  -> t Unix.IOVec.t array @ shared
   -> int
   -> int
+  @@ portable
   = "bigstring_writev_assume_fd_is_nonblocking_stub"
 
 let writev_assume_fd_is_nonblocking fd ?count iovecs =
@@ -342,8 +359,9 @@ external unsafe_output
   -> Out_channel.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> int
+  @@ portable
   = "bigstring_output_stub"
 
 let output ?min_len oc ?(pos = 0) ?len bstr =
@@ -369,6 +387,7 @@ external unsafe_recvmmsg_assume_fd_is_nonblocking
   -> Unix.sockaddr array option
   -> int array
   -> int
+  @@ portable
   = "bigstring_recvmmsg_assume_fd_is_nonblocking_stub"
 
 let recvmmsg_assume_fd_is_nonblocking fd ?count ?srcs iovecs ~lens =
@@ -422,9 +441,10 @@ let recvmmsg_assume_fd_is_nonblocking =
 
 external unsafe_sendmsg_nonblocking_no_sigpipe
   :  Unix.File_descr.t
-  -> t Unix.IOVec.t array
+  -> t Unix.IOVec.t array @ shared
   -> int
   -> int
+  @@ portable
   = "bigstring_sendmsg_nonblocking_no_sigpipe_stub"
 
 let unsafe_sendmsg_nonblocking_no_sigpipe fd iovecs count =

@@ -1,3 +1,5 @@
+@@ portable
+
 (** Warning! this library assumes we are in a POSIX compliant OS. *)
 
 open! Core
@@ -59,4 +61,4 @@ val create_arg_type
   -> 'a Core.Command.Arg_type.t
 
 (** [arg_type] is [create_arg_type Fn.id] *)
-val arg_type : string Core.Command.Arg_type.t
+val arg_type : string Core.Command.Arg_type.t @@ nonportable

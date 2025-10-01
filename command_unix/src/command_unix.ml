@@ -40,9 +40,9 @@ module For_unix = Command.Private.For_unix (struct
 
     module Unix = struct
       let getpid = Core_unix.getpid
-      let putenv = Core_unix.putenv
+      let putenv = (Core_unix.putenv [@ocaml.alert "-unsafe_multidomain"])
       let unsafe_getenv = Sys_unix.unsafe_getenv
-      let unsetenv = Core_unix.unsetenv
+      let unsetenv = (Core_unix.unsetenv [@ocaml.alert "-unsafe_multidomain"])
       let exec = Core_unix.exec
 
       module Run_output = struct
@@ -62,10 +62,7 @@ module For_unix = Command.Private.For_unix (struct
       ;;
     end
 
-    module Version_util = struct
-      include Version_util
-      module Time = Time_float_unix
-    end
+    module Version_util = Version_util_compat
   end)
 
 let run = For_unix.run

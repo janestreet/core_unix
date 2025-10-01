@@ -87,7 +87,8 @@ module Stable = struct
       end
 
       include T
-      include Comparator.Stable.V1.Make (T)
+
+      include%template Comparator.Stable.V1.Make [@modality portable] (T)
     end
 
     module Int = struct
@@ -104,7 +105,8 @@ module Stable = struct
       end
 
       include T
-      include Comparator.Stable.V1.Make (T)
+
+      include%template Comparator.Stable.V1.Make [@modality portable] (T)
     end
 
     module Time = struct end
@@ -124,7 +126,8 @@ module Stable = struct
       end
 
       include T
-      include Comparator.Stable.V1.Make (T)
+
+      include%template Comparator.Stable.V1.Make [@modality portable] (T)
     end
 
     module Ofday_ns = struct
@@ -141,7 +144,8 @@ module Stable = struct
       end
 
       include T
-      include Comparator.Stable.V1.Make (T)
+
+      include%template Comparator.Stable.V1.Make [@modality portable] (T)
     end
 
     module Private = struct
@@ -169,7 +173,7 @@ module type Bound = sig
   val ( <> ) : 'a bound -> 'a bound -> bool
 end
 
-module Raw_make (T : Bound) = struct
+module%template.portable [@modality p] Raw_make (T : Bound) = struct
   module T = struct
     include T
 
@@ -237,6 +241,9 @@ module Raw_make (T : Bound) = struct
       | Empty -> invalid_arg "Interval.lbound_exn: empty interval"
       | Interval (l, _) -> l
     ;;
+
+    (* Avoid unused value warning for the local, nonportable version of this function. *)
+    let _ = lbound_exn [@mode local]
 
     let ubound_exn = function
       | Empty -> invalid_arg "Interval.ubound_exn: empty interval"
@@ -330,7 +337,7 @@ module Raw_make (T : Bound) = struct
     ;;
 
     let convex_hull intervals =
-      List.fold intervals ~init:empty ~f:(fun i1 i2 ->
+      List.fold intervals ~init:Empty ~f:(fun i1 i2 ->
         (* Compute the convex hull of two intervals *)
         match bounds i1, bounds i2 with
         | None, _ -> i2
@@ -425,7 +432,7 @@ end
 type 'a t = 'a interval
 [@@deriving bin_io ~localize, sexp, compare ~localize, equal ~localize, hash]
 
-module C = Raw_make (struct
+module%template C = Raw_make [@modality portable] (struct
     type 'a bound = 'a
 
     include Poly
@@ -449,7 +456,8 @@ end
 [%%template
 [@@@mode.default m = (global, local)]
 
-module Make (Bound : sig
+module%template.portable
+  [@modality p] Make (Bound : sig
     type t
     [@@deriving (bin_io [@mode m]), (compare [@mode m]), (equal [@mode m]), hash, sexp]
 
@@ -462,7 +470,7 @@ struct
   type interval = t [@@deriving (bin_io [@mode m]), sexp]
   type bound = Bound.t
 
-  module C = Raw_make (struct
+  module C = Raw_make [@modality p] (struct
       type 'a bound = Bound.t
 
       let compare = Bound.compare
@@ -499,12 +507,12 @@ module type S =
 
 module type S_time = sig end
 
-module%template Float = Make [@mode local] (Float)
-module%template Ofday = Make [@mode local] (Core.Time_float.Ofday)
-module%template Ofday_ns = Make [@mode local] (Core.Time_ns.Ofday)
+module%template Float = Make [@mode local] [@modality portable] (Float)
+module%template Ofday = Make [@mode local] [@modality portable] (Core.Time_float.Ofday)
+module%template Ofday_ns = Make [@mode local] [@modality portable] (Core.Time_ns.Ofday)
 
 module Int = struct
-  include%template Make [@mode local] (Int)
+  include%template Make [@mode local] [@modality portable] (Int)
 
   let length t =
     match t with
@@ -557,13 +565,15 @@ module Int = struct
       | Interval (lo, hi) -> fold_interval ~lo ~hi ~acc:init ~f
   ;;
 
-  module For_container = Container.Make0 (struct
+  module%template For_container = Container.Make0 [@modality portable] (struct
       type nonrec t = t
 
       module Elt = Int
 
+      let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
+      let iter_until = `Define_using_fold_until
       let iter = `Custom iter
-      let fold = fold
+      let fold = `Custom fold
       let length = `Custom length
     end)
 
@@ -577,6 +587,7 @@ module Int = struct
   let to_array = For_container.to_array
   let fold_result = For_container.fold_result
   let fold_until = For_container.fold_until
+  let iter_until = For_container.iter_until
 
   let min_elt t ~(local_ compare : _ -> _ -> _) =
     if not (phys_equal compare Int.compare)
@@ -595,7 +606,8 @@ module Int = struct
   (* Note that we use zero-based indexing here, because that's what Binary_searchable
      requires, even though at the end we want to export functions that use the natural
      bounds of the interval.  *)
-  module%template For_binary_search = Binary_searchable.Make [@mode local] (struct
+  module%template For_binary_search =
+  Binary_searchable.Make [@mode local] [@modality portable] (struct
       type nonrec t = t
       type nonrec elt = bound
 
@@ -644,7 +656,10 @@ module Int = struct
 end
 
 module Private = struct
-  module%template [@mode m = (global, local)] Make = Make [@mode m]
+  module%template [@mode m = (global, local), p = (nonportable, portable)] Make =
+    Make
+    [@mode m]
+    [@modality p]
 end
 
 module Time = struct end

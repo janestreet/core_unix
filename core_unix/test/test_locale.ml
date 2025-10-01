@@ -66,7 +66,7 @@ let%expect_test "Locale.Expert.native" =
   print_endline (Locale.to_string_hum locale);
   (* Tests run in a clean environment, so no locale environment variables will be set. *)
   [%expect {| C |}];
-  Unix.putenv ~key:"LC_ALL" ~data:"de_DE.UTF-8";
+  (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) ~key:"LC_ALL" ~data:"de_DE.UTF-8";
   print_endline (Locale.to_string_hum locale);
   (* Changing the environment does not affect the existing [Locale.t] or its string
      conversion. *)
@@ -76,7 +76,7 @@ let%expect_test "Locale.Expert.native" =
   print_endline (Locale.to_string_hum locale);
   (* ...but does affect a newly constructed one. *)
   [%expect {| de_DE.UTF-8 |}];
-  Unix.unsetenv "LC_ALL";
+  (Unix.unsetenv [@ocaml.alert "-unsafe_multidomain"]) "LC_ALL";
   print_endline (Locale.to_string_hum locale);
   (* Changing the environment back does not affect it. *)
   [%expect {| de_DE.UTF-8 |}];
@@ -212,10 +212,24 @@ let%expect_test "Locale.posix" =
   [%expect {| C |}]
 ;;
 
+let%expect_test "Locale.Portable.posix" =
+  let locale = Portable_lazy.force Locale.Portable.posix in
+  print_endline (Locale.to_string_hum locale);
+  [%expect {| C |}]
+;;
+
 let%expect_test "Locale.native" =
-  Unix.putenv ~key:"LC_ALL" ~data:"de_DE.UTF-8";
+  (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) ~key:"LC_ALL" ~data:"de_DE.UTF-8";
   let locale = force Locale.native in
-  Unix.unsetenv "LC_ALL";
+  (Unix.unsetenv [@ocaml.alert "-unsafe_multidomain"]) "LC_ALL";
+  print_endline (Locale.to_string_hum locale);
+  [%expect {| de_DE.UTF-8 |}]
+;;
+
+let%expect_test "Locale.Portable.native" =
+  (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) ~key:"LC_ALL" ~data:"de_DE.UTF-8";
+  let locale = Portable_lazy.force Locale.Portable.native in
+  (Unix.unsetenv [@ocaml.alert "-unsafe_multidomain"]) "LC_ALL";
   print_endline (Locale.to_string_hum locale);
   [%expect {| de_DE.UTF-8 |}]
 ;;

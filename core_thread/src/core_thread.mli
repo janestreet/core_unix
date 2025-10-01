@@ -1,3 +1,5 @@
+@@ portable
+
 (** Lightweight threads. *)
 
 open! Core
@@ -26,6 +28,7 @@ val create
   -> ('a -> unit)
   -> 'a
   -> t
+  @@ nonportable
 
 (** Return the thread currently executing. *)
 val self : unit -> t
@@ -104,7 +107,7 @@ val threads_have_been_created : unit -> bool
 val num_threads : unit -> int option
 
 (** [block_forever ()] will block the calling thread forever. *)
-val block_forever : unit -> 'a
+val block_forever : unit -> 'a @@ nonportable
 
 (** {2 Non-portable pthread extensions}
 

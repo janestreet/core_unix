@@ -221,7 +221,7 @@ end]
 
     See the documentation of {{!module:Core.Interval.Make} [Interval.Make]} for a more
     detailed usage example. *)
-module type%template Interval = sig
+module type%template Interval = sig @@ portable
   (** {2 Intervals using polymorphic compare}
 
       This part of the interface is for polymorphic intervals, which are well ordered by
@@ -316,7 +316,7 @@ module type%template Interval = sig
           include Comparable.Make_binable (T)
         end
       ]} *)
-  module
+  module%template.portable
     [@mode m = (global, local)] Make (Bound : sig
       type t
       [@@deriving (bin_io [@mode m]), (compare [@mode m]), (equal [@mode m]), hash, sexp]
@@ -327,8 +327,8 @@ module type%template Interval = sig
   (** [Stable] is used to build stable protocols. It ensures backwards compatibility by
       checking the sexp and bin-io representations of a given module. Here it's also
       applied to the [Float], [Int], [Time], [Time_ns], and [Ofday] intervals. *)
-  module Stable : sig
-    module V1 : sig
+  module (Stable @@ nonportable) : sig @@ portable
+    module (V1 @@ nonportable) : sig @@ portable
       type nonrec 'a t = 'a t
       [@@deriving
         bin_io ~localize
@@ -351,7 +351,7 @@ module type%template Interval = sig
       (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
         https://opensource.janestreet.com/standards/#private-submodules *)
-      module Private : sig
+      module (Private @@ nonportable) : sig
         type 'a interval := 'a t
 
         type 'a t =
@@ -376,7 +376,7 @@ module type%template Interval = sig
 
     https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
-    module
+    module%template.portable
       [@mode m = (global, local)] Make (Bound : sig
         type t [@@deriving (bin_io [@mode m]), sexp, hash]
 

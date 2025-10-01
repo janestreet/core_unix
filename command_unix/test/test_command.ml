@@ -963,7 +963,9 @@ let%expect_test "COMMAND_OUTPUT_HELP_SEXP" =
   in
   let command = Command.group ~summary:"command summary" [ "subcommand", subcommand ] in
   let run ~argv =
-    Core_unix.putenv ~key:"COMMAND_OUTPUT_HELP_SEXP" ~data:"(3)";
+    (Core_unix.putenv [@ocaml.alert "-unsafe_multidomain"])
+      ~key:"COMMAND_OUTPUT_HELP_SEXP"
+      ~data:"(3)";
     run ~argv command;
     Sexp_pretty.sexp_to_string Sexp.(List (of_string_many [%expect.output]))
     |> print_endline

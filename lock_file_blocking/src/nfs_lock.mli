@@ -50,7 +50,7 @@ val create : ?message:string -> string -> unit Or_error.t
 
     The scheme is expected to be backwards-compatible with [create_exn], while avoiding
     some concurrency bugs the original scheme suffers from. *)
-val create_v2 : ?message:string -> string -> unit Or_error.t
+val create_v2 : ?message:string -> ?exn:[ `Mach | `Hum ] -> string -> unit Or_error.t
 
 (** [create_exn ?message path] is like [create], but throws an exception when it fails to
     obtain the lock. *)
@@ -58,17 +58,29 @@ val create_exn : ?message:string -> string -> unit
 
 (** [create_v2_exn ?message path] is like [create_v2], but throws an exception when it
     fails to obtain the lock. *)
-val create_v2_exn : ?message:string -> string -> unit
+val create_v2_exn : ?message:string -> ?exn:[ `Mach | `Hum ] -> string -> unit
 
 (** [blocking_create ?timeout ?message path] is like [create], but sleeps for a short
-    while between lock attempts and does not return until it succeeds or [timeout]
-    expires. Timeout defaults to wait indefinitely. *)
+    while between lock attempts and does not return until it succeeds, [timeout] expires,
+    or a permission error can be caught. Timeout defaults to wait indefinitely. *)
 val blocking_create : ?timeout:Time_float.Span.t -> ?message:string -> string -> unit
 
 (** [blocking_create_v2 ?timeout ?message path] has the same semantics as
     [blocking_create] except the locking scheme of [create_v2] is used to attempt
-    acquiring the lock. *)
-val blocking_create_v2 : ?timeout:Time_float.Span.t -> ?message:string -> string -> unit
+    acquiring the lock.
+
+    [exn] defaults to [`Hum] and controls what the preferred error reporting format is: if
+    it's [`Mach], then unrecoverable errors (currently just permission errors) will raise
+    [Unix_error].
+
+    If it's [`Hum], then all errors will come wrapped in an error message that mentions
+    the lock file. *)
+val blocking_create_v2
+  :  ?timeout:Time_float.Span.t
+  -> ?message:string
+  -> ?exn:[ `Mach | `Hum ]
+  -> string
+  -> unit
 
 (** [critical_section ?message ~timeout path ~f] wraps function [f] (including exceptions
     escaping it) by first locking (using {!blocking_create}) and then unlocking the given

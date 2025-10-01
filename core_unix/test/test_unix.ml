@@ -50,6 +50,54 @@ let%expect_test "[mkdir_p ~perm name] sets the permissions on [name] and all oth
   [%expect {| |}]
 ;;
 
+let%expect_test "[mkdir_p] fails when a file exists at the path" =
+  let test_file = "test_mkdir_p_file" in
+  Out_channel.write_all test_file ~data:"";
+  show_raise (fun () -> mkdir_p test_file);
+  [%expect
+    {|
+    (raised (
+      Unix.Unix_error
+      "File exists"
+      mkdir
+      "((dirname test_mkdir_p_file) (perm 0o777))"))
+    |}];
+  remove test_file;
+  [%expect {| |}]
+;;
+
+let%expect_test "[mkdir_p] adds write+execute permissions to intermediate directories" =
+  let test_dir = "a/b" in
+  mkdir_p ~perm:0o444 test_dir;
+  let parent_stats = stat "a" in
+  let final_stats = stat test_dir in
+  printf "Parent: 0o%o Final: 0o%o\n" parent_stats.st_perm final_stats.st_perm;
+  [%expect {| Parent: 0o744 Final: 0o444 |}];
+  remove test_dir;
+  rmdir "a";
+  [%expect {| |}]
+;;
+
+let%expect_test "[mkdir_p] fails when target is a broken symbolic link" =
+  symlink ~target:"nonexistent" ~link_name:"broken_link";
+  show_raise (fun () -> mkdir_p "broken_link");
+  [%expect
+    {|
+    (raised (
+      Unix.Unix_error "File exists" mkdir "((dirname broken_link) (perm 0o777))"))
+    |}];
+  unlink "broken_link"
+;;
+
+let%expect_test "[mkdir_p] succeeds when target is a symbolic link to a directory" =
+  mkdir "real_dir";
+  symlink ~target:"real_dir" ~link_name:"link_to_dir";
+  mkdir_p "link_to_dir";
+  [%expect {| |}];
+  unlink "link_to_dir";
+  rmdir "real_dir"
+;;
+
 let%expect_test "[mkdtemp] dir name contains [.tmp.]" =
   let dir = mkdtemp "foo" in
   rmdir dir;
@@ -114,7 +162,7 @@ let%test_unit "fork_exec ~env last binding takes precedence" =
         ; `Override (List.map env ~f:(fun (v, s) -> v, Some s))
         ]
         ~f:(fun env -> [%test_result: string] ~expect:"last" (var_in_child env));
-      Unix.putenv ~key:"VAR" ~data:"in-process";
+      (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) ~key:"VAR" ~data:"in-process";
       let env = `Override [ "VAR", None ] in
       [%test_result: string] ~expect:"undefined" (var_in_child env))
 ;;
@@ -655,7 +703,7 @@ let%expect_test "makedev, major, minor" =
     let key = "hello" in
     let data = "world" in
     Expect_test_helpers_core.require_no_allocation (fun () ->
-      putenv ~key ~data;
-      unsetenv key;
+      (putenv [@ocaml.alert "-unsafe_multidomain"]) ~key ~data;
+      (unsetenv [@ocaml.alert "-unsafe_multidomain"]) key;
       ignore (nice 0 : int))
   ;;]

@@ -2,7 +2,7 @@ open! Core
 open Core_unix
 module Thread = Core_thread
 
-module type S = sig
+module type S = sig @@ portable
   (** {2 sysinfo} *)
 
   module Sysinfo : sig
@@ -202,7 +202,7 @@ module type S = sig
 
   module Eventfd : sig
     module Flags : sig
-      type t = private Int63.t [@@deriving sexp_of]
+      type t : immutable_data [@@deriving sexp_of]
 
       include Flags.S with type t := t
 
@@ -249,7 +249,7 @@ module type S = sig
 
   module Fallocate : sig
     module Flags : sig
-      type t [@@deriving sexp_of]
+      type t : immutable_data [@@deriving sexp_of]
 
       include Flags.S with type t := t
 
@@ -298,7 +298,7 @@ module type S = sig
     end
 
     module Flags : sig
-      type t [@@deriving sexp_of]
+      type t : immutable_data [@@deriving sexp_of]
 
       include Flags.S with type t := t
 
@@ -364,7 +364,7 @@ module type S = sig
 
   module Memfd : sig
     module Flags : sig
-      type t [@@deriving sexp_of]
+      type t : immutable_data [@@deriving sexp_of]
 
       include Flags.S with type t := t
 

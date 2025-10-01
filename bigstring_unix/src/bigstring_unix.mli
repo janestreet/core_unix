@@ -1,3 +1,5 @@
+@@ portable
+
 (** String type based on [Bigarray], for use in I/O and C-bindings, extending
     {{!Core.Bigstring} [Core.Bigstring]}. *)
 
@@ -34,7 +36,7 @@ val read
   -> Unix.File_descr.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local
   -> int
 
 (** [really_read fd ?pos ?len bstr] reads [len] bytes from file descriptor [fd], and
@@ -46,7 +48,7 @@ val really_read
   :  Unix.File_descr.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local
   -> unit
 
 (** [really_recv sock ?pos ?len bstr] receives [len] bytes from socket [sock], and writes
@@ -59,7 +61,7 @@ val really_recv
   :  Unix.File_descr.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local
   -> unit
 
 (** [recv_peek_assume_fd_is_nonblocking sock ?pos ~len bstr] peeks [len] bytes from socket
@@ -72,7 +74,7 @@ val recv_peek_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> ?pos:int (** default = 0 *)
   -> len:int
-  -> local_ t
+  -> t @ local
   -> int
 
 (** [recvfrom_assume_fd_is_nonblocking sock ?pos ?len bstr] reads up to [len] bytes into
@@ -87,7 +89,7 @@ val recvfrom_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local
   -> int * Unix.sockaddr
 
 (** [read_assume_fd_is_nonblocking fd ?pos ?len bstr] reads up to [len] bytes into
@@ -99,7 +101,7 @@ val read_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local
   -> Unix.Syscall_result.Int.t
 
 (** Like [read] but uses [pread] to read from the given offset in the file. *)
@@ -109,7 +111,7 @@ val pread
   -> offset:int
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local
   -> int
 
 (** Like [really_read] but uses [pread] to read from the given offset in the file. *)
@@ -118,7 +120,7 @@ val really_pread
   -> offset:int
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local
   -> unit
 
 (** [pread_assume_fd_is_nonblocking fd ~offset ?pos ?len bstr] reads up to [len] bytes
@@ -134,7 +136,7 @@ val pread_assume_fd_is_nonblocking
   -> offset:int
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local
   -> int
 
 (** [input ?min_len ic ?pos ?len bstr] tries to read [len] bytes (guarantees to read at
@@ -156,7 +158,7 @@ val input
   -> In_channel.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local
   -> int
 
 (** [really_input ic ?pos ?len bstr] reads exactly [len] bytes from input channel [ic],
@@ -168,7 +170,7 @@ val really_input
   :  In_channel.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local
   -> unit
 
 (** {2 Output functions} *)
@@ -182,7 +184,7 @@ val really_write
   :  Unix.File_descr.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local shared
   -> unit
 
 (** [really_send_no_sigpipe sock ?pos ?len bstr] sends [len] bytes in bigstring [bstr]
@@ -197,7 +199,7 @@ val really_send_no_sigpipe
   : (Unix.File_descr.t
      -> ?pos:int (** default = 0 *)
      -> ?len:int (** default = [length bstr - pos] *)
-     -> local_ t
+     -> t @ local shared
      -> unit)
       Or_error.t
 
@@ -209,7 +211,7 @@ val send_nonblocking_no_sigpipe
   : (Unix.File_descr.t
      -> ?pos:int (** default = 0 *)
      -> ?len:int (** default = [length bstr - pos] *)
-     -> local_ t
+     -> t @ local shared
      -> Unix.Syscall_result.Int.t)
       Or_error.t
 
@@ -222,7 +224,7 @@ val sendto_nonblocking_no_sigpipe
   : (Unix.File_descr.t
      -> ?pos:int (** default = 0 *)
      -> ?len:int (** default = [length bstr - pos] *)
-     -> local_ t
+     -> t @ local shared
      -> Unix.sockaddr
      -> Unix.Syscall_result.Int.t)
       Or_error.t
@@ -236,7 +238,7 @@ val write
   :  Unix.File_descr.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local shared
   -> int
 
 (** [pwrite_assume_fd_is_nonblocking fd ~offset ?pos ?len bstr] writes up to [len] bytes
@@ -252,7 +254,7 @@ val pwrite_assume_fd_is_nonblocking
   -> offset:int
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local shared
   -> int
 
 (** [write_assume_fd_is_nonblocking fd ?pos ?len bstr] writes [len] bytes in bigstring
@@ -265,7 +267,7 @@ val write_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local shared
   -> int
 
 (** [writev fd ?count iovecs] writes [count] [iovecs] of bigstrings to file descriptor
@@ -276,7 +278,7 @@ val write_assume_fd_is_nonblocking
 val writev
   :  Unix.File_descr.t
   -> ?count:int (** default = [Array.length iovecs] *)
-  -> t Unix.IOVec.t array
+  -> t Unix.IOVec.t array @ shared
   -> int
 
 (** [writev_assume_fd_is_nonblocking fd ?count iovecs] writes [count] [iovecs] of
@@ -288,7 +290,7 @@ val writev
 val writev_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> ?count:int (** default = [Array.length iovecs] *)
-  -> t Unix.IOVec.t array
+  -> t Unix.IOVec.t array @ shared
   -> int
 
 (** [recvmmsg_assume_fd_is_nonblocking fd iovecs ~count ~lens] receives up to [count]
@@ -339,7 +341,7 @@ val unsafe_recvmmsg_assume_fd_is_nonblocking
 val sendmsg_nonblocking_no_sigpipe
   : (Unix.File_descr.t
      -> ?count:int (** default = [Array.length iovecs] *)
-     -> t Unix.IOVec.t array
+     -> t Unix.IOVec.t array @ shared
      -> int option)
       Or_error.t
 
@@ -364,7 +366,7 @@ val output
   -> Out_channel.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local shared
   -> int
 
 (** [really_output oc ?pos ?len bstr] outputs exactly [len] bytes from bigstring [bstr]
@@ -379,7 +381,7 @@ val really_output
   :  Out_channel.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
-  -> local_ t
+  -> t @ local shared
   -> unit
 
 (** {2 Unsafe functions} *)
@@ -391,7 +393,7 @@ external unsafe_read_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> Unix.Syscall_result.Int.t
   = "bigstring_read_assume_fd_is_nonblocking_stub"
 
@@ -401,7 +403,7 @@ external unsafe_write
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> int
   = "bigstring_write_stub"
 
@@ -412,7 +414,7 @@ external unsafe_write_assume_fd_is_nonblocking
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> int
   = "bigstring_write_assume_fd_is_nonblocking_stub"
 
@@ -423,7 +425,7 @@ external unsafe_read
   -> Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> int
   = "bigstring_read_stub"
 
@@ -433,7 +435,7 @@ external unsafe_really_recv
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> unit
   = "bigstring_really_recv_stub"
 
@@ -443,27 +445,31 @@ external unsafe_really_write
   :  Unix.File_descr.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> unit
   = "bigstring_really_write_stub"
 
 (** [unsafe_really_send_no_sigpipe sock ~pos ~len bstr] is similar to {!Bigstring.send},
     but does not perform any bounds checks. Will crash on bounds errors! *)
 val unsafe_really_send_no_sigpipe
-  : (Unix.File_descr.t -> pos:int -> len:int -> local_ t -> unit) Or_error.t
+  : (Unix.File_descr.t -> pos:int -> len:int -> t @ local shared -> unit) Or_error.t
 
 (** [unsafe_send_nonblocking_no_sigpipe sock ~pos ~len bstr] is similar to
     {!Bigstring.send_nonblocking_no_sigpipe}, but does not perform any bounds checks. Will
     crash on bounds errors! *)
 val unsafe_send_nonblocking_no_sigpipe
-  : (Unix.File_descr.t -> pos:int -> len:int -> local_ t -> Unix.Syscall_result.Int.t)
+  : (Unix.File_descr.t
+     -> pos:int
+     -> len:int
+     -> t @ local shared
+     -> Unix.Syscall_result.Int.t)
       Or_error.t
 
 (** [unsafe_writev fd iovecs count] is similar to {!Bigstring.writev}, but does not
     perform any bounds checks. Will crash on bounds errors! *)
 external unsafe_writev
   :  Unix.File_descr.t
-  -> t Unix.IOVec.t array
+  -> t Unix.IOVec.t array @ shared
   -> int
   -> int
   = "bigstring_writev_stub"
@@ -472,7 +478,7 @@ external unsafe_writev
     {!Bigstring.sendmsg_nonblocking_no_sigpipe}, but does not perform any bounds checks.
     Will crash on bounds errors! *)
 val unsafe_sendmsg_nonblocking_no_sigpipe
-  : (Unix.File_descr.t -> t Unix.IOVec.t array -> int -> int option) Or_error.t
+  : (Unix.File_descr.t -> t Unix.IOVec.t array @ shared -> int -> int option) Or_error.t
 
 (** [unsafe_input ~min_len ic ~pos ~len bstr] is similar to {!Bigstring.input}, but does
     not perform any bounds checks. Will crash on bounds errors! *)
@@ -481,7 +487,7 @@ external unsafe_input
   -> In_channel.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local
   -> int
   = "bigstring_input_stub"
 
@@ -492,7 +498,7 @@ external unsafe_output
   -> Out_channel.t
   -> pos:int
   -> len:int
-  -> local_ t
+  -> t @ local shared
   -> int
   = "bigstring_output_stub"
 

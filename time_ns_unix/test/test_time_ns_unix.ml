@@ -2564,7 +2564,13 @@ module%test [@name "format"] _ = struct
   let test_time time =
     print_endline (Time_ns.to_string_abs time ~zone:Time_ns.Zone.utc);
     List.iter zones ~f:(fun zone ->
-      print_endline (Time_ns.format time ~zone "%F %T" ^ " -- " ^ Time_ns.Zone.name zone))
+      let locale = force Core_unix.Locale.native in
+      let without_locale = Time_ns.format time ~zone "%F %T" in
+      let with_locale1 = Time_ns.format ~locale time ~zone "%F %T" in
+      let with_locale2 = Time_ns.format_with_locale ~locale time ~zone "%F %T" in
+      [%test_eq: string] without_locale with_locale1;
+      [%test_eq: string] without_locale with_locale2;
+      print_endline (without_locale ^ " -- " ^ Time_ns.Zone.name zone))
   ;;
 
   let time1 = Time_ns.of_string_abs "2015-01-01 10:00:00 Europe/London"
@@ -2722,7 +2728,14 @@ end
 
 module%test [@name "parse"] _ = struct
   let test zone string =
-    Time_ns.parse ~zone ~fmt:"%Y-%m-%d %H:%M:%S" string
+    let locale = force Core_unix.Locale.native in
+    let fmt = "%Y-%m-%d %H:%M:%S" in
+    let time_ns_without_locale = Time_ns.parse ~zone ~fmt string in
+    let time_ns_with_locale1 = Time_ns.parse ~zone ~fmt ~locale string in
+    let time_ns_with_locale2 = Time_ns.parse_with_locale ~zone ~fmt ~locale string in
+    [%test_eq: Time_ns.t] time_ns_without_locale time_ns_with_locale1;
+    [%test_eq: Time_ns.t] time_ns_without_locale time_ns_with_locale2;
+    time_ns_without_locale
     |> Time_ns.to_string_abs ~zone:Time_ns.Zone.utc
     |> print_endline
   ;;

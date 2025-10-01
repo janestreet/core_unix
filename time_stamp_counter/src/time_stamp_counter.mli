@@ -53,7 +53,7 @@
 open! Core
 open! Import
 
-type t = private Int63.t [@@deriving bin_io, compare, sexp, typerep]
+type t = private Int63.t [@@deriving bin_io, compare ~localize, sexp, typerep]
 
 include Comparisons.S with type t := t
 
@@ -136,7 +136,7 @@ module Span : sig
   end
 end
 
-val now : unit -> t
+val now : unit -> t @@ portable [@@zero_alloc]
 val diff : t -> t -> Span.t
 val add : t -> Span.t -> t
 val to_int63 : t -> Int63.t
@@ -155,7 +155,7 @@ val calibrator : Calibrator.t Lazy.t
 (** It is guaranteed that repeated calls will return nondecreasing [Time.t] values. *)
 val to_time : t -> calibrator:Calibrator.t -> Time_float.t
 
-val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t
+val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t @@ portable [@@zero_alloc]
 
 (**/**)
 
@@ -164,7 +164,7 @@ val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t
   https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   val ewma : alpha:float -> old:float -> add:float -> float
-  val of_int63 : Int63.t -> t
+  val of_int63 : Int63.t -> t @@ portable
   val max_percent_change_from_real_slope : float
   val to_nanos_since_epoch : t -> calibrator:Calibrator.t -> t
 end

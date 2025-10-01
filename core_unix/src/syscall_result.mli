@@ -1,3 +1,5 @@
+@@ portable
+
 (** Representation of Unix system call results
 
     Almost no Unix system call returns a negative integer in case of success.
@@ -15,16 +17,17 @@ type 'a t = private int
 (** exposed only as a performance hack *)
 
 [%%template:
-[@@@mode.default m = (global, local)]
+[@@@mode.default m = (local, global)]
 
 module type S = Syscall_result_intf.S [@mode m] with type 'a syscall_result := 'a t
 module type Arg = Syscall_result_intf.Arg [@mode m]
 
 module Make (M : Arg [@mode m]) () : S [@mode m] with type ok_value := M.t]
 
+[%%template:
 module Int : S [@mode local] with type ok_value := int
 module Unit : S [@mode local] with type ok_value := unit
-module File_descr : S [@mode local] with type ok_value := File_descr.t
+module File_descr : S [@mode local] with type ok_value := File_descr.t]
 
 val create_error : Unix_error.t -> _ t
 val unit : Unit.t

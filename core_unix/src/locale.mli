@@ -12,7 +12,7 @@ open! Import
     or a likely fatal situation such as out-of-memory, so the names are not explicitly
     suffixed with [_exn]. *)
 
-module Category : sig
+module Category : sig @@ portable
   (** A POSIX-standard locale category. An implementation may define additional locale
       categories beyond this list, but they are not representable with this type. *)
   type t =
@@ -32,10 +32,10 @@ module Category : sig
   val of_native_exn : int32 -> t
 end
 
-module Category_set : sig
+module Category_set : sig @@ portable
   (** Represents a set of locale categories. This can include any of the standard
       categories that {!Category.t} defines, but also implementation-defined categories. *)
-  type t [@@deriving sexp_of]
+  type t : immutable_data [@@deriving sexp_of]
 
   include Flags.S with type t := t
 
@@ -90,7 +90,7 @@ module Category_set : sig
 end
 
 (** Constants for names of standard locales which always exist (in any category). *)
-module Name : sig
+module Name : sig @@ portable
   (** The "C" locale. This is a standardized minimal locale which is the default at
       program startup. *)
   val c : string
@@ -104,12 +104,15 @@ module Name : sig
   val native : string
 end
 
-type t [@@deriving compare ~localize, equal ~localize, hash, sexp]
+include sig @@ portable
+  type t : value mod contended portable
+  [@@deriving compare ~localize, equal ~localize, hash, sexp]
 
-val ( = ) : t -> t -> bool
-val ( <> ) : t -> t -> bool
+  val ( = ) : t -> t -> bool
+  val ( <> ) : t -> t -> bool
 
-include Hashable.S_plain with type t := t
+  include Hashable.S_plain with type t := t
+end
 
 (** A singleton locale created with {!Expert.posix} to avoid having to repeatedly
     construct it. As a result, the destructive operations like {!Expert.modify} and
@@ -123,6 +126,21 @@ val posix : t Lazy.t
     users. *)
 val native : t Lazy.t
 
+(** Versions of {!posix} and {!native} that can be constructed from multiple domains. *)
+module Portable : sig
+  (** A singleton locale created with {!Expert.posix} to avoid having to repeatedly
+      construct it. As a result, the destructive operations like {!Expert.modify} and
+      {!Expert.free} must not be called on this locale, as it would interfere with other
+      users. *)
+  val posix : t Portable_lazy.t
+
+  (** A singleton locale created with {!Expert.native} to avoid having to repeatedly
+      construct it. As a result, the destructive operations like {!Expert.modify} and
+      {!Expert.free} must not be called on this locale, as it would interfere with other
+      users. *)
+  val native : t Portable_lazy.t
+end
+
 (** Returns a string representation of the setting of a single category within a locale,
     in an implementation-defined format that is accepted by {!Expert.create}. *)
 val to_string : t -> Category.t -> string
@@ -134,17 +152,22 @@ val to_string_hum : t -> string
 (** Creates a {!t} using {!Expert.create}, calls the provided function with it, and frees
     it afterwards. Be careful when using it with a [Deferred.t]-returning function, as it
     would not wait on the [Deferred.t] before cleaning up. *)
-val with_ : ?base:t -> ?category_mask:Category_set.t -> string -> (t -> 'a) -> 'a
+val with_
+  :  ?base:t
+  -> ?category_mask:Category_set.t
+  -> string
+  -> (t -> 'a) @ local once
+  -> 'a
 
 (** Creates a {!t} using {!Expert.create_multi}, calls the provided function with it, and
     frees it afterwards. Be careful when using it with a [Deferred.t]-returning function,
     as it would not wait on the [Deferred.t] before cleaning up. *)
-val with_multi : ?base:t -> (Category_set.t * string) list -> (t -> 'a) -> 'a
+val with_multi : ?base:t -> (Category_set.t * string) list -> (t -> 'a) @ local once -> 'a
 
 (** Creates a {!t} using {!Expert.copy}, calls the provided function with it, and frees it
     afterwards. Be careful when using it with a [Deferred.t]-returning function, as it
     would not wait on the [Deferred.t] before cleaning up. *)
-val with_copy : t -> (t -> 'a) -> 'a
+val with_copy : t -> (t -> 'a) @ local once -> 'a
 
 (** Returns the current thread-local locale, or [None] if the thread-local locale is
     dynamically tracking the global locale. This gives a direct reference rather than a
@@ -155,29 +178,29 @@ val get_current : unit -> t option
     restores the current locale to its previous value afterwards. Be careful when using it
     with a [Deferred.t]-returning function, as it would not wait on the [Deferred.t]
     before cleaning up. *)
-val with_current : t option -> (unit -> 'a) -> 'a
+val with_current : t option -> (unit -> 'a) @ local once -> 'a
 
 module Expert : sig
   (** Creates a {!t} using the "POSIX" locale (see {!Name.posix}) for all categories. The
       resulting {!t} should be freed with {!free} when it is no longer needed. Consider
       using the singleton {!Locale.posix} instead for efficiency. *)
-  val posix : unit -> t
+  val posix : unit -> t @@ portable
 
   (** Creates a {!t} using the native locale (see {!Name.native}) for all categories. The
       resulting {!t} should be freed with {!free} when it is no longer needed. Consider
       using the singleton {!Locale.native} instead for efficiency. *)
-  val native : unit -> t
+  val native : unit -> t @@ portable
 
   (** Creates a copy of the current global locale. Note that the returned {!t} is a
       snapshot, so will not track subsequent changes to the global locale. It should be
       freed with {!free} when it is no longer needed. *)
-  val global : unit -> t
+  val global : unit -> t @@ portable
 
   (** Creates a copy of the current thread-local locale (which defaults to the current
       global locale if not otherwise overridden). Note that the returned {!t} is a
       snapshot, so will not track subsequent changes to the current locale. It should be
       freed with {!free} when it is no longer needed. *)
-  val current : unit -> t
+  val current : unit -> t @@ portable
 
   (** Creates a {!t} from a specified base locale (the default is the POSIX locale) and a
       set of categories (the default is all) to override with the given locale name. The
@@ -192,7 +215,7 @@ module Expert : sig
   (** Creates a copy of a {!t}. This is useful in the case that destructive operations,
       such as {!modify} and {!free}, might be called on the original {!t}. The resulting
       {!t} should be freed with {!free} when it is no longer needed. *)
-  val copy : t -> t
+  val copy : t -> t @@ portable
 
   (** Modifies a {!t} by overriding a set of categories (the default is all) with the
       given locale name. The passed {!t} is effectively freed, and so no further
@@ -208,7 +231,7 @@ module Expert : sig
   (** Free a locale returned by {!posix}, {!native}, {!global}, {!current}, {!create},
       {!create_multi}, {!copy}, {!modify}, or {!modify_multi}. The locale must not be used
       subsequently. *)
-  val free : t -> unit
+  val free : t -> unit @@ portable
 
   (** POSIX doesn't provide a standard way to set the global locale to a [locale_t], so
       you must instead specify a category to modify (default: all categories) and the name
@@ -225,7 +248,7 @@ module Expert : sig
   val set_current : t option -> t option
 
   (** Returns the native [locale_t] value for use in POSIX C APIs. *)
-  val to_native : t -> nativeint
+  val to_native : t -> nativeint @@ portable
 
   (** The native [locale_t] value [(locale_t)0]. *)
   val native_zero : nativeint

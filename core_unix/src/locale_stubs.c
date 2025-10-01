@@ -48,6 +48,7 @@ static const locale_t zero_locale = (locale_t)0;
 UNIX_NATIVEINT_CONST(LC_GLOBAL_LOCALE)
 UNIX_NATIVEINT_CONST(zero_locale)
 
+/* Its OCaml binding promises that this function is thread-safe. */
 CAMLprim value unix_freelocale(intnat locale) {
   errno = 0;
   freelocale((locale_t)locale);
@@ -60,6 +61,7 @@ CAMLprim value unix_freelocale_bytecode(value v_locale) {
   return unix_freelocale(Nativeint_val(v_locale));
 }
 
+/* Its OCaml binding promises that this function is thread-safe. */
 CAMLprim intnat unix_duplocale(intnat locale) {
   errno = 0;
   locale_t result = duplocale((locale_t)locale);
@@ -68,10 +70,12 @@ CAMLprim intnat unix_duplocale(intnat locale) {
   return (intnat)result;
 }
 
+/* Its OCaml binding promises that this function is thread-safe. */
 CAMLprim value unix_duplocale_bytecode(value v_locale) {
   return caml_copy_nativeint(unix_duplocale(Nativeint_val(v_locale)));
 }
 
+/* Its OCaml binding promises that this function is thread-safe. */
 CAMLprim intnat unix_newlocale(int32_t category_mask, value v_locale, intnat base) {
   errno = 0;
   locale_t result = newlocale(category_mask, String_val(v_locale), (locale_t)base);
@@ -80,12 +84,14 @@ CAMLprim intnat unix_newlocale(int32_t category_mask, value v_locale, intnat bas
   return (intnat)result;
 }
 
+/* Its OCaml binding promises that this function is thread-safe. */
 CAMLprim value unix_newlocale_bytecode(value v_category_mask, value v_locale,
                                        value v_base) {
   return caml_copy_nativeint(
       unix_newlocale(Int32_val(v_category_mask), v_locale, Nativeint_val(v_base)));
 }
 
+/* Its OCaml binding promises that this function is thread-safe. */
 CAMLprim intnat unix_uselocale(intnat locale) {
   errno = 0;
   locale_t result = uselocale((locale_t)locale);
@@ -127,38 +133,8 @@ CAMLprim value unix_getlocalename(int32_t category, intnat i_locale) {
       if (!result || !*result)
         uerror("nl_langinfo_l", Nothing);
       return caml_copy_string(result);
-#elif defined __APPLE__
-      // macOS has different locale mask values and uses querylocale
-      int mask;
-      switch (category) {
-      case LC_COLLATE:
-        mask = LC_COLLATE_MASK;
-        break;
-      case LC_CTYPE:
-        mask = LC_CTYPE_MASK;
-        break;
-      case LC_MESSAGES:
-        mask = LC_MESSAGES_MASK;
-        break;
-      case LC_MONETARY:
-        mask = LC_MONETARY_MASK;
-        break;
-      case LC_NUMERIC:
-        mask = LC_NUMERIC_MASK;
-        break;
-      case LC_TIME:
-        mask = LC_TIME_MASK;
-        break;
-      default:
-        caml_invalid_argument("invalid locale category");
-        break;
-      }
-      errno = 0;
-      const char *result = querylocale(mask, locale);
-      if (!result || !*result)
-        uerror("querylocale", Nothing);
-      return caml_copy_string(result);
-#elif defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__
+#elif defined __APPLE__ || defined __FreeBSD__ || defined __NetBSD__ ||                  \
+    defined __OpenBSD__
       // Here we rely on LC_*_MASK == 1 << LC_* for the standard categories *, which we
       // static assert on:
       static_assert(LC_CTYPE_MASK == 1 << LC_CTYPE, "");

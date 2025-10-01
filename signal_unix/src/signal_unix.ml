@@ -5,11 +5,13 @@ open Core.Signal
 external ml_caml_to_nonportable_signal_number
   :  t
   -> int
+  @@ portable
   = "ml_caml_to_nonportable_signal_number"
 
 external ml_nonportable_to_caml_signal_number
   :  int
   -> t
+  @@ portable
   = "ml_nonportable_to_caml_signal_number"
 
 let of_system_int t = ml_nonportable_to_caml_signal_number t

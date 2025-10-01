@@ -41,7 +41,7 @@ module Bound_to_interface = struct
   [@@deriving sexp_of]
 end
 
-module Priority : sig
+module Priority : sig @@ portable
   type t [@@deriving sexp]
 
   val equal : t -> t -> bool
@@ -157,13 +157,16 @@ let cpu_list_of_file_exn file =
   | Some cpu_list -> cpu_list_of_string_exn cpu_list
 ;;
 
-let isolated_cpus =
-  Memo.unit (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/isolated")
+let memo fn =
+  let memoized_fn = Base.Portable_lazy.from_fun fn in
+  fun () -> Portable_lazy.force memoized_fn
 ;;
 
-let online_cpus =
-  Memo.unit (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/online")
+let isolated_cpus =
+  memo (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/isolated")
 ;;
+
+let online_cpus = memo (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/online")
 
 let cpus_local_to_nic ~ifname =
   cpu_list_of_file_exn (sprintf "/sys/class/net/%s/device/local_cpulist" ifname)
@@ -424,24 +427,33 @@ module Clock = struct
 
   (* These functions should be in Unix, but due to the dependency on Time,
      this is not possible (cyclic dependency). *)
-  external get_time : t -> float = "core_unix_clock_gettime"
+  external get_time : t -> float @@ portable = "core_unix_clock_gettime"
 
   let get_time t = Time_float.Span.of_sec (get_time t)
 
-  external set_time : t -> float -> unit = "core_unix_clock_settime"
+  external set_time : t -> float -> unit @@ portable = "core_unix_clock_settime"
 
   let set_time t s = set_time t (Time_float.Span.to_sec s)
 
-  external get_resolution : t -> float = "core_unix_clock_getres"
+  external get_resolution : t -> float @@ portable = "core_unix_clock_getres"
 
   let get_resolution t = Time_float.Span.of_sec (get_resolution t)
 
-  external get_process_clock : unit -> t = "core_unix_clock_process_cputime_id_stub"
-  external get_thread_clock : unit -> t = "core_unix_clock_thread_cputime_id_stub"
+  external get_process_clock
+    :  unit
+    -> t
+    @@ portable
+    = "core_unix_clock_process_cputime_id_stub"
+
+  external get_thread_clock
+    :  unit
+    -> t
+    @@ portable
+    = "core_unix_clock_thread_cputime_id_stub"
 
   [%%ifdef JSC_THREAD_CPUTIME]
 
-  external get : Thread.t -> t = "core_unix_pthread_getcpuclockid"
+  external get : Thread.t -> t @@ portable = "core_unix_pthread_getcpuclockid"
 
   let get = Ok get
 
@@ -517,6 +529,7 @@ module Fallocate = struct
     -> offset:(int[@untagged])
     -> size:(int[@untagged])
     -> unit
+    @@ portable
     = "caml_no_bytecode_impl" "core_linux_fallocate"
   [@@noalloc]
 
@@ -524,7 +537,7 @@ module Fallocate = struct
     fallocate (File_descr.to_int fd) ~mode:(Flags.to_int_exn mode) ~offset ~size
   ;;
 
-  let fallocate = Or_error.return fallocate
+  let fallocate = Ok fallocate
 end
 
 [%%else]
@@ -535,7 +548,7 @@ module Fallocate = Null.Fallocate
 [%%if defined JSC_TIMERFD && defined JSC_LINUX_EXT]
 
 module Timerfd = struct
-  module Clock : sig
+  module Clock : sig @@ portable
     type t [@@deriving bin_io, compare ~localize, sexp]
 
     val realtime : t
@@ -573,7 +586,12 @@ module Timerfd = struct
 
   let to_file_descr t = t
 
-  external timerfd_create : Clock.t -> Flags.t -> int = "core_linux_timerfd_create"
+  external timerfd_create
+    :  Clock.t
+    -> Flags.t
+    -> int
+    @@ portable
+    = "core_linux_timerfd_create"
 
   (* At Jane Street, we link with [--wrap timerfd_create] so that we can use
      our own wrapper around [timerfd_create].  This allows us to compile an executable on
@@ -604,6 +622,7 @@ module Timerfd = struct
     -> initial:Int63.t
     -> interval:Int63.t
     -> Syscall_result.Unit.t
+    @@ portable
     = "core_linux_timerfd_settime"
   [@@noalloc]
 
@@ -682,7 +701,7 @@ module Timerfd = struct
     ; interval : Time_ns.Span.t
     }
 
-  external timerfd_gettime : t -> repeat = "core_linux_timerfd_gettime"
+  external timerfd_gettime : t -> repeat @@ portable = "core_linux_timerfd_gettime"
 
   let get t =
     let spec = timerfd_gettime t in
@@ -749,13 +768,14 @@ module Memfd = struct
     -> initial_size:int
     -> name:string
     -> t
+    @@ portable
     = "core_linux_memfd_create"
 
   let create =
     let create ?(flags = Flags.empty) ?(initial_size = 0) name =
       create ~flags ~initial_size ~name
     in
-    Or_error.return create
+    Ok create
   ;;
 
   let to_file_descr t = t
@@ -791,13 +811,13 @@ module Eventfd = struct
 
   type t = File_descr.t [@@deriving compare ~localize, sexp_of]
 
-  external create : Int32.t -> Flags.t -> t = "core_linux_eventfd"
-  external read : t -> Int64.t = "core_linux_eventfd_read"
-  external write : t -> Int64.t -> unit = "core_linux_eventfd_write"
+  external create : Int32.t -> Flags.t -> t @@ portable = "core_linux_eventfd"
+  external read : t -> Int64.t @@ portable = "core_linux_eventfd_read"
+  external write : t -> Int64.t -> unit @@ portable = "core_linux_eventfd_write"
 
   let create =
     let create ?(flags = Flags.empty) init = create init flags in
-    Or_error.return create
+    Ok create
   ;;
 
   let to_file_descr t = t
@@ -809,6 +829,7 @@ external sendfile
   -> pos:int
   -> len:int
   -> int
+  @@ portable
   = "core_linux_sendfile_stub"
 
 let sendfile ?(pos = 0) ?len ~fd sock =
@@ -843,7 +864,7 @@ end
 module Sysinfo = struct
   include Sysinfo0
 
-  external raw_sysinfo : unit -> Raw_sysinfo.t = "core_linux_sysinfo"
+  external raw_sysinfo : unit -> Raw_sysinfo.t @@ portable = "core_linux_sysinfo"
 
   let sysinfo =
     Ok
@@ -871,6 +892,7 @@ external gettcpopt_bool
   :  file_descr
   -> tcp_bool_option
   -> bool
+  @@ portable
   = "core_linux_gettcpopt_bool_stub"
 
 external settcpopt_bool
@@ -878,12 +900,14 @@ external settcpopt_bool
   -> tcp_bool_option
   -> bool
   -> unit
+  @@ portable
   = "core_linux_settcpopt_bool_stub"
 
 external gettcpopt_string
   :  file_descr
   -> tcp_string_option
   -> string
+  @@ portable
   = "core_linux_gettcpopt_string_stub"
 
 external settcpopt_string
@@ -891,11 +915,13 @@ external settcpopt_string
   -> tcp_string_option
   -> string
   -> unit
+  @@ portable
   = "core_linux_settcpopt_string_stub"
 
 external peer_credentials
   :  file_descr
   -> Peer_credentials.t
+  @@ portable
   = "core_linux_peer_credentials"
 
 external unsafe_send_nonblocking_no_sigpipe
@@ -904,6 +930,7 @@ external unsafe_send_nonblocking_no_sigpipe
   -> len:int
   -> Bytes.t
   -> int
+  @@ portable
   = "core_linux_send_nonblocking_no_sigpipe_stub"
 
 let unsafe_send_nonblocking_no_sigpipe fd ~pos ~len buf =
@@ -917,6 +944,7 @@ external unsafe_send_no_sigpipe
   -> len:int
   -> Bytes.t
   -> int
+  @@ portable
   = "core_linux_send_no_sigpipe_stub"
 
 let check_send_args ?pos ?len buf =
@@ -956,6 +984,7 @@ external unsafe_sendmsg_nonblocking_no_sigpipe
   -> string Unix.IOVec.t array
   -> int
   -> int
+  @@ portable
   = "core_linux_sendmsg_nonblocking_no_sigpipe_stub"
 
 let unsafe_sendmsg_nonblocking_no_sigpipe fd iovecs count =
@@ -977,10 +1006,20 @@ let sendmsg_nonblocking_no_sigpipe sock ?count iovecs =
   unsafe_sendmsg_nonblocking_no_sigpipe sock iovecs count
 ;;
 
-external pr_set_pdeathsig : Signal.t -> unit = "core_linux_pr_set_pdeathsig_stub"
-external pr_get_pdeathsig : unit -> Signal.t = "core_linux_pr_get_pdeathsig_stub"
-external pr_set_name_first16 : string -> unit = "core_linux_pr_set_name"
-external pr_get_name : unit -> string = "core_linux_pr_get_name"
+external pr_set_pdeathsig
+  :  Signal.t
+  -> unit
+  @@ portable
+  = "core_linux_pr_set_pdeathsig_stub"
+
+external pr_get_pdeathsig
+  :  unit
+  -> Signal.t
+  @@ portable
+  = "core_linux_pr_get_pdeathsig_stub"
+
+external pr_set_name_first16 : string -> unit @@ portable = "core_linux_pr_set_name"
+external pr_get_name : unit -> string @@ portable = "core_linux_pr_get_name"
 
 let file_descr_realpath fd =
   Filename_unix.realpath ("/proc/self/fd/" ^ File_descr.to_string fd)
@@ -993,6 +1032,7 @@ external raw_sched_setaffinity
   :  pid:int
   -> cpuset:int list
   -> unit
+  @@ portable
   = "core_linux_sched_setaffinity"
 
 let pid_to_int_or_zero = function
@@ -1004,26 +1044,36 @@ let sched_setaffinity ?pid ~cpuset () =
   raw_sched_setaffinity ~pid:(pid_to_int_or_zero pid) ~cpuset
 ;;
 
-external raw_sched_getaffinity : pid:int -> int list = "core_linux_sched_getaffinity"
+external raw_sched_getaffinity
+  :  pid:int
+  -> int list
+  @@ portable
+  = "core_linux_sched_getaffinity"
 
 let sched_getaffinity ?pid () = raw_sched_getaffinity ~pid:(pid_to_int_or_zero pid)
 
 (* defined in core_unix_stubs.c *)
-external gettid : unit -> int = "core_unix_gettid"
+external gettid : unit -> int @@ portable = "core_unix_gettid"
 
 let sched_setaffinity_this_thread ~cpuset =
   sched_setaffinity ~pid:(Pid.of_int (gettid ())) ~cpuset ()
 ;;
 
 (* defined in linux_ext_stubs.c *)
-external raw_setpriority : pid:int -> Priority.t -> unit = "core_linux_setpriority"
-external raw_getpriority : pid:int -> Priority.t = "core_linux_getpriority"
+external raw_setpriority
+  :  pid:int
+  -> Priority.t
+  -> unit
+  @@ portable
+  = "core_linux_setpriority"
+
+external raw_getpriority : pid:int -> Priority.t @@ portable = "core_linux_getpriority"
 
 let setpriority ?pid priority = raw_setpriority ~pid:(pid_to_int_or_zero pid) priority
 let getpriority ?pid () = raw_getpriority ~pid:(pid_to_int_or_zero pid)
 
-let cores =
-  Memo.unit (fun () ->
+let cores @ portable =
+  memo (fun () ->
     match Option.bind (Core_unix.sysconf NPROCESSORS_ONLN) ~f:Int64.to_int with
     | None ->
       (* Fall back to our own implementation on the off-chance that the C library for some
@@ -1035,7 +1085,11 @@ let cores =
     | Some n -> n)
 ;;
 
-external get_terminal_size : File_descr.t -> int * int = "core_linux_get_terminal_size"
+external get_terminal_size
+  :  File_descr.t
+  -> int * int
+  @@ portable
+  = "core_linux_get_terminal_size"
 
 let get_terminal_size = function
   | `Fd fd -> get_terminal_size fd
@@ -1049,9 +1103,14 @@ let get_terminal_size = function
 external get_ipv4_address_for_interface
   :  string
   -> string
+  @@ portable
   = "core_linux_get_ipv4_address_for_interface"
 
-external get_mac_address : ifname:string -> string = "core_linux_get_mac_address"
+external get_mac_address
+  :  ifname:string
+  -> string
+  @@ portable
+  = "core_linux_get_mac_address"
 
 (* The C-stub is a simple pass-through of the linux SO_BINDTODEVICE semantics, wherein an
    empty string removes any binding *)
@@ -1059,6 +1118,7 @@ external bind_to_interface'
   :  File_descr.t
   -> string
   -> unit
+  @@ portable
   = "core_linux_bind_to_interface"
 
 let bind_to_interface fd ifname =
@@ -1073,6 +1133,7 @@ let bind_to_interface fd ifname =
 external get_bind_to_interface'
   :  File_descr.t
   -> string
+  @@ portable
   = "core_linux_get_bind_to_interface"
 
 let get_bind_to_interface fd =
@@ -1081,8 +1142,8 @@ let get_bind_to_interface fd =
   | name -> Bound_to_interface.Only name
 ;;
 
-external setfsuid : uid:int -> int = "core_linux_setfsuid"
-external setfsgid : gid:int -> int = "core_linux_setfsgid"
+external setfsuid : uid:int -> int @@ portable = "core_linux_setfsuid"
+external setfsgid : gid:int -> int @@ portable = "core_linux_setfsgid"
 
 let getfsuid () = setfsuid ~uid:(-1)
 let getfsgid () = setfsgid ~gid:(-1)
@@ -1126,8 +1187,17 @@ let getfsgid = Ok getfsgid
 
 module Extended_file_attributes = struct
   module Flags = struct
-    external only_create : unit -> Int63.t = "core_linux_xattr_XATTR_CREATE_flag"
-    external only_replace : unit -> Int63.t = "core_linux_xattr_XATTR_REPLACE_flag"
+    external only_create
+      :  unit
+      -> Int63.t
+      @@ portable
+      = "core_linux_xattr_XATTR_CREATE_flag"
+
+    external only_replace
+      :  unit
+      -> Int63.t
+      @@ portable
+      = "core_linux_xattr_XATTR_REPLACE_flag"
 
     let set = Int63.zero
   end
@@ -1155,6 +1225,7 @@ module Extended_file_attributes = struct
     -> string
     -> string
     -> Get_attr_result.t
+    @@ portable
     = "core_linux_getxattr"
 
   external setxattr
@@ -1164,6 +1235,7 @@ module Extended_file_attributes = struct
     -> string
     -> Int63.t
     -> Set_attr_result.t
+    @@ portable
     = "core_linux_setxattr"
 
   let getxattr ~follow_symlinks ~path ~name = getxattr follow_symlinks path name

@@ -1,3 +1,5 @@
+@@ portable
+
 (** This file is a modified version of unixLabels.mli from the OCaml distribution. Many of
     these functions raise exceptions but do not have a _exn suffixed name. *)
 
@@ -188,7 +190,7 @@ exception Unix_error of Error.t * string * string
 module Syscall_result : module type of Syscall_result with type 'a t = 'a Syscall_result.t
 
 (** @raise Unix_error with a given errno, function name and argument *)
-val unix_error : int -> string -> string -> _
+val unix_error : int -> string -> string -> _ @ portable unique
 
 val error_message : Error.t -> string
 [@@deprecated "[since 2016-10] use [Unix.Error.message] instead"]
@@ -197,11 +199,11 @@ val error_message : Error.t -> string
     [Unix_error] is raised, it prints a message describing the error and exits with code
 
     2. *)
-val handle_unix_error : (unit -> 'a) -> 'a
+val handle_unix_error : (unit -> 'a) -> 'a @@ nonportable
 
 (** [retry_until_no_eintr f] returns [f ()] unless [f ()] fails with [EINTR]; in which
     case [f ()] is run again until it raises a different error or returns a value. *)
-val retry_until_no_eintr : (unit -> 'a) -> 'a
+val retry_until_no_eintr : (unit -> 'a) @ local -> 'a
 
 module Private : sig
   (** [sexp_to_string_hum] formats the sexp as a human readable string. Used to prettify
@@ -223,12 +225,16 @@ val environment : unit -> string array
 (** [Unix.putenv ~key ~data] sets the value associated to a variable in the process
     environment. [key] is the name of the environment variable, and [data] its new
     associated value. *)
-val putenv : key:string -> data:string -> unit
+val putenv : key:string -> data:string -> unit @@ nonportable
+[@@alert
+  unsafe_multidomain "Mutating the environment makes reading the environment unsafe."]
 
 (** [unsetenv name] deletes the variable [name] from the environment.
 
     EINVAL [name] contained an ’=’ or an '\000' character. *)
-val unsetenv : string -> unit
+val unsetenv : string -> unit @@ nonportable
+[@@alert
+  unsafe_multidomain "Mutating the environment makes reading the environment unsafe."]
 
 (** {6 Process handling} *)
 
@@ -323,6 +329,24 @@ module Pgid : sig
   val of_pid : int -> t
 end
 
+module Scheduler : sig
+  module Policy : sig
+    type t =
+      | Fifo
+      | Round_robin
+      | Other
+    [@@deriving sexp]
+  end
+
+  (** See [man sched_setscheduler].
+
+      The [priority] supplied here is *not* the nice value of a process. It is the
+      "static" priority (1 .. 99) used in conjunction with real-time processes. If you
+      want to set the nice value of a normal process, use [Linux_ext.setpriority] or
+      [Core_unix.nice]. *)
+  val set : pid:Pid.t option @ local -> policy:Policy.t -> priority:int -> unit
+end
+
 (** [exec ~prog ~argv ?search_path ?env] execs [prog] with [argv]. If [use_path = true]
     (the default) and [prog] doesn't contain a slash, then [exec] searches the [PATH]
     environment variable for [prog]. If [env] is supplied, it determines the environment
@@ -337,7 +361,7 @@ end
 val exec
   :  prog:string
   -> argv:string list
-  -> ?use_path:local_ bool (** default is [true] *)
+  -> ?use_path:bool (** default is [true] *) @ local
   -> ?env:env
   -> unit
   -> never_returns
@@ -361,10 +385,11 @@ val fork_exec
   -> ?env:env
   -> unit
   -> Pid.t
+  @@ nonportable
 
 (** [fork ()] forks a new process. The return value indicates whether we are continuing in
     the child or the parent, and if the parent, includes the child's process id. *)
-val fork : unit -> [ `In_the_child | `In_the_parent of Pid.t ]
+val fork : unit -> [ `In_the_child | `In_the_parent of Pid.t ] @@ nonportable
 
 (** {v
  [wait{,_nohang,_untraced,_nohang_untraced} ?restart wait_on] is a family of functions
@@ -502,7 +527,7 @@ module Open_flags : sig
 
       We deliberately omit [cloexec] because [cloexec] actually isn't reported by
       [fcntl_getfl]. *)
-  type t [@@deriving sexp_of]
+  type t : immutable_data [@@deriving sexp_of]
 
   include Flags.S with type t := t
 
@@ -548,7 +573,7 @@ val fcntl_getfl : File_descr.t -> Open_flags.t
 val fcntl_setfl : File_descr.t -> Open_flags.t -> unit
 
 (** Close a file descriptor. *)
-val close : ?restart:bool (** defaults to false *) -> File_descr.t -> unit
+val close : File_descr.t -> unit
 
 (** [with_file file ~mode ~perm ~f] opens [file], and applies [f] to the resulting file
     descriptor. When [f] finishes (or raises), [with_file] closes the descriptor and
@@ -557,7 +582,7 @@ val with_file
   :  ?perm:file_perm
   -> string
   -> mode:open_flag list
-  -> f:(File_descr.t -> 'a)
+  -> f:(File_descr.t -> 'a) @ local once
   -> 'a
 
 (** [read ~pos ~len fd ~buf] reads [len] bytes from descriptor [fd], storing them in byte
@@ -580,7 +605,7 @@ val read
 
     WARNING: write is an interruptible call and has no way to handle EINTR properly. You
     should most probably be using single write. *)
-val write : ?pos:int -> ?len:int -> File_descr.t -> buf:Bytes.t -> int
+val write : ?pos:int -> ?len:int -> File_descr.t -> buf:Bytes.t @ shared -> int
 
 (** Same as [write] but with a string buffer. *)
 val write_substring : ?pos:int -> ?len:int -> File_descr.t -> buf:string -> int
@@ -1270,14 +1295,14 @@ val gettimeofday : unit -> float
 
 (** Convert a time in seconds, as returned by {!UnixLabels.time}, into a date and a time.
     Assumes UTC. *)
-val gmtime : float -> tm
+val gmtime : float @ local -> tm
 
 (** Convert a UTC time in a tm record to a time in seconds *)
 val timegm : tm -> float
 
 (** Convert a time in seconds, as returned by {!UnixLabels.time}, into a date and a time.
     Assumes the local time zone. *)
-val localtime : float -> tm
+val localtime : float @ local -> tm
 
 (** Convert a date and time, specified by the [tm] argument, into a time in seconds, as
     returned by {!UnixLabels.time}. Also return a normalized copy of the given [tm]
@@ -1287,14 +1312,38 @@ val mktime : tm -> float * tm
 
 (** Convert a date and time, specified by the [tm] argument, into a formatted string. See
     'man strftime' for format options. *)
-val strftime : ?locale:Locale.t -> tm -> string -> string
+val strftime : ?locale:Locale.t -> tm -> string -> string @@ nonportable
 
-(** Given a format string, convert a corresponding string to a date and time See 'man
+(** Convert a date and time, specified by the [tm] argument, into a formatted string in
+    the given locale. See 'man strftime' for format options.
+
+    The main reason to use this instead of [strftime] is because it's more thread-safe,
+    hence our ability to expose it as [portable]. However, it's not completely thread
+    safe: one must not free the provided locale for the duration of the call. *)
+val strftime_l : locale:Locale.t -> tm -> string -> string
+
+(** Given a format string, convert a corresponding string to a date and time. See 'man
     strptime' for format options.
 
     Raise if [allow_trailing_input] is false and [fmt] does not consume all of the input. *)
 val strptime
   :  ?locale:Locale.t
+  -> ?allow_trailing_input:bool (** default = false *)
+  -> fmt:string
+  -> string
+  -> Unix.tm
+  @@ nonportable
+
+(** Given a format string, convert a corresponding string to a date and time in the given
+    locale. See 'man strptime' for format options.
+
+    Raise if [allow_trailing_input] is false and [fmt] does not consume all of the input.
+
+    The main reason to use this instead of [strptime] is because it's more thread-safe,
+    hence our ability to expose it as [portable]. However, it's not completely thread
+    safe: one must not free the provided locale for the duration of the call. *)
+val strptime_l
+  :  locale:Locale.t
   -> ?allow_trailing_input:bool (** default = false *)
   -> fmt:string
   -> string
@@ -1309,14 +1358,14 @@ val sleep : int -> unit
 (** [nanosleep f] delays execution of the program for at least [f] seconds. The function
     can return earlier if a signal has been delivered, in which case the number of seconds
     left is returned. Any other failure raises an exception. *)
-val nanosleep : float -> float
+val nanosleep : float @ local -> float
 
 (** Return the execution times of the process. *)
 val times : unit -> process_times
 
 (** Set the last access time (second arg) and last modification time (third arg) for a
     file. Times are expressed in seconds from 00:00:00 GMT, Jan. 1, 1970. *)
-val utimes : string -> access:float -> modif:float -> unit
+val utimes : string -> access:float @ local -> modif:float @ local -> unit
 
 (** Set the last access time and last modification time for a file with nanosecond
     precision. Setting [access] or [modif] to [None] will leave that value unchanged.
@@ -1389,7 +1438,7 @@ val getegid : unit -> int
 val setgid : int -> unit
 
 (** Structure of entries in the [passwd] database *)
-module Passwd : sig
+module (Passwd @@ nonportable) : sig @@ portable
   type t =
     { name : string
     ; passwd : string
@@ -1408,9 +1457,9 @@ module Passwd : sig
 
   (** [getpwents] is a thread-safe wrapper over the low-level passwd database functions.
       The order in which the results are returned is not deterministic. *)
-  val getpwents : unit -> t list
+  val getpwents : unit -> t list @@ nonportable
 
-  module Low_level : sig
+  module (Low_level @@ nonportable) : sig
     (** These functions may not be thread safe. Use [getpwents], above, if possible. *)
 
     val setpwent : unit -> unit
@@ -1457,23 +1506,24 @@ end
 
 (** {6 Internet addresses} *)
 
-module Inet_addr : sig
+module (Inet_addr @@ nonportable) : sig @@ portable
   type t = Unix.inet_addr [@@deriving bin_io, compare ~localize, hash, sexp_of]
 
-  val arg_type : t Core.Command.Arg_type.t
+  val arg_type : t Core.Command.Arg_type.t @@ nonportable
 
   (** [t_of_sexp] is deprecated because it used to block to do a DNS lookup, and we don't
       want a sexp converter to do that. As we transition away, one can use
       [Blocking_sexp], which has the old behavior. *)
-  val t_of_sexp : Sexp.t -> t
+  val t_of_sexp : Sexp.t -> t @@ nonportable
   [@@deprecated "[since 2015-10] Replace [t] by [Stable.V1.t] or by [Blocking_sexp.t]"]
 
   (** [Blocking_sexp] performs DNS lookup to resolve hostnames to IP addresses. *)
-  module Blocking_sexp : sig
+  module (Blocking_sexp @@ nonportable) : sig
     type t = Unix.inet_addr [@@deriving bin_io, compare ~localize, hash, sexp]
   end
 
-  include Comparable.S with type t := t
+  include%template Comparable.S [@mode local] with type t := t
+
   module Table : Hashtbl.S with type key = t
 
   (** Conversion from the printable representation of an Internet address to its internal
@@ -1484,7 +1534,7 @@ module Inet_addr : sig
   val of_string : string -> t
 
   (** Call [of_string] and if that fails, use [Host.getbyname]. *)
-  val of_string_or_getbyname : string -> t
+  val of_string_or_getbyname : string -> t @@ nonportable
 
   (** Return the printable representation of the given Internet address. See [of_string]
       for a description of the printable representation. *)
@@ -1530,14 +1580,14 @@ end
     given address is inside the range or not. Only IPv4 addresses are supported. Values
     are always normalized so the base address is the lowest IP address in the range, so
     for example [to_string (of_string "192.168.1.101/24") = "192.168.1.0/24"]. *)
-module Cidr : sig
+module (Cidr @@ nonportable) : sig @@ portable
   type t : immutable_data [@@deriving sexp, bin_io]
 
-  val arg_type : t Core.Command.Arg_type.t
+  val arg_type : t Core.Command.Arg_type.t @@ nonportable
 
   (** [of_string] Generates a Cidr.t based on a string like ["10.0.0.0/8"]. Addresses are
       not expanded, i.e. ["10/8"] is invalid. *)
-  include Identifiable.S with type t := t
+  include%template Identifiable.S [@mode local] with type t := t
 
   include Invariant.S with type t := t
 
@@ -1580,8 +1630,9 @@ module Cidr : sig
   val is_subset : t -> of_:t -> bool
 
   module Stable : sig
-    module V1 :
+    module%template V1 :
       Stable_comparable.With_stable_witness.V1
+      [@mode local]
       with type t = t
       with type comparator_witness = comparator_witness
   end
@@ -1613,7 +1664,7 @@ type sockaddr = Unix.sockaddr =
   | ADDR_INET of Inet_addr.t * int
 [@@deriving bin_io, compare ~localize, sexp_of]
 
-val sockaddr_of_sexp : Sexp.t -> sockaddr
+val sockaddr_of_sexp : Sexp.t -> sockaddr @@ nonportable
 [@@deprecated "[since 2015-10] Replace [sockaddr] by [sockaddr_blocking_sexp]"]
 
 (** [sockaddr_blocking_sexp] is like [sockaddr], with [of_sexp] that performs DNS lookup
@@ -1819,7 +1870,7 @@ val setsockopt_int : File_descr.t -> socket_int_option -> int -> unit
 val getsockopt_optint : File_descr.t -> socket_optint_option -> int option
 
 (** Same as {!UnixLabels.setsockopt} for a socket option whose value is an [int option]. *)
-val setsockopt_optint : File_descr.t -> socket_optint_option -> int option -> unit
+val setsockopt_optint : File_descr.t -> socket_optint_option -> int option @ local -> unit
 
 (** Same as {!UnixLabels.getsockopt} for a socket option whose value is a floating-point
     number. *)
@@ -1827,7 +1878,7 @@ val getsockopt_float : File_descr.t -> socket_float_option -> float
 
 (** Same as {!UnixLabels.setsockopt} for a socket option whose value is a floating-point
     number. *)
-val setsockopt_float : File_descr.t -> socket_float_option -> float -> unit
+val setsockopt_float : File_descr.t -> socket_float_option -> float @ local -> unit
 
 (** {6 High-level network connection functions} *)
 
@@ -1845,7 +1896,11 @@ val shutdown_connection : In_channel.t -> unit
     called for each connection with two buffered channels connected to the client. A new
     process is created for each connection. The function {!UnixLabels.establish_server}
     never returns normally. *)
-val establish_server : (In_channel.t -> Out_channel.t -> unit) -> addr:sockaddr -> unit
+val establish_server
+  :  (In_channel.t -> Out_channel.t -> unit)
+  -> addr:sockaddr
+  -> unit
+  @@ nonportable
 
 (** {6 Host and protocol databases} *)
 
@@ -1877,7 +1932,7 @@ module Host : sig
   val have_address_in_common : t -> t -> bool
 end
 
-module Protocol : sig
+module (Protocol @@ nonportable) : sig @@ portable
   (** Structure of entries in the [protocols] database. *)
   type t =
     { name : string
@@ -1887,17 +1942,17 @@ module Protocol : sig
   [@@deriving sexp]
 
   (** Find an entry in [protocols] with the given name. *)
-  val getbyname : string -> t option
+  val getbyname : string -> t option @@ nonportable
 
-  val getbyname_exn : string -> t
+  val getbyname_exn : string -> t @@ nonportable
 
   (** Find an entry in [protocols] with the given protocol number. *)
-  val getbynumber : int -> t option
+  val getbynumber : int -> t option @@ nonportable
 
-  val getbynumber_exn : int -> t
+  val getbynumber_exn : int -> t @@ nonportable
 end
 
-module Service : sig
+module (Service @@ nonportable) : sig @@ portable
   (** Structure of entries in the [services] database. *)
   type t =
     { name : string
@@ -1908,14 +1963,14 @@ module Service : sig
   [@@deriving sexp]
 
   (** Find an entry in [services] with the given name. *)
-  val getbyname : string -> protocol:string -> t option
+  val getbyname : string -> protocol:string -> t option @@ nonportable
 
-  val getbyname_exn : string -> protocol:string -> t
+  val getbyname_exn : string -> protocol:string -> t @@ nonportable
 
   (** Find an entry in [services] with the given service number. *)
-  val getbyport : int -> protocol:string -> t option
+  val getbyport : int -> protocol:string -> t option @@ nonportable
 
-  val getbyport_exn : int -> protocol:string -> t
+  val getbyport_exn : int -> protocol:string -> t @@ nonportable
 end
 
 (** Address information returned by {!Unix.getaddrinfo}. *)
@@ -1985,52 +2040,51 @@ val getnameinfo : sockaddr -> getnameinfo_option list -> name_info
     [termios] man page for a complete description. *)
 
 module Terminal_io : sig
-  type t = Unix.terminal_io =
+  type t =
     { (*_ Input modes: *)
-      mutable c_ignbrk : bool (** Ignore the break condition. *)
-    ; mutable c_brkint : bool (** Signal interrupt on break condition. *)
-    ; mutable c_ignpar : bool (** Ignore characters with parity errors. *)
-    ; mutable c_parmrk : bool (** Mark parity errors. *)
-    ; mutable c_inpck : bool (** Enable parity check on input. *)
-    ; mutable c_istrip : bool (** Strip 8th bit on input characters. *)
-    ; mutable c_inlcr : bool (** Map NL to CR on input. *)
-    ; mutable c_igncr : bool (** Ignore CR on input. *)
-    ; mutable c_icrnl : bool (** Map CR to NL on input. *)
-    ; mutable c_ixon : bool (** Recognize XON/XOFF characters on input. *)
-    ; mutable c_ixoff : bool (** Emit XON/XOFF chars to control input flow. *)
+      c_ignbrk : bool (** Ignore the break condition. *)
+    ; c_brkint : bool (** Signal interrupt on break condition. *)
+    ; c_ignpar : bool (** Ignore characters with parity errors. *)
+    ; c_parmrk : bool (** Mark parity errors. *)
+    ; c_inpck : bool (** Enable parity check on input. *)
+    ; c_istrip : bool (** Strip 8th bit on input characters. *)
+    ; c_inlcr : bool (** Map NL to CR on input. *)
+    ; c_igncr : bool (** Ignore CR on input. *)
+    ; c_icrnl : bool (** Map CR to NL on input. *)
+    ; c_ixon : bool (** Recognize XON/XOFF characters on input. *)
+    ; c_ixoff : bool (** Emit XON/XOFF chars to control input flow. *)
     ; (*_ Output modes: *)
-      mutable c_opost : bool (** Enable output processing. *)
+      c_opost : bool (** Enable output processing. *)
     ; (*_ Control modes: *)
-      mutable c_obaud : int (** Output baud rate (0 means close connection). *)
-    ; mutable c_ibaud : int (** Input baud rate. *)
-    ; mutable c_csize : int (** Number of bits per character (5-8). *)
-    ; mutable c_cstopb : int (** Number of stop bits (1-2). *)
-    ; mutable c_cread : bool (** Reception is enabled. *)
-    ; mutable c_parenb : bool (** Enable parity generation and detection. *)
-    ; mutable c_parodd : bool (** Specify odd parity instead of even. *)
-    ; mutable c_hupcl : bool (** Hang up on last close. *)
-    ; mutable c_clocal : bool (** Ignore modem status lines. *)
+      c_obaud : int (** Output baud rate (0 means close connection). *)
+    ; c_ibaud : int (** Input baud rate. *)
+    ; c_csize : int (** Number of bits per character (5-8). *)
+    ; c_cstopb : int (** Number of stop bits (1-2). *)
+    ; c_cread : bool (** Reception is enabled. *)
+    ; c_parenb : bool (** Enable parity generation and detection. *)
+    ; c_parodd : bool (** Specify odd parity instead of even. *)
+    ; c_hupcl : bool (** Hang up on last close. *)
+    ; c_clocal : bool (** Ignore modem status lines. *)
     ; (*_ Local modes: *)
-      mutable c_isig : bool (** Generate signal on INTR, QUIT, SUSP. *)
-    ; mutable c_icanon : bool
-    (** Enable canonical processing (line buffering and editing) *)
-    ; mutable c_noflsh : bool (** Disable flush after INTR, QUIT, SUSP. *)
-    ; mutable c_echo : bool (** Echo input characters. *)
-    ; mutable c_echoe : bool (** Echo ERASE (to erase previous character). *)
-    ; mutable c_echok : bool (** Echo KILL (to erase the current line). *)
-    ; mutable c_echonl : bool (** Echo NL even if c_echo is not set. *)
+      c_isig : bool (** Generate signal on INTR, QUIT, SUSP. *)
+    ; c_icanon : bool (** Enable canonical processing (line buffering and editing) *)
+    ; c_noflsh : bool (** Disable flush after INTR, QUIT, SUSP. *)
+    ; c_echo : bool (** Echo input characters. *)
+    ; c_echoe : bool (** Echo ERASE (to erase previous character). *)
+    ; c_echok : bool (** Echo KILL (to erase the current line). *)
+    ; c_echonl : bool (** Echo NL even if c_echo is not set. *)
     ; (*_ Control characters: *)
-      mutable c_vintr : char (** Interrupt character (usually ctrl-C). *)
-    ; mutable c_vquit : char (** Quit character (usually ctrl-\). *)
-    ; mutable c_verase : char (** Erase character (usually DEL or ctrl-H). *)
-    ; mutable c_vkill : char (** Kill line character (usually ctrl-U). *)
-    ; mutable c_veof : char (** End-of-file character (usually ctrl-D). *)
-    ; mutable c_veol : char (** Alternate end-of-line char. (usually none). *)
-    ; mutable c_vmin : int
+      c_vintr : char (** Interrupt character (usually ctrl-C). *)
+    ; c_vquit : char (** Quit character (usually ctrl-\). *)
+    ; c_verase : char (** Erase character (usually DEL or ctrl-H). *)
+    ; c_vkill : char (** Kill line character (usually ctrl-U). *)
+    ; c_veof : char (** End-of-file character (usually ctrl-D). *)
+    ; c_veol : char (** Alternate end-of-line char. (usually none). *)
+    ; c_vmin : int
     (** Minimum number of characters to read before the read request is satisfied. *)
-    ; mutable c_vtime : int (** Maximum read wait (in 0.1s units). *)
-    ; mutable c_vstart : char (** Start character (usually ctrl-Q). *)
-    ; mutable c_vstop : char (** Stop character (usually ctrl-S). *)
+    ; c_vtime : int (** Maximum read wait (in 0.1s units). *)
+    ; c_vstart : char (** Start character (usually ctrl-Q). *)
+    ; c_vstop : char (** Stop character (usually ctrl-S). *)
     }
   [@@deriving sexp_of]
 
@@ -2091,14 +2145,14 @@ end
 val get_sockaddr : string -> int -> sockaddr
 
 (** Set a timeout for a socket associated with an [In_channel.t] *)
-val set_in_channel_timeout : In_channel.t -> float -> unit
+val set_in_channel_timeout : In_channel.t -> float @ local -> unit
 
 (** Set a timeout for a socket associated with an [Out_channel.t] *)
-val set_out_channel_timeout : Out_channel.t -> float -> unit
+val set_out_channel_timeout : Out_channel.t -> float @ local -> unit
 
 (** [exit_immediately exit_code] immediately calls the [exit] system call with the given
     exit code without performing any other actions (unlike Caml.exit). Does not return. *)
-val exit_immediately : int -> _
+val exit_immediately : int -> _ @ portable unique
 
 (** {2 Filesystem functions} *)
 
@@ -2228,7 +2282,6 @@ val write_assume_fd_is_nonblocking
   -> ?len:int
   -> Bytes.t @ shared
   -> int
-  @@ portable
 
 (** [writev_assume_fd_is_nonblocking fd ?count iovecs] calls the system call [writev]
     ASSUMING THAT IT IS NOT GOING TO BLOCK using [count] I/O-vectors [iovecs].
@@ -2239,7 +2292,7 @@ val write_assume_fd_is_nonblocking
 val writev_assume_fd_is_nonblocking
   :  File_descr.t
   -> ?count:int
-  -> string IOVec.t array
+  -> string IOVec.t array @ shared
   -> int
 
 (** [writev fd ?count iovecs] like {!writev_assume_fd_is_nonblocking}, but does not
@@ -2252,7 +2305,7 @@ val writev_assume_fd_is_nonblocking
 
     @raise Invalid_argument if the designated ranges are invalid.
     @raise Unix_error on Unix-errors. *)
-val writev : File_descr.t -> ?count:int -> string IOVec.t array -> int
+val writev : File_descr.t -> ?count:int -> string IOVec.t array @ shared -> int
 
 (** [pselect rfds wfds efds timeout sigmask] like {!Core_unix.select} but also allows one
     to wait for the arrival of signals. *)
@@ -2260,7 +2313,7 @@ val pselect
   :  File_descr.t list
   -> File_descr.t list
   -> File_descr.t list
-  -> float
+  -> float @ local
   -> int list
   -> File_descr.t list * File_descr.t list * File_descr.t list
 
@@ -2390,15 +2443,15 @@ val mkdtemp : string -> string
 (** Causes abnormal program termination unless the signal SIGABRT is caught and the signal
     handler does not return. If the SIGABRT signal is blocked or ignored, the abort()
     function will still override it. *)
-val abort : unit -> _
+val abort : unit -> _ @ portable unique
 
 (** {2 User id, group id} *)
 
-val initgroups : string -> int -> unit
+val initgroups : string -> int -> unit @@ nonportable
 
 (** [getgrouplist user group] returns the list of groups to which [user] belongs. See 'man
     getgrouplist'. *)
-val getgrouplist : string -> int -> int array
+val getgrouplist : string -> int -> int array @@ nonportable
 
 (** Return the list of groups to which the user executing the process belongs. *)
 val getgroups : unit -> int array
@@ -2412,10 +2465,12 @@ val fnmatch
   -> pat:string
   -> string
   -> bool
+  @@ nonportable
 
 (** See man page for wordexp. *)
 val wordexp
   : (?flags:[ `No_cmd | `Show_err | `Undef ] list -> string -> string array) Or_error.t
+  @@ nonportable
 
 (** {2 System information} *)
 
@@ -2487,25 +2542,6 @@ val set_mcast_loop : File_descr.t -> bool -> unit
     This uses [setsockopt] with [IP_MULTICAST_IF] and applies to multicast traffic. For
     non-multicast applications, see {!Linux_ext.bind_to_interface}. *)
 val set_mcast_ifname : File_descr.t -> string -> unit
-
-module Scheduler : sig
-  module Policy : sig
-    type t =
-      [ `Fifo
-      | `Round_robin
-      | `Other
-      ]
-    [@@deriving sexp]
-  end
-
-  (** See [man sched_setscheduler].
-
-      The [priority] supplied here is *not* the nice value of a process. It is the
-      "static" priority (1 .. 99) used in conjunction with real-time processes. If you
-      want to set the nice value of a normal process, use [Linux_ext.setpriority] or
-      [Core_unix.nice]. *)
-  val set : pid:Pid.t option -> policy:Policy.t -> priority:int -> unit
-end
 
 module Priority : sig
   val nice : int -> int
@@ -2592,7 +2628,7 @@ end
 val getifaddrs : unit -> Ifaddr.t list
 val get_all_ifnames : unit -> string list
 
-module Expert : sig
+module (Expert @@ nonportable) : sig @@ portable
   (** [Expert.exec] is essentially equivalent to the non-expert [exec], but it allocates
       less. *)
   val exec
@@ -2601,6 +2637,7 @@ module Expert : sig
     -> use_path:bool
     -> env:string array option
     -> never_returns
+    @@ nonportable
 end
 
 module Stable : sig

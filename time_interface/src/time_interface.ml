@@ -94,7 +94,7 @@ module type S = sig
   val of_string_abs : string -> t
 
   val next_multiple
-    :  ?can_equal_after:bool
+    :  ?can_equal_after:bool @ local
     -> base:t
     -> after:t
     -> interval:Span.t

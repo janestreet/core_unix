@@ -34,9 +34,7 @@ val parse_command_line_or_error
     [f args] will raise if [args] goes through an [Exec _].
 
     This will trigger any side-effects caused by parsing the args but it does guarentee
-    the the args provided are completely valid.
-
-    [validate_command command] does not work in top-level expect tests. *)
+    the the args provided are completely valid. *)
 val validate_command : Command.t -> string list -> unit Or_error.t
 
 (** [validate_command_line shape] provides a function [f] s.t. [f args] is best-effort

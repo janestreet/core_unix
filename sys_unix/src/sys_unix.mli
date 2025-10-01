@@ -1,3 +1,5 @@
+@@ portable
+
 (** System interface. *)
 
 open! Core
@@ -140,4 +142,4 @@ val home_directory : unit -> string
     - it re-uses and mutates the previous [argv] value instead of using the new one; and
     - it even mutates its length, which can be observed by inspecting the array returned
       by an earlier call to {!get_argv}. *)
-val override_argv : string array -> unit
+val override_argv : string array -> unit @@ nonportable

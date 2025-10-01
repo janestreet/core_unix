@@ -105,7 +105,7 @@ module Impl = struct
       let oneshot = flag_epolloneshot ()
     end)
 
-  external epoll_create : unit -> File_descr.t = "core_linux_epoll_create"
+  external epoll_create : unit -> File_descr.t @@ portable = "core_linux_epoll_create"
 
   (* Some justification for the below interface: Unlike select() and poll(), epoll() fills
      in an array of ready events, analogous to a read() call where you pass in a buffer to
@@ -139,6 +139,7 @@ module Impl = struct
     -> File_descr.t
     -> Flags.t
     -> unit
+    @@ portable
     = "core_linux_epoll_ctl_add"
 
   external epoll_ctl_mod
@@ -146,12 +147,14 @@ module Impl = struct
     -> File_descr.t
     -> Flags.t
     -> unit
+    @@ portable
     = "core_linux_epoll_ctl_mod"
 
   external epoll_ctl_del
     :  File_descr.t
     -> File_descr.t
     -> unit
+    @@ portable
     = "core_linux_epoll_ctl_del"
 
   module Table = Bounded_int_table
@@ -315,6 +318,7 @@ module Impl = struct
     -> ready_events
     -> int
     -> int
+    @@ portable
     = "core_linux_epoll_wait"
 
   let wait_internal t ~timeout_ms =

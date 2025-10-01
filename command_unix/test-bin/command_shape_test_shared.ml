@@ -39,7 +39,9 @@ let parent_cmd =
   fun () ->
     let path_to_exe = `Relative_to_me "./command_shape_test_child.exe" in
     let cmd = Command.exec ~summary:"" ~path_to_exe () in
-    Unix.putenv ~key:instructions_variable ~data:(sprintf !"%{sexp:t list}" instructions);
+    (Unix.putenv [@ocaml.alert "-unsafe_multidomain"])
+      ~key:instructions_variable
+      ~data:(sprintf !"%{sexp:t list}" instructions);
     match
       Or_error.try_with (fun () -> Command.Shape.fully_forced (Command_unix.shape cmd))
     with

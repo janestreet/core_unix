@@ -9,14 +9,14 @@ open Core_unix
 
     See the man pages for a full description of the epoll facility. *)
 
-module type S = sig
+module type S = sig @@ portable
   module Flags : sig
     (** An [Epoll.Flags.t] is an immutable set of flags for which one can register
         interest in a file descriptor. It is implemented as a bitmask, and so all
         operations (+, -, etc.) are constant time with no allocation.
 
         [sexp_of_t] produces a human-readable list of bits, e.g., "(in out)". *)
-    type t [@@deriving sexp_of]
+    type t : immutable_data [@@deriving sexp_of]
 
     include Flags.S with type t := t
 

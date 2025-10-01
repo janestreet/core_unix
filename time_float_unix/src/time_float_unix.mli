@@ -1,3 +1,5 @@
+@@ portable
+
 open! Core
 open! Import
 
@@ -43,7 +45,12 @@ val pause_forever : unit -> never_returns
 
     Not all strftime control codes are standard; the supported subset will depend on the C
     libraries linked into a given executable. *)
-val format : t -> string -> zone:Zone.t -> string
+val format : t -> string -> zone:Zone.t -> string @@ nonportable
+
+(** A thread-safe version of {!format} where you are obliged to pass [locale] (though you
+    should not free the locale while the call is in progress). The syntax of the format
+    string is the same. *)
+val format_with_locale : t -> string -> zone:Zone.t -> locale:Core_unix.Locale.t -> string
 
 (** [parse string ~fmt ~zone] parses [string], according to [fmt], which follows the
     formatting rules given in 'man strptime'. The time is assumed to be in the given
@@ -65,4 +72,16 @@ val parse
   -> string
   -> fmt:string
   -> zone:Zone.t
+  -> t
+  @@ nonportable
+
+(** A thread-safe version of {!parse} where you are obliged to pass [locale] (though you
+    should not free the locale while the call is in progress). The syntax of the format
+    string is the same. *)
+val parse_with_locale
+  :  ?allow_trailing_input:bool (** default = false *)
+  -> string
+  -> fmt:string
+  -> zone:Zone.t
+  -> locale:Core_unix.Locale.t
   -> t
