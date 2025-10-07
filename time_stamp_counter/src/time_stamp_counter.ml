@@ -391,7 +391,7 @@ end
 [%%else]
 
 (* noalloc on x86_64 only *)
-external now : unit -> tsc = "tsc_get"
+external now : unit -> tsc @@ portable = "tsc_get"
 
 (* Outside of x86_64, [now] returns the result of clock_gettime(), i.e. the current time
    in nanos past epoch. *)
