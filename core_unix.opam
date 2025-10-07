@@ -25,7 +25,7 @@ depends: [
   "uopt"
   "base-threads"
   "dune"                     {>= "3.17.0"}
-  "spawn"                    {>= "v0.15"}
+  "spawn"                    {= "v0.15.1+ox"}
 ]
 available: arch != "arm32" & arch != "x86_32"
 synopsis: "Unix-specific portions of Core"
