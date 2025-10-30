@@ -168,6 +168,25 @@ let isolated_cpus =
 
 let online_cpus = memo (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/online")
 
+let allowed_cpus ?(include_offline = false) ?pid () =
+  let status_path =
+    match pid with
+    | None -> "/proc/self/status"
+    | Some pid -> [%string "/proc/%{pid#Pid}/status"]
+  in
+  let lines = In_channel.read_lines status_path in
+  let cpus_allowed =
+    List.find_map_exn lines ~f:(String.chop_prefix ~prefix:"Cpus_allowed_list:")
+    |> String.strip
+    |> cpu_list_of_string_exn
+  in
+  match include_offline with
+  | true -> cpus_allowed
+  | false ->
+    let cpus_online = online_cpus () |> Int.Set.of_list in
+    List.filter cpus_allowed ~f:(Set.mem cpus_online)
+;;
+
 let cpus_local_to_nic ~ifname =
   cpu_list_of_file_exn (sprintf "/sys/class/net/%s/device/local_cpulist" ifname)
 ;;
@@ -187,6 +206,7 @@ module Null_toplevel = struct
   let cpu_list_of_string_exn = cpu_list_of_string_exn
   let isolated_cpus = u "Linux_ext.isolated_cores"
   let online_cpus = u "Linux_ext.online_cores"
+  let allowed_cpus = u "Linux_ext.allowed_cores"
   let cpus_local_to_nic = u "Linux_ext.cpus_local_to_nic"
   let file_descr_realpath = u "Linux_ext.file_descr_realpath"
   let get_ipv4_address_for_interface = u "Linux_ext.get_ipv4_address_for_interface"
@@ -1095,6 +1115,7 @@ module Epoll = Epoll.Impl
 let cores = Ok cores
 let isolated_cpus = Ok isolated_cpus
 let online_cpus = Ok online_cpus
+let allowed_cpus = Ok allowed_cpus
 let cpus_local_to_nic = Ok cpus_local_to_nic
 let file_descr_realpath = Ok file_descr_realpath
 let get_ipv4_address_for_interface = Ok get_ipv4_address_for_interface

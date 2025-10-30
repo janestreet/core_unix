@@ -136,7 +136,7 @@ module Span : sig
   end
 end
 
-val now : unit -> t [@@zero_alloc]
+val now : unit -> t
 val diff : t -> t -> Span.t
 val add : t -> Span.t -> t
 val to_int63 : t -> Int63.t

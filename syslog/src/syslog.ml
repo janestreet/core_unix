@@ -47,7 +47,7 @@ module Facility = struct
   end
 
   include T
-  include Sexpable.To_stringable (T)
+  include Sexpable.To_stringable [@mode portable] (T)
 
   let%test_unit _ = [%test_result: string] ~expect:"KERN" (to_string KERN)
   let%test_unit _ = [%test_result: t] ~expect:LOCAL7 (of_string "LOCAL7")
@@ -77,7 +77,7 @@ module Level = struct
   end
 
   include T
-  include Sexpable.To_stringable (T)
+  include Sexpable.To_stringable [@mode portable] (T)
 
   let%test_unit _ = [%test_result: string] ~expect:"EMERG" (to_string EMERG)
   let%test_unit _ = [%test_result: t] ~expect:DEBUG (of_string "DEBUG")

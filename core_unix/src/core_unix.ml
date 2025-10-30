@@ -970,22 +970,6 @@ let fork () =
   else `In_the_parent (Pid.of_int pid)
 ;;
 
-(* Same as [Caml.exit] but does not run at_exit handlers *)
-external sys_exit : int -> 'a = "caml_sys_exit"
-
-let fork_exec ~prog ~argv ?preexec_fn ?(use_path = true) ?env () =
-  let argv = Array.of_list argv in
-  let env = Option.map env ~f:Env.expand_array in
-  match fork () with
-  | `In_the_child ->
-    (try
-       Option.call ~f:preexec_fn ();
-       never_returns (exec_internal ~prog ~argv ~use_path ~env)
-     with
-     | _ -> sys_exit 127)
-  | `In_the_parent pid -> pid
-;;
-
 type wait_flag = Unix.wait_flag =
   | WNOHANG
   | WUNTRACED
@@ -1233,14 +1217,10 @@ let read_write_string f ?restart ?pos ?len fd ~buf =
     (fun () -> [ fd_r fd; "pos", Int.sexp_of_t pos; len_r len ]) [@nontail]
 ;;
 
-let unix_write fd ~buf ~pos ~len =
-  Unix.write fd ~buf:(Obj.magic_uncontended buf) ~pos ~len
-;;
-
 let read = read_write Unix.read
-let%template write = (read_write [@mode shared]) unix_write ?restart:None
+let write = [%template read_write [@mode shared]] Unix.write ?restart:None
 let write_substring = read_write_string Unix.write_substring ?restart:None
-let single_write = read_write Unix.single_write
+let single_write = [%template read_write [@mode shared]] Unix.single_write
 let single_write_substring = read_write_string Unix.single_write_substring
 let in_channel_of_descr = Unix.in_channel_of_descr
 let out_channel_of_descr = Unix.out_channel_of_descr
@@ -1935,6 +1915,8 @@ module Execvp_emulation : sig
     -> ?argv0:string
     -> unit
     -> 'a
+
+  val candidate_paths : ?prog_search_path:string list -> string -> string list
 end = struct
   let get_path prog_search_path =
     match prog_search_path with
@@ -2111,6 +2093,66 @@ let close_process (ic, oc) = Exit_or_signal.of_unix (Unix.close_process (ic, oc)
 let close_process_full c =
   let module C = Process_channels in
   Exit_or_signal.of_unix (Unix.close_process_full (c.C.stdout, c.C.stdin, c.C.stderr))
+;;
+
+(* Changes to the below must be reflected in the [preexec_cmd_tag] enum in [core_unix_stubs.c] *)
+module Pre_exec_command = struct
+  type t =
+    | Fd_open of
+        { fd : File_descr.t
+        ; filename : string
+        ; flags : open_flag list
+        ; perm : int
+        }
+    | Fd_close of File_descr.t
+    | Fd_dup2 of
+        { src : File_descr.t
+        ; dst : File_descr.t
+        }
+    | Signal_setignore of Signal.t
+    | Signal_setdefault of Signal.t
+    | Signal_setmask of Signal.t list
+    | Signal_setpdeathsig of Signal.t
+    | Sched_setscheduler of
+        { policy : Scheduler.Policy.t
+        ; priority : int
+        }
+    | Sched_nice of
+        { niceness : int
+        ; ignore_eperm : bool
+        }
+    | Sched_setaffinity of int list
+  [@@deriving sexp]
+end
+
+external do_fork_exec
+  :  progs:string array
+  -> argv:string array
+  -> env:string array option
+  -> preexec:Pre_exec_command.t list
+  -> (Core.Pid.t, int * Unix.error) Result.t
+  = "core_unix_fork_exec"
+
+let fork_exec ~prog ~argv ?(preexec = []) ?(use_path = true) ?env () =
+  let argv = Array.of_list argv in
+  let env = Option.map env ~f:Env.expand_array in
+  let progs =
+    (* The path-searching exec variants (execvp, execvpe) are not async-signal-safe,
+       so we avoid them and search PATH ourselves if requested *)
+    if use_path then Array.of_list (Execvp_emulation.candidate_paths prog) else [| prog |]
+  in
+  match do_fork_exec ~progs ~argv ~env ~preexec with
+  | Ok pid -> pid
+  | Error (ix, errno) ->
+    let cmd =
+      assert (ix >= -1);
+      if ix = -1
+      then [%sexp "vfork"]
+      else if ix < List.length preexec
+      then [%sexp (List.nth_exn preexec ix : Pre_exec_command.t)]
+      else [%sexp (("exec", prog) : string * string)]
+    in
+    raise_s [%sexp (("Core_unix.fork_exec", cmd, errno) : string * Sexp.t * Error.t)]
 ;;
 
 external setpgid : int -> int -> unit = "core_unix_setpgid"

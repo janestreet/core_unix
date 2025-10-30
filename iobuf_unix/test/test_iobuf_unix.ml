@@ -3,7 +3,7 @@ open! Iobuf_unix
 module Unix = Core_unix
 module Thread = Core_thread
 
-type nonrec ('d, 'w) t = ('d, 'w) Iobuf.Hexdump.t [@@deriving sexp_of]
+type nonrec ('d, 'w) t = ('d, 'w, Iobuf.global) Iobuf.Hexdump.t [@@deriving sexp_of]
 
 let%test_unit _ =
   let to_bigstring_shared_via_iovec ?pos ?len iobuf =
@@ -53,14 +53,14 @@ module Io_test (Ch : sig
 
     val create_in : string -> in_
     val close_in : in_ -> unit
-    val read : ([> write ], Iobuf.seek) Iobuf.t -> in_ -> ok_or_eof
+    val read : ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t -> in_ -> ok_or_eof
 
     type out_
 
     val create_out : Unix.File_descr.t -> out_
     val close_out : out_ -> unit
-    val write : ([> read ], Iobuf.seek) Iobuf.t -> out_ -> unit
-    val peek_write : ([> read ], _) Iobuf.t -> out_ -> int
+    val write : ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t -> out_ -> unit
+    val peek_write : ([> read ], _, Iobuf.global) Iobuf.t -> out_ -> int
   end) =
 struct
   let%test_unit "write + read" =
@@ -236,7 +236,9 @@ let sendto_and_recvfrom recvfrom recv_fd sendto ~sendto_name =
                 Unix.Syscall_result.Unit.ok_or_unix_error_exn
                   (sendto t send_fd send_addr)
                   ~syscall_name:sendto_name);
-              [%test_pred: (_, _) Iobuf.Hexdump.t] (fun buf -> Iobuf.is_empty buf) t))
+              [%test_pred: (_, _, Iobuf.global) Iobuf.Hexdump.t]
+                (fun buf -> Iobuf.is_empty buf)
+                t))
           ~on_uncaught_exn:`Print_to_stderr
           ()
       in

@@ -766,7 +766,7 @@ CAMLprim value core_linux_memfd_create(value v_flags, value v_initial_size,
     uerror("memfd_create", Nothing);
   }
 
-  int initial_size = Int_val(v_initial_size);
+  loff_t initial_size = Long_val(v_initial_size);
   if (initial_size) {
     if (ftruncate(fd, initial_size) == -1) {
       uerror("ftruncate", Nothing);

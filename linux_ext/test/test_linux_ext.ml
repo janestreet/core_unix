@@ -81,6 +81,20 @@ let%test_unit _ =
 
 (* 99,999 cores ought to be enough for anybody *)
 
+let%expect_test "allowed_cpus returns non-empty list" =
+  match allowed_cpus with
+  | Error _ -> print_endline "allowed_cpus not available on this platform"
+  | Ok allowed_cpus ->
+    let cpus = allowed_cpus () in
+    assert (not (List.is_empty cpus));
+    List.iter cpus ~f:(fun cpu ->
+      assert (cpu >= 0);
+      assert (cpu < 2048));
+    let cpus_with_pid = allowed_cpus ~pid:(Unix.getpid ()) () in
+    assert (not (List.is_empty cpus_with_pid));
+    assert (List.equal Int.equal cpus cpus_with_pid)
+;;
+
 let%test "lo interface addr is 127.0.0.1" =
   (* This could be a false positive if the test box is misconfigured. *)
   match get_ipv4_address_for_interface with
@@ -173,8 +187,10 @@ module%test _ = struct
                  of the pipe closes\n\
                  after a partial read"
     =
-    let saw_sigpipe = ref false in
-    let new_sigpipe_handler = `Handle (fun _ -> saw_sigpipe := true) in
+    let saw_sigpipe = Atomic.make false in
+    let new_sigpipe_handler =
+      Signal.Expert.Handle (fun _ -> Atomic.set saw_sigpipe true)
+    in
     let old_sigpipe_handler = Signal.Expert.signal Signal.pipe new_sigpipe_handler in
     Exn.protect
       ~finally:(fun () -> Signal.Expert.set Signal.pipe old_sigpipe_handler)
@@ -201,7 +217,7 @@ module%test _ = struct
           match Epoll.wait_timeout_after epoll Time_ns.Span.second with
           | `Timeout -> assert false
           | `Ok ->
-            assert !saw_sigpipe;
+            assert (Atomic.get saw_sigpipe);
             let saw_fd = ref false in
             Epoll.iter_ready epoll ~f:(fun fd flags ->
               assert (Unix.File_descr.equal fd w);

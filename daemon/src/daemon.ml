@@ -124,7 +124,7 @@ let daemonize_wait
        Option.iter umask ~f:(fun umask -> ignore (Unix.umask umask));
        Staged.stage (fun () ->
          redirect_stdio_fds ?perm ~stdout:redirect_stdout ~stderr:redirect_stderr ();
-         let old_sigpipe_behavior = Signal.Expert.signal Signal.pipe `Ignore in
+         let old_sigpipe_behavior = Signal.Expert.signal Signal.pipe Ignore in
          (try ignore (Unix.write_substring write_end ~buf ~pos:0 ~len : int) with
           | _ -> ());
          Signal.Expert.set Signal.pipe old_sigpipe_behavior;

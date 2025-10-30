@@ -133,18 +133,31 @@ CAMLprim value unix_getlocalename(int32_t category, intnat i_locale) {
       if (!result || !*result)
         uerror("nl_langinfo_l", Nothing);
       return caml_copy_string(result);
-#elif defined __APPLE__ || defined __FreeBSD__ || defined __NetBSD__ ||                  \
-    defined __OpenBSD__
-      // Here we rely on LC_*_MASK == 1 << LC_* for the standard categories *, which we
-      // static assert on:
-      static_assert(LC_CTYPE_MASK == 1 << LC_CTYPE, "");
-      static_assert(LC_COLLATE_MASK == 1 << LC_COLLATE, "");
-      static_assert(LC_MESSAGES_MASK == 1 << LC_MESSAGES, "");
-      static_assert(LC_MONETARY_MASK == 1 << LC_MONETARY, "");
-      static_assert(LC_NUMERIC_MASK == 1 << LC_NUMERIC, "");
-      static_assert(LC_TIME_MASK == 1 << LC_TIME, "");
-      errno = 0;
-      const char *result = querylocale(1 << category, locale);
+#elif defined __APPLE__
+      int category_mask;
+      switch (category) {
+      case LC_CTYPE:
+        category_mask = LC_CTYPE_MASK;
+        break;
+      case LC_COLLATE:
+        category_mask = LC_COLLATE_MASK;
+        break;
+      case LC_MESSAGES:
+        category_mask = LC_MESSAGES_MASK;
+        break;
+      case LC_MONETARY:
+        category_mask = LC_MONETARY_MASK;
+        break;
+      case LC_NUMERIC:
+        category_mask = LC_NUMERIC_MASK;
+        break;
+      case LC_TIME:
+        category_mask = LC_TIME_MASK;
+        break;
+      default:
+        caml_failwith("querylocale: unsupported locale category");
+      }
+      const char *result = querylocale(category_mask, locale);
       if (!result || !*result)
         uerror("querylocale", Nothing);
       return caml_copy_string(result);

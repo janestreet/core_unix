@@ -492,6 +492,13 @@ module type S = sig
   (** [online_cpus ()] returns the list of cores online for scheduling. *)
   val online_cpus : (unit -> int list) Or_error.t
 
+  (** [allowed_cpus ?include_offline ?pid ()] returns the list of cores allowed for
+      scheduling for this particular PID. If no PID is specified, this checks the current
+      PID. By default, this function automatically filters the returned list of cores to
+      only include online cores. Set [include_offline] to true to also return CPU cores
+      that the kernel is reporting as allowed, but are currently offline. *)
+  val allowed_cpus : (?include_offline:bool -> ?pid:Pid.t -> unit -> int list) Or_error.t
+
   (** [cpus_local_to_nic ~ifname] returns the list of cores NUMA-local to [ifname]. *)
   val cpus_local_to_nic : (ifname:string -> int list) Or_error.t
 
