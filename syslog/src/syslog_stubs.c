@@ -1,3 +1,5 @@
+#ifndef _WIN32
+
 #include <string.h>
 #include <syslog.h>
 
@@ -71,7 +73,7 @@ CAMLprim value core_syslog_syslog(value v_priority, value v_message) {
   return Val_unit;
 }
 
-CAMLprim value core_syslog_closelog() {
+CAMLprim value core_syslog_closelog(void) {
   closelog();
   return Val_unit;
 }
@@ -80,3 +82,30 @@ CAMLprim value core_syslog_setlogmask(value v_mask) {
   setlogmask(Int_val(v_mask));
   return Val_unit;
 }
+
+#else
+
+#include "ocaml_utils.h"
+
+CAMLprim value core_syslog_level_to_int(value __unused v_level) {
+  caml_invalid_argument("Level.to_int not implemented");
+}
+
+CAMLprim value core_syslog_openlog(value __unused v_ident, value __unused v_open_option, value __unused v_facility) {
+  caml_invalid_argument("openlog not implemented");
+}
+
+/* A priority is a level | facility.  See syslog(3). */
+CAMLprim value core_syslog_syslog(value __unused v_priority, value __unused v_message) {
+  caml_invalid_argument("syslog not implemented");
+}
+
+CAMLprim value core_syslog_closelog(void) {
+  caml_invalid_argument("closelog not implemented");
+}
+
+CAMLprim value core_syslog_setlogmask(value __unused v_mask) {
+  caml_invalid_argument("setlogmask not implemented");
+}
+
+#endif

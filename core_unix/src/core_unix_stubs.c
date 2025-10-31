@@ -50,6 +50,16 @@
 #include <sys/prctl.h>
 #endif
 
+#if defined(__FreeBSD__)
+#   include <pthread_np.h>      /* pthread_getthreadid_np() */
+#elif defined(_AIX)
+#   include <sys/thread.h>      /* thread_self() */
+#elif defined(__NetBSD__)
+#   include <lwp.h>             /* _lwp_self() */
+#elif defined(__DragonFly__)
+#   include <sys/lwp.h>         /* lwp_gettid() */
+#endif
+
 /* makedev */
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) ||                 \
     defined(__OpenBSD__)
@@ -1168,7 +1178,11 @@ CAMLprim value core_unix_getgrouplist(value v_user, value v_group) {
   c_user = strdup(String_val(v_user));
 
   caml_enter_blocking_section();
+#ifdef __APPLE__
+  n = getgrouplist(c_user, Long_val(v_group), (int *)groups, &ngroups);
+#else
   n = getgrouplist(c_user, Long_val(v_group), groups, &ngroups);
+#endif
   free(c_user);
   caml_leave_blocking_section();
 
@@ -1618,11 +1632,39 @@ CAMLprim value core_unix_remove(value v_path) {
   CAMLreturn(Val_unit);
 }
 
-#if defined(GET_THREAD_ID)
-
-CAMLprim value core_unix_gettid(value v_unit __unused) { return Val_long(GET_THREAD_ID); }
-
+CAMLprim value core_unix_gettid(value v_unit __unused) {
+#if defined(__APPLE__)
+  uint64_t native_id;
+  (void) pthread_threadid_np(NULL, &native_id);
+#elif defined(__linux__)
+  pid_t native_id;
+  native_id = gettid();
+#elif defined(__FreeBSD__)
+  int native_id;
+  native_id = pthread_getthreadid_np();
+#elif defined(__OpenBSD__)
+  pid_t native_id;
+  native_id = getthrid();
+#elif defined(_AIX)
+  tid_t native_id;
+  native_id = thread_self();
+#elif defined(__NetBSD__)
+  lwpid_t native_id;
+  native_id = _lwp_self();
+#elif defined(__DragonFly__)
+  lwpid_t native_id;
+  native_id = lwp_gettid();
+#elif defined(GET_THREAD_ID)
+  long native_id;
+  native_id = GET_THREAD_ID;
+#elif defined(_WIN32)
+  DWORD native_id;
+  native_id = GetCurrentThreadId();
+#else
+  int native_id = 0;
 #endif
+  return Val_long(native_id);
+}
 
 static value sockaddr_to_caml_string_of_octets(struct sockaddr *sa, int family) {
   CAMLparam0();
