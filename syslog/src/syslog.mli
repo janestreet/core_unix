@@ -8,7 +8,7 @@
 
 open! Import
 
-module Open_option : sig
+module Open_option : sig @@ portable
   type t =
     | PID (** Include PID with each message *)
     | CONS
@@ -22,7 +22,7 @@ module Open_option : sig
 end
 
 (** Types of messages *)
-module Facility : sig
+module Facility : sig @@ portable
   type t =
     | KERN (** Kernel messages *)
     | USER (** Generic user-level message (default) *)
@@ -47,7 +47,7 @@ module Facility : sig
   [@@deriving sexp]
 end
 
-module Level : sig
+module Level : sig @@ portable
   (** [DEBUG] < [EMERG] *)
   type t =
     | EMERG (** System is unusable *)
@@ -97,6 +97,7 @@ val syslog
   -> ?level:Level.t (** default is [INFO] *)
   -> string
   -> unit
+  @@ portable
 
 (** [syslog_printf] acts like [syslog], but allows [printf]-style specification of the
     message. *)
@@ -105,6 +106,7 @@ val syslogf
   -> ?level:Level.t
   -> ('a, unit, string, unit) format4
   -> 'a
+  @@ portable
 
 (** [closelog ()] closes the connection to the [syslog] daemon. *)
 val closelog : unit -> unit

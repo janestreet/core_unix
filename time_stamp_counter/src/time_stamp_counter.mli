@@ -139,7 +139,7 @@ end
 val now : unit -> t @@ portable
 val diff : t -> t -> Span.t
 val add : t -> Span.t -> t
-val to_int63 : t -> Int63.t
+val to_int63 : t -> Int63.t @@ portable
 val zero : t
 
 (** A default calibrator for the current process. Most programs can just use this

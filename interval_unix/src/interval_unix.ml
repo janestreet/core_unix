@@ -6,7 +6,7 @@ module Stable = struct
     module Time = struct
       module T = struct
         type t = Time_float_unix.Stable.V1.t Interval.Stable.V1.t
-        [@@deriving sexp, bin_io, compare]
+        [@@deriving bin_io, compare, sexp, stable_witness]
       end
 
       include T
@@ -16,7 +16,7 @@ module Stable = struct
     module Time_ns = struct
       module T = struct
         type t = Time_ns_unix.Stable.V1.t Interval.Stable.V1.t
-        [@@deriving sexp, bin_io, compare]
+        [@@deriving bin_io, compare, sexp, stable_witness]
       end
 
       include T

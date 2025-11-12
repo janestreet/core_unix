@@ -46,6 +46,9 @@
 #include <netdb.h>
 #include <ifaddrs.h>
 #include <sys/wait.h>
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
 
 /* makedev */
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) ||                 \
@@ -2108,4 +2111,340 @@ CAMLprim value core_unix_execvpe(value v_prog, value v_args, value v_env) {
 #endif
 
   caml_uerror("execvpe", v_prog);
+}
+
+/* The below enum must match the variant order in the [Pre_exec_command] module */
+enum preexec_cmd_tag {
+  PREEXEC_FD_OPEN,
+  PREEXEC_FD_CLOSE,
+  PREEXEC_FD_DUP2,
+  PREEXEC_SIGNAL_SETIGNORE,
+  PREEXEC_SIGNAL_SETDEFAULT,
+  PREEXEC_SIGNAL_SETMASK,
+  PREEXEC_SIGNAL_SETPDEATHSIG,
+  PREEXEC_SCHED_SETSCHEDULER,
+  PREEXEC_SCHED_NICE,
+  PREEXEC_SCHED_SETAFFINITY
+};
+
+struct subprocess_err {
+  int index;
+  int error;
+};
+
+#ifdef __GNUC__
+__attribute__((noinline))
+#endif
+static pid_t
+do_fork_exec(value v_paths, char *const *argv, char *const *envp, sigset_t *parent_mask,
+             int *pipe_fds, value v_preexec_list) {
+  /* vfork() is a tricky API: the parent thread is paused until the child execs/exits, but
+     they share the same stack. So, in the child, we need to avoid clobbering the parent's
+     stackframe. To mitigate the risk of the compiler rearranging code in a way that
+     causes such clobbering, the vfork() and the entire child process take place in a
+     separate stack frame (that is, inside an __attribute__((noinline)) function) */
+
+  pid_t pid = vfork();
+  if (pid != 0)
+    return pid;
+
+  /* From here on, we're in the child process.
+
+     This is a nasty context: we can only use async-signal-safe functions, so we can't
+     call into the OCaml runtime or use most of the C stdlib.
+
+     Error reporting is done by writing a struct subprocess_err to pipe_fds[1]. If we
+     succeed in exec'ing, we'll close the pipe, which indicates success to the parent. */
+
+  close(pipe_fds[0]);
+  int pipe_fd = pipe_fds[1];
+
+  /* It's bad if a signal handler runs between vfork() and exec().
+
+     This is not impossible: we're unlikely to get a process-directed signal here, because
+     nobody knows our PID yet, but we're part of the same process group as the parent so
+     e.g. we'll get SIGINT if the user mashes ctrl-C at exactly the wrong moment.
+
+     To prevent this, we blocked all signals before vfork'ing, and we're going to remove
+     all signal handlers (by ensuring every signal disposition is SIG_DFL or SIG_IGN)
+     before we restore the signal mask. */
+  struct sigaction sig_dfl = {.sa_handler = SIG_DFL};
+  for (int sig = 1 /* 0 is not a signal */; sig < NSIG; sig++) {
+    /* No error checking here: there's not much we can or should do if sigaction fails */
+    struct sigaction sa;
+    sigaction(sig, NULL, &sa);
+    if (sa.sa_handler != SIG_IGN && sa.sa_handler != SIG_DFL)
+      sigaction(sig, &sig_dfl, NULL);
+  }
+
+  sigprocmask(SIG_SETMASK, parent_mask, NULL);
+
+  /* There are no EINTR retry loops below: we have ensured no signal handlers are
+     installed, so no syscalls will get EINTR. */
+  struct subprocess_err err = {.index = 0};
+  for (value preexec = v_preexec_list; Is_block(preexec); preexec = Field(preexec, 1)) {
+    value cmd = Field(preexec, 0);
+    switch ((enum preexec_cmd_tag)Tag_val(cmd)) {
+    case PREEXEC_FD_OPEN: {
+      int fd = Int_val(Field(cmd, 0));
+      const char *filename = String_val(Field(cmd, 1));
+      mode_t perm = (mode_t)Int_val(Field(cmd, 3));
+      static const int
+          flag_table[] = {O_RDONLY,  O_WRONLY, O_RDWR, O_NONBLOCK, O_APPEND,
+                          O_CREAT,   O_TRUNC,  O_EXCL, O_NOCTTY,   O_DSYNC,
+                          O_SYNC,    O_RSYNC,  0, /* O_SHARE_DELETE, Windows-only */
+                          O_CLOEXEC, 0 /* O_KEEPEXEC */};
+      int flags = caml_convert_flag_list(Field(cmd, 2), flag_table);
+      int open_fd = open(filename, flags, perm);
+      if (open_fd < 0) {
+        goto fail;
+      } else if (open_fd != fd) {
+        if (fd == pipe_fd) {
+          /* It's possible that the FD that the user asked us to open ('fd') happens to
+             have the same number as the FD of the pipe we're using for error reporting
+             ('pipe_fd'). For instance, if the only open FDs are the standard ones, then
+             the pipe_fd will be descriptor 3, the next free one. If the user tries to
+             fork_exec a program redirecting FD 3 ("foo 3>/some/where" in shell syntax),
+             then this will clobber our pipe_fd.
+
+             To avoid this, we need to move the pipe to a new FD number by dup'ing it. */
+          pipe_fd = dup(pipe_fd); /* move pipe_fd out of the way */
+        }
+        if (dup2(open_fd, fd) < 0) /* closes old fd first */
+          goto fail;
+        close(open_fd);
+      }
+      break;
+    }
+
+    case PREEXEC_FD_CLOSE: {
+      /* Explicitly ignore any error coming out of [close].
+
+         A desired use case for [Fd_PREEXEC_FD_CLOSE] is to close all non-io file
+         descriptors of a process pre-exec, but there isn't any great way of
+         deterministically fetching all your current open file descriptors (e.g., the act
+         of reading [/proc/self/fd] opens a new file descriptor).
+
+         A much easier way is to iterate over all possible file descriptors and close
+         everything > 2, but this only possible if errors are silenced.
+
+         A [PREEXEC_FD_CLOSE_RANGE] flag would help in some cases, but not all (e.g.,
+         wanting to keep stdio open but also a handful of other descriptors). */
+      close(Int_val(Field(cmd, 0)));
+      break;
+    }
+
+    case PREEXEC_FD_DUP2: {
+      int src = Int_val(Field(cmd, 0));
+      int dst = Int_val(Field(cmd, 1));
+      if (dst == pipe_fd)
+        pipe_fd = dup(pipe_fd); /* move pipe_fd out of the way. (See comment above) */
+      if (dup2(src, dst) < 0)
+        goto fail;
+      break;
+    }
+
+    case PREEXEC_SIGNAL_SETIGNORE: {
+      int sig = caml_convert_signal_number(Int_val(Field(cmd, 0)));
+      struct sigaction sa = {.sa_handler = SIG_IGN};
+      sigemptyset(&sa.sa_mask);
+      if (sigaction(sig, &sa, NULL) < 0)
+        goto fail;
+      break;
+    }
+
+    case PREEXEC_SIGNAL_SETDEFAULT: {
+      int sig = caml_convert_signal_number(Int_val(Field(cmd, 0)));
+      struct sigaction sa = {.sa_handler = SIG_DFL};
+      sigemptyset(&sa.sa_mask);
+      if (sigaction(sig, &sa, NULL) < 0)
+        goto fail;
+      break;
+    }
+
+    case PREEXEC_SIGNAL_SETMASK: {
+      sigset_t mask;
+      sigemptyset(&mask);
+      for (value v_sigs = Field(cmd, 0); Is_block(v_sigs); v_sigs = Field(v_sigs, 1)) {
+        int sig = caml_convert_signal_number(Int_val(Field(v_sigs, 0)));
+        sigaddset(&mask, sig);
+      }
+      if (sigprocmask(SIG_SETMASK, &mask, NULL) < 0)
+        goto fail;
+      break;
+    }
+
+    case PREEXEC_SIGNAL_SETPDEATHSIG: {
+#ifdef __linux__
+      int sig = caml_convert_signal_number(Int_val(Field(cmd, 0)));
+      if (prctl(PR_SET_PDEATHSIG, sig) < 0)
+        goto fail;
+      break;
+#else
+      errno = ENOSYS;
+      goto fail;
+#endif
+    }
+
+    case PREEXEC_SCHED_SETSCHEDULER: {
+#if defined(_POSIX_PRIORITY_SCHEDULING) && (_POSIX_PRIORITY_SCHEDULING + 0 > 0)
+      struct sched_param param;
+      param.sched_priority = Int_val(Field(cmd, 1));
+      int policy = sched_policy_table[Int_val(Field(cmd, 0))];
+      if (sched_setscheduler(0, policy, &param) < 0)
+        goto fail;
+#else
+      errno = ENOSYS;
+      goto fail;
+#endif
+      break;
+    }
+
+    case PREEXEC_SCHED_NICE: {
+      errno = 0;
+      if (nice(Int_val(Field(cmd, 0))) == -1 && errno != 0) {
+        if (errno != EPERM || Field(cmd, 1) == Val_false)
+          goto fail;
+      }
+      break;
+    }
+
+    case PREEXEC_SCHED_SETAFFINITY: {
+#ifdef __linux__
+      /* Despite not being in [man 7 signal] (because it's not POSIX),
+         [sched_setaffinity] is actually async-signal-safe. See "AS-Safe" label in
+         https://www.gnu.org/software/libc/manual/html_node/CPU-Affinity.html */
+      cpu_set_t cpuset;
+      CPU_ZERO(&cpuset);
+      for (value cpus = Field(cmd, 0); Is_block(cpus); cpus = Field(cpus, 1)) {
+        int cpu = Int_val(Field(cpus, 0));
+        if (cpu < 0 || cpu >= CPU_SETSIZE) {
+          errno = EINVAL;
+          goto fail;
+        }
+        CPU_SET(cpu, &cpuset);
+      }
+      if (sched_setaffinity(0, sizeof(cpuset), &cpuset) < 0)
+        goto fail;
+      break;
+#else
+      errno = ENOSYS;
+      goto fail;
+#endif
+    }
+
+    default:
+      /* should never happen if Pre_exec_command.t is in sync with preexec_cmd_tag */
+      errno = ENOSYS;
+      goto fail;
+    }
+    err.index++;
+  }
+
+  /* Set close-on-exec on the pipe. This is done now rather than initially, since the pipe
+     fd may have changed via dup(). (The usual reason to set it initially, to avoid a
+     race, doesn't apply here because we know we're in a single-threaded process now) */
+  int flags = fcntl(pipe_fd, F_GETFD);
+  if (flags >= 0) {
+    fcntl(pipe_fd, F_SETFD, flags | FD_CLOEXEC);
+  }
+
+  for (size_t i = 0; i < Wosize_val(v_paths); i++) {
+    const char *path = String_val(Field(v_paths, i));
+    if (envp) {
+      execve(path, argv, envp);
+    } else {
+      execv(path, argv);
+    }
+    if (errno != ENOENT)
+      goto fail;
+  }
+
+fail:
+  err.error = errno;
+  /* Write to a pipe of fewer than PIPE_BUF bytes, so guaranteed atomic.
+     (So no need to bother with partial writes and retries) */
+  write(pipe_fd, &err, sizeof(err));
+  _exit(127);
+}
+
+CAMLprim value core_unix_fork_exec(value v_progs, value v_argv, value v_env_opt,
+                                   value v_preexec) {
+  CAMLparam4(v_progs, v_argv, v_env_opt, v_preexec);
+  CAMLlocal3(v_errno, v_pair, v_result);
+
+  const size_t nargs = Wosize_val(v_argv);
+  char **argv_storage = caml_stat_alloc(sizeof(char *) * (nargs + 1));
+  char *const *argv = fill_args(argv_storage, nargs, v_argv);
+
+  char **env_storage = NULL;
+  char *const *envp = NULL;
+  if (Is_block(v_env_opt)) {
+    value v_env = Field(v_env_opt, 0);
+    const size_t nenv = Wosize_val(v_env);
+    env_storage = caml_stat_alloc(sizeof(char *) * (nenv + 1));
+    envp = fill_args(env_storage, nenv, v_env);
+  }
+
+  /* We don't want to be interrupted during this process (especially in the child between
+     vfork and exec), so temporarily disable both pthread cancellation and signals */
+  int cancelstate;
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancelstate);
+  sigset_t parent_mask, blocked_mask;
+  sigfillset(&blocked_mask);
+  sigprocmask(SIG_SETMASK, &blocked_mask, &parent_mask);
+
+  int pipe_fds[2];
+  if (pipe(pipe_fds) < 0)
+    caml_uerror("pipe", Nothing);
+
+  pid_t child = do_fork_exec(v_progs, argv, envp, &parent_mask, pipe_fds, v_preexec);
+  if (child < 0) {
+    /* vfork failed: return Error(-1, errno) (note there is an extra level of boxing
+     * here because of the use of ['a Result.t]) */
+    v_errno = caml_unix_error_of_code(errno);
+    v_pair = caml_alloc(2, 0);
+    Store_field(v_pair, 0, Val_int(-1));
+    Store_field(v_pair, 1, v_errno);
+    v_result = caml_alloc(1, 1);
+    Store_field(v_result, 0, v_pair);
+    close(pipe_fds[0]);
+    close(pipe_fds[1]);
+  } else {
+    close(pipe_fds[1]);
+    struct subprocess_err err;
+    ssize_t read_sz;
+    do {
+      read_sz = read(pipe_fds[0], &err, sizeof(err));
+    } while (read_sz < 0 && errno == EINTR);
+    close(pipe_fds[0]);
+    if (read_sz < 0) {
+      /* something's wrong in the internals of fork_exec,
+         not the user request - just raise */
+      caml_uerror("read", Nothing);
+    } else if (read_sz > 0) {
+      /* something failed in the child process: return Error (index, errno) */
+      v_errno = caml_unix_error_of_code(err.error);
+      v_pair = caml_alloc(2, 0);
+      Store_field(v_pair, 0, Val_int(err.index));
+      Store_field(v_pair, 1, v_errno);
+      v_result = caml_alloc(1, 1);
+      Store_field(v_result, 0, v_pair);
+      int wstatus;
+      waitpid(child, &wstatus, 0); /* clean up process, but ignore exit code (127) */
+    } else {
+      /* zero bytes read means the pipe was closed by execve,
+         so this means we succeeded, and so should return Ok (pid) */
+      v_result = caml_alloc(1, 0);
+      Store_field(v_result, 0, Val_long(child));
+    }
+  }
+
+  sigprocmask(SIG_SETMASK, &parent_mask, NULL);
+  pthread_setcancelstate(cancelstate, &cancelstate);
+
+  if (env_storage)
+    caml_stat_free(env_storage);
+  caml_stat_free(argv_storage);
+  CAMLreturn(v_result);
 }

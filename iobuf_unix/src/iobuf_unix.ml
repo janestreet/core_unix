@@ -119,7 +119,7 @@ module Recvmmsg_context = struct
   type ctx
 
   external unsafe_ctx
-    :  ([> write ], Iobuf.seek) Iobuf.t array
+    :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t array
     -> ctx
     = "iobuf_recvmmsg_ctx"
 
@@ -130,7 +130,7 @@ module Recvmmsg_context = struct
       raise_s
         [%sexp
           "Recvmmsg_context.create: all buffers must be reset"
-          , (ts : (_, _) Iobuf.With_shallow_sexp.t array)]
+          , (ts : (_, _, Iobuf.global) Iobuf.With_shallow_sexp.t array)]
   ;;
 
   (* we retain a reference to the underlying bigstrings, in the event that callers
@@ -138,7 +138,7 @@ module Recvmmsg_context = struct
      referenced by the bigstring, we want to prevent it from being garbage collected and
      released. *)
   type t =
-    { iobufs : (read_write, Iobuf.seek) Iobuf.t array
+    { iobufs : (read_write, Iobuf.seek, Iobuf.global) Iobuf.t array
     ; bstrs : Bigstring.t array
     ; ctx : ctx
     }
@@ -153,7 +153,7 @@ end
 
 external unsafe_recvmmsg_assume_fd_is_nonblocking
   :  File_descr.t
-  -> (read_write, Iobuf.seek) Iobuf.t array
+  -> (read_write, Iobuf.seek, Iobuf.global) Iobuf.t array
   -> Recvmmsg_context.ctx
   -> Unix.Syscall_result.Int.t
   = "iobuf_recvmmsg_assume_fd_is_nonblocking_stub"
@@ -301,7 +301,7 @@ let pwrite_assume_fd_is_nonblocking t fd ~offset =
 
 module Expert = struct
   external unsafe_pokef_float
-    :  (read_write, _) Iobuf.t
+    :  (read_write, _, Iobuf.global) Iobuf.t
     -> c_format:string
     -> max_length:int
     -> (float[@unboxed])

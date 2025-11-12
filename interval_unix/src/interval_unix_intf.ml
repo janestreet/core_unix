@@ -60,8 +60,8 @@ module type Interval_unix = sig
       the [Time], and [Time_ns] intervals. *)
   module Stable : sig
     module V1 : sig
-      module Time : Stable with type t = Time.t
-      module Time_ns : Stable with type t = Time_ns.t
+      module Time : Stable_with_witness with type t = Time.t
+      module Time_ns : Stable_with_witness with type t = Time_ns.t
     end
   end
 end

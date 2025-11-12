@@ -66,8 +66,8 @@ CAMLprim value core_syslog_syslog(value v_priority, value v_message) {
   memcpy(message, String_val(v_message), len);
   caml_enter_blocking_section();
   syslog(Int_val(v_priority), "%s", message);
-  caml_stat_free(message);
   caml_leave_blocking_section();
+  caml_stat_free(message);
   return Val_unit;
 }
 

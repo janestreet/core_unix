@@ -43,11 +43,11 @@ module Facility = struct
       | LOCAL7
     [@@deriving sexp]
 
-    external to_int : t -> int = "core_syslog_facility_to_int"
+    external to_int : t -> int @@ portable = "core_syslog_facility_to_int"
   end
 
   include T
-  include Sexpable.To_stringable (T)
+  include Sexpable.To_stringable [@mode portable] (T)
 
   let%test_unit _ = [%test_result: string] ~expect:"KERN" (to_string KERN)
   let%test_unit _ = [%test_result: t] ~expect:LOCAL7 (of_string "LOCAL7")
@@ -70,21 +70,21 @@ module Level = struct
     let compare a b = compare b a (* listed in descending order *)
     let%test_unit _ = [%test_result: int] ~expect:1 (compare EMERG DEBUG)
 
-    external to_int : t -> int = "core_syslog_level_to_int"
+    external to_int : t -> int @@ portable = "core_syslog_level_to_int"
 
     let collect_mask i t = to_int t lor i
     let mask ts = List.fold ~f:collect_mask ~init:0 ts
   end
 
   include T
-  include Sexpable.To_stringable (T)
+  include Sexpable.To_stringable [@mode portable] (T)
 
   let%test_unit _ = [%test_result: string] ~expect:"EMERG" (to_string EMERG)
   let%test_unit _ = [%test_result: t] ~expect:DEBUG (of_string "DEBUG")
 end
 
 external core_syslog_openlog : string option -> int -> int -> unit = "core_syslog_openlog"
-external core_syslog_syslog : int -> string -> unit = "core_syslog_syslog"
+external core_syslog_syslog : int -> string -> unit @@ portable = "core_syslog_syslog"
 external core_syslog_closelog : unit -> unit = "core_syslog_closelog" [@@noalloc]
 external core_syslog_setlogmask : int -> unit = "core_syslog_setlogmask" [@@noalloc]
 
