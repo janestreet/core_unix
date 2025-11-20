@@ -164,9 +164,9 @@ let recvmmsg_assume_fd_is_nonblocking fd { Recvmmsg_context.iobufs; ctx; _ } =
 ;;
 
 let recvmmsg_assume_fd_is_nonblocking =
-  (* We link with [--wrap recvmmsg].  If we have compiled on a machine with recvmmsg
-     (e.g., CentOS 6) but then run on a machine without (e.g., CentOS 5), our wrapped
-     [recvmmsg] always returns -1 and sets errno to ENOSYS. *)
+  (* We link with [--wrap recvmmsg]. If we have compiled on a machine with recvmmsg (e.g.,
+     CentOS 6) but then run on a machine without (e.g., CentOS 5), our wrapped [recvmmsg]
+     always returns -1 and sets errno to ENOSYS. *)
   match
     Unix.Syscall_result.Int.to_result
       (let fd = File_descr.of_int (-1) in

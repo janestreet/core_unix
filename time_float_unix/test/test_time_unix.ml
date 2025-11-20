@@ -323,11 +323,16 @@ module%test [@name "parse"] _ = struct
 end
 
 let%expect_test "accept float instead of time/span/ofday for hash tables and hash sets" =
-  let module Of_string (M : Sexpable.S1) = struct
+  let module Of_string (M : sig
+      type 'a t
+
+      include Sexpable.S1 with type 'a t := 'a t
+    end) =
+  struct
     type t = string M.t [@@deriving sexp]
   end
   in
-  let test (module M : Sexpable) string =
+  let test (type t) (module M : Sexpable with type t = t) string =
     print_s (M.sexp_of_t (M.t_of_sexp (Sexp.of_string string)))
   in
   test (module Time.Hash_set) {| (0 0.05 946746000 1381152600) |};
@@ -491,9 +496,9 @@ let%expect_test "our gmtime matches Unix.gmtime" =
               (results : (Date.t * Time.Ofday.t) * (Date.t * Time.Ofday.t))])
 ;;
 
-(* we expose the private type of Timish things to help the compiler optimize things
-   like records of all floats.  This is not exactly an expect test in that we expect
-   compilation to simply fail rather than a runtime test failure. *)
+(* we expose the private type of Timish things to help the compiler optimize things like
+   records of all floats. This is not exactly an expect test in that we expect compilation
+   to simply fail rather than a runtime test failure. *)
 let%expect_test "time/span/ofday can be cast to their underlying type" =
   let _ = (Time.epoch :> float) in
   let _ = (Time.Span.zero :> float) in
@@ -563,7 +568,7 @@ module%test [@name "Time.Stable"] _ = struct
   ;;
 
   (* We construct and test lots of values because the stability of Time conversions is
-       complex, and depends a lot on how comprehensive these tests are. *)
+     complex, and depends a lot on how comprehensive these tests are. *)
   let examples =
     let constructed_examples =
       List.concat_map date_examples ~f:(fun date ->
@@ -601,12 +606,11 @@ module%test [@name "Time.Stable"] _ = struct
   let test_stability (module M : S) =
     require_does_not_raise (fun () ->
       (* For the pre-written examples, test round-tripping, and also print out the
-           converted values so we will see if they change. *)
+         converted values so we will see if they change. *)
       print_and_check_stable_type (module M) M.examples;
       (* Test lots more pseudo-randomly generated examples for round-tripping. Do not
-           print them out, as we don't want to read thousands of examples, so we won't
-           know if their representation changes, but at least we will know they
-           round-trip. *)
+         print them out, as we don't want to read thousands of examples, so we won't know
+         if their representation changes, but at least we will know they round-trip. *)
       quickcheck M.quickcheck_generator ~sexp_of:M.sexp_of_t ~f:(fun example ->
         require_does_not_raise (fun () ->
           let sexp = M.sexp_of_t example in
@@ -622,11 +626,11 @@ module%test [@name "Time.Stable"] _ = struct
     let examples = examples
 
     let quickcheck_generator =
-      (* If we add another digit, the times start to exceed the range of [gmtime] and
-           sexp conversion raises. *)
+      (* If we add another digit, the times start to exceed the range of [gmtime] and sexp
+         conversion raises. *)
       Int64.gen_uniform_incl (-10_000_000_000_000_000L) 10_000_000_000_000_000L
       (* We generate in units of microseconds because our current sexp representation is
-           no more precise than that. *)
+         no more precise than that. *)
       |> Quickcheck.Generator.map ~f:(fun int64 ->
         Time.of_span_since_epoch (Span.of_us (Int64.to_float int64)))
     ;;
@@ -809,11 +813,11 @@ module%test [@name "Time.Stable"] _ = struct
       (2012-04-09 12:00:00.000000-04:00)
       (2012-04-09 12:00:00.000000-04:00)
       |}];
-    (* test that t_of_sexp accepts leap seconds
-         NB. there are such things as non-integer hour offset timezones, so we need to be
-         able to accept leap seconds even when the minutes aren't zero. This obviously
-         isn't such a timezone, but the output sexp will be in UTC-4, so the input sexp
-         should be so as well so that the result is obviously as intended.
+    (* test that t_of_sexp accepts leap seconds NB. there are such things as non-integer
+       hour offset timezones, so we need to be able to accept leap seconds even when the
+       minutes aren't zero. This obviously isn't such a timezone, but the output sexp will
+       be in UTC-4, so the input sexp should be so as well so that the result is obviously
+       as intended.
     *)
     test "(2012-04-09 05:14:60.000000-04:00)";
     test "(2012-04-09 05:14:60.123456-04:00)";
@@ -2530,8 +2534,8 @@ module%test [@name "Time.Stable.Span"] _ = struct
 
   let%expect_test "V1" =
     print_and_check_stable_type
-    (* V1 round-trips imprecisely in some cases, so we document them and note that
-           they are still reasonably close. *)
+    (* V1 round-trips imprecisely in some cases, so we document them and note that they
+       are still reasonably close. *)
       ~cr:Comment
       (module Time.Stable.Span.V1)
       examples;
@@ -2617,8 +2621,8 @@ module%test [@name "Time.Stable.Ofday"] _ = struct
 
   let%expect_test "V1" =
     print_and_check_stable_type
-    (* V1 round-trips imprecisely in some cases, so we document them and note that
-           they are still reasonably close. *)
+    (* V1 round-trips imprecisely in some cases, so we document them and note that they
+       are still reasonably close. *)
       ~cr:Comment
       (module Time.Stable.Ofday.V1)
       examples;
@@ -2679,8 +2683,8 @@ module%test [@name "Time.Stable.Ofday"] _ = struct
 
   let%expect_test "Zoned.V1" =
     print_and_check_stable_type
-    (* V1 round-trips imprecisely in some cases, so we document them and note that
-           they are still reasonably close. *)
+    (* V1 round-trips imprecisely in some cases, so we document them and note that they
+       are still reasonably close. *)
       ~cr:Comment
       (module Time.Stable.Ofday.Zoned.V1)
       zoned_examples;

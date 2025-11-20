@@ -42,7 +42,7 @@ module type S = sig @@ portable
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+      https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     val of_int : int -> t
     val length_preallocated_errnos : int

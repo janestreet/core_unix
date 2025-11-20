@@ -176,7 +176,7 @@ module Error : sig
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+      https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     val to_errno : t -> int
   end
@@ -240,8 +240,8 @@ val unsetenv : string -> unit @@ nonportable
 
 (** The termination status of a process. *)
 module Exit : sig
-  type error = [ `Exit_non_zero of int ] [@@deriving compare ~localize, sexp]
-  type t = (unit, error) Result.t [@@deriving compare ~localize, sexp]
+  type error = [ `Exit_non_zero of int ] [@@deriving bin_io, compare ~localize, sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, compare ~localize, sexp]
 
   val to_string_hum : t -> string
   val code : t -> int
@@ -254,9 +254,9 @@ module Exit_or_signal : sig
     [ Exit.error
     | `Signal of Signal.t
     ]
-  [@@deriving compare ~localize, sexp]
+  [@@deriving bin_io, compare ~localize, sexp]
 
-  type t = (unit, error) Result.t [@@deriving compare ~localize, sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, compare ~localize, sexp]
 
   (** [of_unix] assumes that any signal numbers in the incoming value are OCaml internal
       signal numbers. *)
@@ -271,9 +271,9 @@ module Exit_or_signal_or_stop : sig
     [ Exit_or_signal.error
     | `Stop of Signal.t
     ]
-  [@@deriving sexp]
+  [@@deriving bin_io, sexp]
 
-  type t = (unit, error) Result.t [@@deriving sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, sexp]
 
   (** [of_unix] assumes that any signal numbers in the incoming value are OCaml internal
       signal numbers. *)
@@ -2619,7 +2619,7 @@ module Ifaddr : sig
 
     (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-      https://opensource.janestreet.com/standards/#private-submodules *)
+        https://opensource.janestreet.com/standards/#private-submodules *)
     module Private : sig
       val core_unix_iff_to_int : t -> int
       val set_of_int : int -> Set.t

@@ -282,8 +282,7 @@ module _ = struct
 
     let%expect_test "params_arg_types__passing_flag_twice_but_arg_once" =
       test_flags [ "-b"; "-b"; "_" ];
-      (* Wrong error raised: Validating by reconstruction cannot
-         test arg type, only arity *)
+      (* Wrong error raised: Validating by reconstruction cannot test arg type, only arity *)
       [%expect
         {|
         Diff of validate_command (-) vs validate_command_line (+):
@@ -398,8 +397,8 @@ module _ = struct
 
     let%expect_test "params_escape__incorrect_escaped_arg_type" =
       test_escape [ "--"; "foo" ];
-      (* Wrong error raised: Validation by reconstruction cannot
-         handle side-effects like escape args *)
+      (* Wrong error raised: Validation by reconstruction cannot handle side-effects like
+         escape args *)
       [%expect
         {|
         Diff of validate_command (-) vs validate_command_line (+):

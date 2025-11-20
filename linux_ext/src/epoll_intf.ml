@@ -32,7 +32,9 @@ module type S = sig @@ portable
     (** Associated fd is writable *)
     val out : t
 
-    (*_ val rdhup   : t (\* Event flag For detecting tcp half-close        *\) *)
+    (*_ {v
+ val rdhup   : t (\* Event flag For detecting tcp half-close        *\)
+        v} *)
 
     (** Urgent data available *)
     val pri : t
@@ -120,8 +122,8 @@ module type S = sig @@ portable
     val clear_ready : t -> unit
   end
 
-  (*_
+  (*_ {v
     (* pwait -> with the specified sigmask, analogous to pselect *)
     (* val pwait   : t -> timeout:Span.t -> int list -> [ `Ok of Ready_fds.t | `Timeout ] *)
-  *)
+      v} *)
 end

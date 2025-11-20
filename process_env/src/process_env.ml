@@ -9,8 +9,8 @@ let parse_ssh_client_var = function
   | Some s ->
     (match String.split ~on:' ' s with
      | [] -> failwith "This should never happen, empty string splits as [\"\"]"
-     (* Allow any SSH_CLIENT var containing an IP address as the first element.
-        Normally, it should have three parts, but relaxing this constraint helps
+     (* Allow any SSH_CLIENT var containing an IP address as the first element. Normally,
+        it should have three parts, but relaxing this constraint helps
         debugging/troubleshooting easier. *)
      | address :: _ ->
        Or_error.try_with (fun () -> `From (Unix.Inet_addr.of_string address))

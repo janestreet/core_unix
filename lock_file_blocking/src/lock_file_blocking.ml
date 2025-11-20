@@ -5,13 +5,13 @@ module Unix = Core_unix
 
 open Shared
 
-(* We have reason to believe that lockf doesn't work properly on CIFS mounts.  The idea
-   behind requiring both lockf and flock is to prevent programs taking locks on
-   network filesystems where they may not be sound.
+(* We have reason to believe that lockf doesn't work properly on CIFS mounts. The idea
+   behind requiring both lockf and flock is to prevent programs taking locks on network
+   filesystems where they may not be sound.
 
-   However, this assumes that [lockf] and [flock] take independent locks, which
-   is true on local Linux filesystems, but is false on many OSes (for example, Mac OS X),
-   so we use just [flock] on non-linux OSes and give up the fail-on-CIFS-and-NFS property.
+   However, this assumes that [lockf] and [flock] take independent locks, which is true on
+   local Linux filesystems, but is false on many OSes (for example, Mac OS X), so we use
+   just [flock] on non-linux OSes and give up the fail-on-CIFS-and-NFS property.
 
    We prefer [flock] and not [lockf] because [lockf] has bad semantics if used multiple
    times within the same process: for example [lockf a; lockf b; close a] succeeds (bad!)
@@ -71,8 +71,8 @@ let create
   path
   =
   let message = sprintf "%s\n" message in
-  (* We use [~perm:0o664] rather than our usual default perms, [0o666], because
-     lock files shouldn't rely on the umask to disallow tampering by other. *)
+  (* We use [~perm:0o664] rather than our usual default perms, [0o666], because lock files
+     shouldn't rely on the umask to disallow tampering by other. *)
   let fd =
     Unix.openfile
       path
@@ -148,11 +148,11 @@ let get_pid path =
 module Nfs = Nfs_lock
 
 (* The reason this function is used is to make sure the file the path is pointing to
-   remains stable across [chdir]. In fact we'd prefer for it to remain stable over
-   other things, such as [rename] of a parent directory.
-   That could be achieved if we [open] the [dir] and use the resulting file descriptor
-   with linkat, unlinkat, etc system calls, but that's less portable and most
-   programs that use locks will break anyway if their directory is renamed. *)
+   remains stable across [chdir]. In fact we'd prefer for it to remain stable over other
+   things, such as [rename] of a parent directory. That could be achieved if we [open] the
+   [dir] and use the resulting file descriptor with linkat, unlinkat, etc system calls,
+   but that's less portable and most programs that use locks will break anyway if their
+   directory is renamed. *)
 let canonicalize_dirname path =
   let dir, name = Filename.dirname path, Filename.basename path in
   let dir = Filename_unix.realpath dir in

@@ -3,8 +3,8 @@ open! Import
 include Time_float
 
 let of_tm tm ~zone =
-  (* Explicitly ignoring isdst, wday, yday (they are redundant with the other fields
-       and the [zone] argument) *)
+  (* Explicitly ignoring isdst, wday, yday (they are redundant with the other fields and
+     the [zone] argument) *)
   let { Unix.tm_year
       ; tm_mon
       ; tm_mday
@@ -47,9 +47,9 @@ let parse_with_locale ?allow_trailing_input s ~fmt ~zone ~locale =
 
 let pause_for span =
   let time_remaining =
-    (* If too large a float is passed in (Span.max_value for instance) then
-         nanosleep will return immediately, leading to an infinite and expensive
-         select loop.  This is handled by pausing for no longer than 100 days.
+    (* If too large a float is passed in (Span.max_value for instance) then nanosleep will
+       return immediately, leading to an infinite and expensive select loop. This is
+       handled by pausing for no longer than 100 days.
     *)
     let span = Span.min span (Span.scale Span.day 100.) in
     Unix.nanosleep (Span.to_sec span)

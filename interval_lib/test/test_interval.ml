@@ -364,7 +364,7 @@ module%test _ = struct
   ;;
 
   (* As long as the tests are passing anyway, there's no reason to bother writing a
-       sophisticated shrinker. *)
+     sophisticated shrinker. *)
   let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
 
   let%quick_test "union" =

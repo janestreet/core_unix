@@ -1,5 +1,5 @@
 (* Core_unix wraps the standard unix functions with an exception handler that inserts an
-   informative string in the third field of Unix_error.  The problem with the standard
+   informative string in the third field of Unix_error. The problem with the standard
    Unix_error that gets raised is that it doesn't include information about the arguments
    to the function that failed. *)
 [%%import "config.h"]
@@ -14,9 +14,9 @@ let atom x = Sexp.Atom x
 let list x = Sexp.List x
 let record l = list (List.map l ~f:(fun (name, value) -> list [ atom name; value ]))
 
-(* No need to include a counter here. It just doesn't make sense to think we are
-   going to be receiving a steady stream of interrupts.
-   Glibc's macro doesn't have a counter either.
+(* No need to include a counter here. It just doesn't make sense to think we are going to
+   be receiving a steady stream of interrupts. Glibc's macro doesn't have a counter
+   either.
 *)
 let rec retry_until_no_eintr f =
   try f () with
@@ -36,9 +36,9 @@ module Private = struct
   let sexp_to_string_hum = sexp_to_string_hum
 end
 
-(* We pass [unix_error] to this function instead of the [error] and [function_name]
-   that it contains so as to generate as little code as possible at the
-   callsite, since any codepath reaching this function should be very cold. *)
+(* We pass [unix_error] to this function instead of the [error] and [function_name] that
+   it contains so as to generate as little code as possible at the callsite, since any
+   codepath reaching this function should be very cold. *)
 let[@cold] raise_improved_unix_error unix_error (local_ make_arg_sexps) =
   match unix_error with
   | Unix.Unix_error (error, function_name, _) ->
@@ -398,8 +398,8 @@ module IOVec = struct
   (* [1024] is the limit on recent Linux systems.
 
      Other values we could use:
-     - [Array.max_length] with the assumption that [None] means "unlimited" (which
-       some man pages seem to suggest); or
+     - [Array.max_length] with the assumption that [None] means "unlimited" (which some
+       man pages seem to suggest); or
      - the value IOV_MAX from a C header file. *)
   let default_max_iovecs = 1024
 
@@ -599,8 +599,7 @@ end
 module Mman = struct
   module Mcl_flags = struct
     type t =
-      (* Do not change the ordering of this type without also
-         changing the C stub. *)
+      (* Do not change the ordering of this type without also changing the C stub. *)
       | Current
       | Future
     [@@deriving sexp]
@@ -746,8 +745,8 @@ let putenv ~key ~data =
 ;;
 
 let unsetenv name =
-  (* The C unsetenv has only one error: EINVAL if name contains an '='
-     character. C strings are null terminated though so '\000' is also invalid.
+  (* The C unsetenv has only one error: EINVAL if name contains an '=' character. C
+     strings are null terminated though so '\000' is also invalid.
   *)
   if String.contains name '\000' then raise (Unix_error (EINVAL, "unsetenv", name));
   unsetenv name
@@ -760,8 +759,8 @@ type process_status = Unix.process_status =
 [@@deriving sexp]
 
 module Exit = struct
-  type error = [ `Exit_non_zero of int ] [@@deriving compare ~localize, sexp]
-  type t = (unit, error) Result.t [@@deriving compare ~localize, sexp]
+  type error = [ `Exit_non_zero of int ] [@@deriving bin_io, compare ~localize, sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, compare ~localize, sexp]
 
   let to_string_hum = function
     | Ok () -> "exited normally"
@@ -794,9 +793,9 @@ module Exit_or_signal = struct
     [ Exit.error
     | `Signal of Signal.t
     ]
-  [@@deriving compare ~localize, sexp]
+  [@@deriving bin_io, compare ~localize, sexp]
 
-  type t = (unit, error) Result.t [@@deriving compare ~localize, sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, compare ~localize, sexp]
 
   let to_string_hum = function
     | (Ok () | Error #Exit.error) as e -> Exit.to_string_hum e
@@ -826,9 +825,9 @@ module Exit_or_signal_or_stop = struct
     [ Exit_or_signal.error
     | `Stop of Signal.t
     ]
-  [@@deriving sexp]
+  [@@deriving bin_io, sexp]
 
-  type t = (unit, error) Result.t [@@deriving sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, sexp]
 
   let to_string_hum = function
     | (Ok () | Error #Exit_or_signal.error) as e -> Exit_or_signal.to_string_hum e
@@ -895,10 +894,10 @@ module Raw_exec = struct
     = "core_unix_execvpe"
 end
 
-(* We [@inline] the primary closure in each of the [exec*] functions below in order
-   to avoid *any* allocation (stack or heap) to minimize the chances of violating
-   async-signal-safety in the event we're running in the newly created child process
-   from a recent [fork()] call. *)
+(* We [@inline] the primary closure in each of the [exec*] functions below in order to
+   avoid *any* allocation (stack or heap) to minimize the chances of violating
+   async-signal-safety in the event we're running in the newly created child process from
+   a recent [fork()] call. *)
 
 let[@zero_alloc] execv ~prog ~argv =
   improve_no_retry
@@ -1651,9 +1650,9 @@ module Open_flags = struct
       (* remove non existing flags, like cloexec on centos5 *)
     end)
 
-  (* The lower two bits of the open flags are used to specify the access mode:
-     rdonly, wronly, rdwr.  So, we have some code to treat those two bits together rather
-     than as two separate bit flags. *)
+  (* The lower two bits of the open flags are used to specify the access mode: rdonly,
+     wronly, rdwr. So, we have some code to treat those two bits together rather than as
+     two separate bit flags. *)
 
   let access_mode t = Int63.bit_and t (Int63.of_int 3)
   let can_read t = access_mode t = rdonly || access_mode t = rdwr
@@ -1791,9 +1790,9 @@ let readdir_opt dh =
 
 let rewinddir = unary_dir_handle Unix.rewinddir (* Non-intr *)
 
-(* if closedir is passed an already closed file handle it will try to call
-   dirfd on it to get a file descriptor for the error message, which will fail
-   with invalid argument because closedir sets the fd to null *)
+(* if closedir is passed an already closed file handle it will try to call dirfd on it to
+   get a file descriptor for the error message, which will fail with invalid argument
+   because closedir sets the fd to null *)
 let closedir =
   (* Non-intr *)
   unary_dir_handle (fun dh ->
@@ -1942,8 +1941,8 @@ let create_process_internal ~stdin ~stdout ~stderr ~working_dir ~setpgid ~prog ~
 module Execvp_emulation : sig @@ portable
   (* This is a reimplementation of execvp semantics with two main differences:
      - it does [spawn] instead of [execve] and returns its result on success
-     - it checks file existence and access rights before trying to spawn.
-       This optimization is valuable because a failed [spawn] is much more expensive than a
+     - it checks file existence and access rights before trying to spawn. This
+       optimization is valuable because a failed [spawn] is much more expensive than a
        failed [execve]. *)
   val run
     :  working_dir:string option
@@ -1970,8 +1969,8 @@ end = struct
   ;;
 
   let candidate_paths ?prog_search_path prog =
-    (* [assert] is to make bugs less subtle if we try to make this
-       portable to non-POSIX in the future. *)
+    (* [assert] is to make bugs less subtle if we try to make this portable to non-POSIX
+       in the future. *)
     assert (String.equal Filename.dir_sep "/");
     if String.contains prog '/'
     then [ prog ]
@@ -2003,17 +2002,18 @@ end = struct
       with
       | exception Unix_error (ENOEXEC, _, _) ->
         Ok
-          ((* As crazy as it looks, this is what execvp does. It's even documented in the man
-              page. *)
+          ((* As crazy as it looks, this is what execvp does. It's even documented in the
+              man page. *)
            spawn
              ~prog:"/bin/sh"
              ~argv:("/bin/sh" :: candidate :: args))
       | exception (Unix_error (EACCES, _, _) as exn) -> Eaccess exn
       | exception
           (Unix_error
-             ( (* This list of nonfatal errors comes from glibc and openbsd implementations of
-                  execvpe, as collected in [execvpe_ml] function in ocaml (see
-                  otherlibs/unix/unix.ml in https://github.com/ocaml/ocaml/pull/1414). *)
+             ( (* This list of nonfatal errors comes from glibc and openbsd
+                  implementations of execvpe, as collected in [execvpe_ml] function in
+                  ocaml (see otherlibs/unix/unix.ml in
+                  https://github.com/ocaml/ocaml/pull/1414). *)
                ( EISDIR | ELOOP | ENAMETOOLONG | ENODEV | ENOENT | ENOTDIR | ETIMEDOUT )
              , _
              , _ ) as exn) -> Enoent_or_similar exn
@@ -2137,7 +2137,8 @@ let close_process_full c =
   Exit_or_signal.of_unix (Unix.close_process_full (c.C.stdout, c.C.stdin, c.C.stderr))
 ;;
 
-(* Changes to the below must be reflected in the [preexec_cmd_tag] enum in [core_unix_stubs.c] *)
+(* Changes to the below must be reflected in the [preexec_cmd_tag] enum in
+   [core_unix_stubs.c] *)
 module Pre_exec_command = struct
   type t =
     | Fd_open of
@@ -2180,8 +2181,8 @@ let fork_exec ~prog ~argv ?(preexec = []) ?(use_path = true) ?env () =
   let argv = Array.of_list argv in
   let env = Option.map env ~f:Env.expand_array in
   let progs =
-    (* The path-searching exec variants (execvp, execvpe) are not async-signal-safe,
-       so we avoid them and search PATH ourselves if requested *)
+    (* The path-searching exec variants (execvp, execvpe) are not async-signal-safe, so we
+       avoid them and search PATH ourselves if requested *)
     if use_path then Array.of_list (Execvp_emulation.candidate_paths prog) else [| prog |]
   in
   match do_fork_exec ~progs ~argv ~env ~preexec with
@@ -2286,7 +2287,8 @@ module Clock = struct
 
   (* [clockid_t] is a linux int, i.e. 32 bits. The values we return are very likely going
      to be totally fine in a 31-bit int, but I don't want to find out not the hard way,
-     and I don't see a lot of value in providing a 32-bit implementation, so it's easier to punt. *)
+     and I don't see a lot of value in providing a 32-bit implementation, so it's easier
+     to punt. *)
 
   [%%ifdef JSC_CLOCK_GETCPUCLOCKID]
 
@@ -2455,17 +2457,15 @@ let with_buffer_increased_on_ERANGE f x =
   let rec go n =
     match f x (Core.Bigstring.create n) with
     | exception Unix_error (ERANGE, _, _) ->
-      (* Using 4 instead of 2 here as a multiple ~doubles the memory usage, but it
-         ~halves the number of calls. The number of calls is likely to be the more
-         important concern here.
-         Increasing it further has diminishing returns. *)
+      (* Using 4 instead of 2 here as a multiple ~doubles the memory usage, but it ~halves
+         the number of calls. The number of calls is likely to be the more important
+         concern here. Increasing it further has diminishing returns. *)
       go (4 * n)
     | x -> x
   in
-  (* the recommented initial size is sysconf(_SC_GET{PW,GR}_R_SIZE_MAX),
-     but we don't have a binding for that and it might not
-     be available on every platform and the recommendation is unlikely to be
-     sufficiently well-informed so why bother. *)
+  (* the recommented initial size is sysconf(_SC_GET[{PW,GR}]_R_SIZE_MAX), but we don't
+     have a binding for that and it might not be available on every platform and the
+     recommendation is unlikely to be sufficiently well-informed so why bother. *)
   go 10000
 ;;
 
@@ -2521,8 +2521,8 @@ module Passwd = struct
   ;;
 
   module Low_level = struct
-    (* duplicating type definition here because we'll need to update the C bindings
-       if it ever changes *)
+    (* duplicating type definition here because we'll need to update the C bindings if it
+       ever changes *)
     type passwd_entry = Unix.passwd_entry =
       { pw_name : string
       ; pw_passwd : string
@@ -2608,8 +2608,8 @@ module Group = struct
   ;;
 
   module Low_level = struct
-    (* duplicating type definition here because we'll need to update the C bindings
-       if it ever changes *)
+    (* duplicating type definition here because we'll need to update the C bindings if it
+       ever changes *)
     type group_entry = Unix.group_entry =
       { gr_name : string
       ; gr_passwd : string
@@ -2650,8 +2650,8 @@ end
 
 let username () = (Passwd.getbyuid_exn (getuid ())).name
 
-(* The standard getlogin function goes through utmp which is unreliable,
-   see the BUGS section of getlogin(3) *)
+(* The standard getlogin function goes through utmp which is unreliable, see the BUGS
+   section of getlogin(3) *)
 let getlogin = username
 
 module Protocol_family = struct
@@ -3111,19 +3111,19 @@ let with_socket_length_restriction_workaround f fd ~addr =
   | ADDR_UNIX path ->
     (try f fd ~addr with
      | Unix_error (ENAMETOOLONG, orig1, orig2) as orig_exn ->
-       (* Try to workaround this limit on linux by using /proc. The limit on ENAMETOOLONG is
-          system specific anyway, so that seems fine.
-          We must let EINTR through, as this error can happen at any time, and it's not
-          reasonable to transform EINTR, which is transient and should be retried, into
-          ENAMETOOLONG which is not transient. *)
+       (* Try to workaround this limit on linux by using /proc. The limit on ENAMETOOLONG
+          is system specific anyway, so that seems fine. We must let EINTR through, as
+          this error can happen at any time, and it's not reasonable to transform EINTR,
+          which is transient and should be retried, into ENAMETOOLONG which is not
+          transient. *)
        (match close (openfile ~mode:[ O_CLOEXEC; O_RDONLY ] "/proc/self/fd") with
         | exception Unix_error (EINTR, _, _) -> raise (Unix_error (EINTR, orig1, orig2))
         | exception Unix_error _ -> raise orig_exn
         | () ->
-          (* We let the errors of openfile through: resolution of the directory should lead to
-             the same errors as if we didn't run into the connect/bind limit (ENOENT, ENOTDIR,
-             EACCESS, etc). The function name in the error would be "open" instead of
-             "connect", but that seems fine. *)
+          (* We let the errors of openfile through: resolution of the directory should
+             lead to the same errors as if we didn't run into the connect/bind limit
+             (ENOENT, ENOTDIR, EACCESS, etc). The function name in the error would be
+             "open" instead of "connect", but that seems fine. *)
           Exn.protectx
             (openfile ~mode:[ O_CLOEXEC; O_RDONLY ] (Filename.dirname path))
             ~finally:close
@@ -3388,7 +3388,7 @@ external set_mcast_ifname
   = "core_unix_mcast_set_ifname"
 
 let set_mcast_ifname fd ifname =
-  (* Improve the error info in the common case.  (It's inconvenient for the C stub to fill
+  (* Improve the error info in the common case. (It's inconvenient for the C stub to fill
      in the interface name, but it's easy here.) *)
   try set_mcast_ifname fd ifname with
   | Unix_error (message, errno, "") -> raise (Unix_error (message, errno, ifname))

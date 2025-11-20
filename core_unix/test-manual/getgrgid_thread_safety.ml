@@ -26,7 +26,7 @@ let spawn i =
            let g = Core_unix.Group.getbygid_exn i in
            let len = Array.length g.mem in
            (* to test stdlib instead of core:
-               [let len = Array.length ((Unix.getgrgid i).gr_mem) in] *)
+              [let len = Array.length ((Unix.getgrgid i).gr_mem) in] *)
            Printf.printf "%d\n%!" len;
            Thread.yield ();
            f ()
@@ -75,8 +75,8 @@ let all_group_ids =
 let () =
   (* It's good if the groups here are of very different sizes.
 
-     If the groups have the same size, then you'll still get meaningless results
-     due to races, but you probably won't segfault. *)
+     If the groups have the same size, then you'll still get meaningless results due to
+     races, but you probably won't segfault. *)
   let all_groups =
     List.map
       (fun i ->

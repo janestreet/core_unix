@@ -100,7 +100,7 @@ module Calibrator : sig
 
     (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+        https://opensource.janestreet.com/standards/#private-submodules *)
     module Private : sig
       val create_using : tsc:tsc -> time:float -> samples:(tsc * float) list -> t
       val calibrate_using : t -> tsc:tsc -> time:float -> am_initializing:bool -> unit
@@ -129,7 +129,7 @@ module Span : sig
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+      https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     val of_int63 : Int63.t -> t
     val to_int63 : t -> Int63.t
@@ -161,7 +161,7 @@ val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t @@ portable [@@zero_a
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-  https://opensource.janestreet.com/standards/#private-submodules *)
+    https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   val ewma : alpha:float -> old:float -> add:float -> float
   val of_int63 : Int63.t -> t @@ portable

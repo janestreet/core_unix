@@ -12,10 +12,10 @@ let boot_time () =
 ;;
 
 let process_start_time pid =
-  (* Find the start time for a process, without requiring the [Procfs] library
-       -- start time is represented in USER_HZ units in /proc/<pid>/stat (confusingly
-       referred to as 'jiffies' in the man page); USER_HZ is almost certainly 100, for
-       mostly historical reasons, but just to be sure we'll ask sysconf.
+  (* Find the start time for a process, without requiring the [Procfs] library -- start
+     time is represented in USER_HZ units in /proc/<pid>/stat (confusingly referred to as
+     'jiffies' in the man page); USER_HZ is almost certainly 100, for mostly historical
+     reasons, but just to be sure we'll ask sysconf.
   *)
   let%bind.Option boot_time = boot_time () in
   let boot_time = Time_ns.to_time_float_round_nearest boot_time in
@@ -75,18 +75,17 @@ let unlink_if_exists path =
   | Unix.Unix_error ((ENOTDIR | ENOENT), _, _) -> ()
 ;;
 
-(* Check if the process is running: sends signal 0 to pid, which should work if
-   the process is running and is owned by the user running this code. If the
-   process is not owned by the user running this code we should fail to unlock
-   either earlier (unable to read the file) or later (unable to remove the
-   file). *)
+(* Check if the process is running: sends signal 0 to pid, which should work if the
+   process is running and is owned by the user running this code. If the process is not
+   owned by the user running this code we should fail to unlock either earlier (unable to
+   read the file) or later (unable to remove the file). *)
 let pid_start_matches_lock ~info =
   match Option.both (Info.start_time info) (process_start_time (Info.pid info)) with
   | None -> true (* don't have both start times: fall back to old behaviour *)
   | Some (lock_start, pid_start) ->
-    (* our method of calculating start time is open to some inaccuracy, so let's
-       be generous and allow for up to 1s of difference (this would only allow
-       for a collision if pids get reused within 1s, which seems unlikely) *)
+    (* our method of calculating start time is open to some inaccuracy, so let's be
+       generous and allow for up to 1s of difference (this would only allow for a
+       collision if pids get reused within 1s, which seems unlikely) *)
     let epsilon = Time_float.Span.of_sec 1. in
     Time_float.Span.( < ) (Time_float.abs_diff lock_start pid_start) epsilon
 ;;
@@ -104,9 +103,8 @@ let read_lock_file ~lock_path =
 ;;
 
 let with_openfile_exn file ~f =
-  (* opening the file for writing to make sure [flock] works regardless of
-     how the NFS client is configured (simulation of flock via lockf requires
-     write mode) *)
+  (* opening the file for writing to make sure [flock] works regardless of how the NFS
+     client is configured (simulation of flock via lockf requires write mode) *)
   let fd = Unix.openfile ~mode:[ Unix.O_RDWR ] file in
   Exn.protect ~finally:(fun () -> Unix.close fd) ~f:(fun () -> f fd)
 ;;
@@ -123,9 +121,9 @@ let with_flock_exn fd ~f =
 
 let unlink_lock_files path =
   let lock_path = lock_path path in
-  (* We need to be able to recover from the situation where [path] does not exist
-     for whatever reason, but [lock_path] is present. We use [unlink_if_exists]
-     to be able to cope with this situation and properly clean up stale locks. *)
+  (* We need to be able to recover from the situation where [path] does not exist for
+     whatever reason, but [lock_path] is present. We use [unlink_if_exists] to be able to
+     cope with this situation and properly clean up stale locks. *)
   unlink_if_exists path;
   Unix.unlink lock_path
 ;;
@@ -177,13 +175,13 @@ let prepare_to_lock_exn path =
                "lock was held by pid %i (but not anymore, please retry)"
                (Pid.to_int locking_pid))
         | true ->
-          (* We know the lock is held by a process that no longer exists.  We want to
-             clean it up, but we need to protect against many processes "cleaning up" the
-             same lock in parallel (thus removing each other's locks).
+          (* We know the lock is held by a process that no longer exists. We want to clean
+             it up, but we need to protect against many processes "cleaning up" the same
+             lock in parallel (thus removing each other's locks).
 
              Since we know all the cleanup is done on the same box, we can use flock to
-             make sure a given file is cleaned up at most once.
-             (empirically, flock on NFS ensures mutual exclusion locally)
+             make sure a given file is cleaned up at most once. (empirically, flock on NFS
+             ensures mutual exclusion locally)
 
              We try to detect if some other process also tried to clean this up at the
              same time: If openfile or flock fails, or [lock_file_still_there ()] returns
@@ -213,10 +211,10 @@ let unlock_self_exn path =
   let error s =
     failwithf "Lock_file.Nfs.unlock_self_exn: unable to unlock %s: %s" path s ()
   in
-  (* We can't just assume that we're holding the lock here, we check it first
-     by reading the lock file. It helps to guard against the user error of double-unlock,
-     but more importantly our own [at_exit] handler can already do double-unlock,
-     since it runs unconditionally. *)
+  (* We can't just assume that we're holding the lock here, we check it first by reading
+     the lock file. It helps to guard against the user error of double-unlock, but more
+     importantly our own [at_exit] handler can already do double-unlock, since it runs
+     unconditionally. *)
   do_if_locked_exn path ~error ~f:(fun ~info ->
     if not (is_my_own_info info)
     then
@@ -230,8 +228,8 @@ let unlock_self_exn path =
       | e -> error (Exn.to_string e)))
 ;;
 
-(* See mli for more information on the algorithm we use for locking over NFS.  Ensure
-     that you understand it before you make any changes here. *)
+(* See mli for more information on the algorithm we use for locking over NFS. Ensure that
+   you understand it before you make any changes here. *)
 let create_exn ?(message = "") path =
   try
     prepare_to_lock_exn path;
@@ -243,10 +241,9 @@ let create_exn ?(message = "") path =
         Unix.link ~target:path ~link_name:(lock_path path) ();
         Unix.ftruncate fd ~len:0L;
         let info = Info.create ~message in
-        (* if this fprintf fails, empty lock file would be left behind, and
-             subsequent calls to [Lock_file.Nfs.create_exn] would be unable to
-             figure out that it is stale/corrupt and remove it. So we need to
-             remove it ourselves *)
+        (* if this fprintf fails, empty lock file would be left behind, and subsequent
+           calls to [Lock_file.Nfs.create_exn] would be unable to figure out that it is
+           stale/corrupt and remove it. So we need to remove it ourselves *)
         try
           let out_channel = Unix.out_channel_of_descr fd in
           (cleanup := fun () -> Stdlib.close_out_noerr out_channel);
@@ -325,9 +322,8 @@ let unlink_old_attempts path =
       Array.filter files ~f:(fun attempt_file_basename ->
         is_possibly_attempt_file ~of_:path_basename ~attempt_file_basename)
   in
-  (* attempts are supposed to be extremely short-lived (created, then immediately
-     linked and removed), so cleaning up attempts that are more than 5 minutes old seems
-     fine *)
+  (* attempts are supposed to be extremely short-lived (created, then immediately linked
+     and removed), so cleaning up attempts that are more than 5 minutes old seems fine *)
   let now = Time_float.now () in
   Array.filter_map relevant_attempts ~f:(fun file ->
     let file = dir ^/ file in
@@ -349,10 +345,10 @@ let unlink_old_attempts path =
 ;;
 
 let maybe_unlink_old_attempts path =
-  (* Cleaning up old attempts should almost never be needed, since the
-     attempt files are removed immediately by the process that creates
-     them. So we do this probabilistically to avoid always paying the readdir
-     overhead, which can be large if the directory contains lots of files.
+  (* Cleaning up old attempts should almost never be needed, since the attempt files are
+     removed immediately by the process that creates them. So we do this probabilistically
+     to avoid always paying the readdir overhead, which can be large if the directory
+     contains lots of files.
   *)
   if am_running_test || Float.( < ) (Random.float 1.0) 0.05 then unlink_old_attempts path
 ;;

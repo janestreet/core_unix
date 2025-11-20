@@ -362,11 +362,11 @@ module%template.portable [@modality p] Raw_make (T : Bound) = struct
 
     let create_merging_intervals intervals =
       (* We only need to check for overlapping intervals that are adjacent in the sorted
-         order.  That's because, if you have intervals [abc] that are sorted by their
+         order. That's because, if you have intervals [abc] that are sorted by their
          lower-bound, if a intersects with c, then b must intersect with c as well.
 
          As a result we can just iteratively merge together adjacent intervals that
-         intersect, and that will capture all necessary merges.  *)
+         intersect, and that will capture all necessary merges. *)
       drop_empty_intervals_and_sort intervals
       |> List.fold ~init:[] ~f:(fun acc interval ->
         match acc with
@@ -605,7 +605,7 @@ module Int = struct
 
   (* Note that we use zero-based indexing here, because that's what Binary_searchable
      requires, even though at the end we want to export functions that use the natural
-     bounds of the interval.  *)
+     bounds of the interval. *)
   module%template For_binary_search =
   Binary_searchable.Make [@mode local] [@modality portable] (struct
       type nonrec t = t

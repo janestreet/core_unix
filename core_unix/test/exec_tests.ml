@@ -104,8 +104,8 @@ let%expect_test "fork_exec redirection" =
   [%expect {| hello |}]
 ;;
 
-(* Test that fork_exec is able to move its internal pipe fd out of the way,
-   even if the user uses lots of fds *)
+(* Test that fork_exec is able to move its internal pipe fd out of the way, even if the
+   user uses lots of fds *)
 let%expect_test "fork_exec preexec FD management" =
   let preexec =
     List.init 100 ~f:(fun i ->

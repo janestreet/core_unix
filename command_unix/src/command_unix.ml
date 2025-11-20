@@ -2,8 +2,8 @@ open! Core
 module Path = Command.Private.Path
 
 let read_stdout_and_stderr (process_info : Core_unix.Process_info.t) =
-  (* We need to read each of stdout and stderr in a separate thread to avoid deadlocks
-     if the child process decides to wait for a read on one before closing the other.
+  (* We need to read each of stdout and stderr in a separate thread to avoid deadlocks if
+     the child process decides to wait for a read on one before closing the other.
      Buffering may hide this problem until output is "sufficiently large". *)
   let start_reading descr info =
     let output = ref None in

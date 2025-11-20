@@ -5,8 +5,8 @@ open Core.Filename
 let create_arg_type ?key of_string =
   Core.Command.Arg_type.create ?key of_string ~complete:(fun _ ~part ->
     let completions =
-      (* `compgen -f` handles some fiddly things nicely, e.g. completing "foo" and
-         "foo/" appropriately. *)
+      (* `compgen -f` handles some fiddly things nicely, e.g. completing "foo" and "foo/"
+         appropriately. *)
       let command =
         Sys.concat_quoted [ "bash"; "-c"; Sys.concat_quoted [ "compgen"; "-f"; part ] ]
       in
@@ -21,10 +21,10 @@ let create_arg_type ?key of_string =
     match completions with
     | [ dir ] when String.is_suffix dir ~suffix:"/" ->
       (* If the only match is a directory, we fake out bash here by creating a bogus
-         entry, which the user will never see - it forces bash to push the completion
-         out to the slash. Then when the user hits tab again, they will be at the end
-         of the line, at the directory with a slash and completion will continue into
-         the subdirectory.
+         entry, which the user will never see - it forces bash to push the completion out
+         to the slash. Then when the user hits tab again, they will be at the end of the
+         line, at the directory with a slash and completion will continue into the
+         subdirectory.
       *)
       [ dir; dir ^ "x" ]
     | _ -> completions)
@@ -38,9 +38,9 @@ module DLS = Basement.Stdlib_shim.Domain.Safe.DLS
 
 (* We want [random_letter ()] to be thread-safe.
 
-   This is thread safe because [Stdlib.Random.State.int] is (the only updates to
-   the state are effected via [caml_lxm_next_unboxed] in the OCaml runtime, which
-   cannot be interrupted by an OCaml thread context switch).
+   This is thread safe because [Stdlib.Random.State.int] is (the only updates to the state
+   are effected via [caml_lxm_next_unboxed] in the OCaml runtime, which cannot be
+   interrupted by an OCaml thread context switch).
 *)
 let random_letter =
   let prng_key = DLS.new_key Stdlib.Random.State.make_self_init in
@@ -92,8 +92,8 @@ let open_temp_file_fd ?(close_on_exec = false) ?(perm = 0o600) ?in_dir prefix su
 let temp_file ?(perm = 0o600) ?in_dir prefix suffix =
   retry ~in_dir ~prefix ~suffix (fun name ->
     let fd = UnixLabels.openfile ~perm ~mode:[ O_CLOEXEC; O_EXCL; O_CREAT ] name in
-    (* On Linux and many other Unix implementations, the file descriptor is guaranteed to be
-       closed after calling [close]. *)
+    (* On Linux and many other Unix implementations, the file descriptor is guaranteed to
+       be closed after calling [close]. *)
     match Unix.close fd with
     | () | (exception (_ : exn)) -> name)
 ;;

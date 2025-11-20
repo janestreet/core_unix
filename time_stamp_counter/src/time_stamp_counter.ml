@@ -1,4 +1,4 @@
-(* Time stamp counter
+(*=Time stamp counter
    ==================
 
    This module tries to estimate time based on the CPU time stamp counter (TSC).  The time
@@ -117,7 +117,7 @@ module Calibrator = struct
     { (* the most recent observations and regression results *)
       mutable time : float
     ; mutable sec_per_cycle : float
-        (* mutable sec_error_intercept      : float; *)
+        (*=mutable sec_error_intercept      : float; *)
 
         (* this time value is monotonically increasing *)
     ; mutable monotonic_time : float
@@ -174,7 +174,7 @@ module Calibrator = struct
       else convert t tsc t.time_nanos t.floats.nanos_per_cycle
   ;;
 
-  (* The rate of response to the variations in TSC frequency can be controlled via alpha.
+  (*=The rate of response to the variations in TSC frequency can be controlled via alpha.
      Alpha should be in (0,1] and controls the decay of the subsequent EWMA calculation.
      A low number such as 0.01 suggests that the TSC is largely stable and small
      variations should be treated as noise.  Setting this number to 0.6 or higher
@@ -194,8 +194,8 @@ module Calibrator = struct
 
      {[
        match Float.iround_up float with
-       | None   -> if_iround_up_fails
-       | Some i -> Int63.(+) int i
+       | None -> if_iround_up_fails
+       | Some i -> Int63.( + ) int i
      ]}
 
      but I couldn't find a way to make the simple version stop allocating, even with
@@ -244,8 +244,8 @@ module Calibrator = struct
            the estimated time, i.e. solve for [monotonic_sec_per_cycle] in:
 
            {[
-             t.monotonic_time + monotonic_sec_per_cycle * catchup_cycles
-             = t.time         + t.sec_per_cycle         * catchup_cycles
+             t.monotonic_time + (monotonic_sec_per_cycle * catchup_cycles)
+             = t.time + (t.sec_per_cycle * catchup_cycles)
            ]}
 
            Note that [time_diff_est = t.time - t.monotonic_time]. *)
@@ -269,11 +269,11 @@ module Calibrator = struct
          equals estimated time, i.e. solve for [cycles] in:
 
          {[
-           t.monotonic_time + t.monotonic_sec_per_cycle * cycles
-           = t.time         + t.sec_per_cycle           * cycles
+           t.monotonic_time + (t.monotonic_sec_per_cycle * cycles)
+           = t.time + (t.sec_per_cycle * cycles)
          ]}
 
-         This value might get very small when the two slopes are about the same.  In such
+         This value might get very small when the two slopes are about the same. In such
          cases we just use the estimated slope always. *)
       t.monotonic_until_tsc
       <- time_diff_est /. (t.floats.monotonic_sec_per_cycle -. t.floats.sec_per_cycle)

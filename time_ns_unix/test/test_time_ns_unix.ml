@@ -31,7 +31,7 @@ let%expect_test "Time_ns.to_date_ofday" =
 
 module%test [@name "Core.Time_ns.Utc.to_date_and_span_since_start_of_day"] _ = struct
   (* move 1ms off min and max values because [Time_ns]'s boundary checking in functions
-       that convert to/from float apparently has some fuzz issues. *)
+     that convert to/from float apparently has some fuzz issues. *)
   let safe_min_value =
     Time_ns.add Time_ns.min_value_for_1us_rounding Time_ns.Span.microsecond
   ;;
@@ -206,13 +206,12 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
   ;;
 
   let%expect_test "of_string: round to nearest ns" =
-    (* Convert the golden ratio in minutes to a number of nanoseconds.
-         This is the same as about 97082039324.994 nanoseconds, so it should round up
-         to 97082039325. *)
+    (* Convert the golden ratio in minutes to a number of nanoseconds. This is the same as
+       about 97082039324.994 nanoseconds, so it should round up to 97082039325. *)
     print_nanos "1.6180339887498949m";
     [%expect {| 97082039325ns |}];
-    (* Test the bounds of the rounding behavior for the float parsing - it should
-         round to the nearest nanosecond, breaking ties by rounding towards +infinity. *)
+    (* Test the bounds of the rounding behavior for the float parsing - it should round to
+       the nearest nanosecond, breaking ties by rounding towards +infinity. *)
     print_nanos "0.1231231234s";
     print_nanos "0.123123123499s";
     print_nanos "0.1231231235s";
@@ -235,10 +234,9 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
       -123123123ns
       -123123124ns
       |}];
-    (* 0.3333333333333...m and 0.33333333335m are 1 ns apart.
-         The midpoint point between them is 0.333333333341666....
-         which is the boundary at which we should start getting 20 billion or
-         20 billion + 1 nanos. *)
+    (* 0.3333333333333...m and 0.33333333335m are 1 ns apart. The midpoint point between
+       them is 0.333333333341666.... which is the boundary at which we should start
+       getting 20 billion or 20 billion + 1 nanos. *)
     print_nanos "0.3333333333333333333333333333333334m";
     print_nanos "0.3333333333416666666666666666666666m";
     print_nanos "0.333333333341666666666666666666666659m";
@@ -265,10 +263,9 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
       -20000000001ns
       -20000000001ns
       |}];
-    (* 0.6666666666666...m and 0.66666666668333...m are 1 ns apart.
-         The midpoint point between them is 0.666666666675m.
-         which is the boundary at which we should start getting 40 billion or
-         40 billion + 1 nanos. *)
+    (* 0.6666666666666...m and 0.66666666668333...m are 1 ns apart. The midpoint point
+       between them is 0.666666666675m. which is the boundary at which we should start
+       getting 40 billion or 40 billion + 1 nanos. *)
     print_nanos "0.666666666674m";
     print_nanos "0.6666666666749m";
     print_nanos "0.666666666675m";
@@ -314,24 +311,24 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
       |}]
   ;;
 
-  (* Test a bunch of random floats and make sure span parsing code rounds the same
-       way as the float would. *)
+  (* Test a bunch of random floats and make sure span parsing code rounds the same way as
+     the float would. *)
   let%expect_test "of_string: random float parsing approx" =
     let rand =
       Random.State.make [| Hashtbl.hash "Time_ns random-float-parsing-approx" |]
     in
     (* When you multiply a float x by an integer n, sometimes the value y := (x*n) will
-         not exactly be representable as a float. That means that the computed y will
-         actually be a different value than the idealized mathematical (x*n).
+       not exactly be representable as a float. That means that the computed y will
+       actually be a different value than the idealized mathematical (x*n).
 
-         If that difference puts the computed y and the ideal (x*n) on different sides of
-         a rounding boundary, we will get a different number of nanoseconds compared to if
-         we had parsed x directly with correct rounding. So allow some tolerance on the
-         difference in this test.
+       If that difference puts the computed y and the ideal (x*n) on different sides of a
+       rounding boundary, we will get a different number of nanoseconds compared to if we
+       had parsed x directly with correct rounding. So allow some tolerance on the
+       difference in this test.
 
-         The larger that [n] is, the more likely this is, because (unless n is a multiple
-         of a large power of 2), the more we run into the fact that floats have a bounded
-         number of bits of precision. *)
+       The larger that [n] is, the more likely this is, because (unless n is a multiple of
+       a large power of 2), the more we run into the fact that floats have a bounded
+       number of bits of precision. *)
     let num_equality_tests = ref 0 in
     let num_equaled_exactly = ref 0 in
     let print_ratio () =
@@ -375,8 +372,7 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
       test [%here] ~suffix:"m" ~factor:60_000_000_000. ~tolerance:1
     done;
     (* The fraction of exact equalities should be *almost exactly* 1. The exact fraction
-         might change if [Random.State] ever changes in a future OCaml version, that's
-         okay. *)
+       might change if [Random.State] ever changes in a future OCaml version, that's okay. *)
     print_ratio ();
     [%expect {| 100000/100000 equality tests were exact |}];
     for _ = 1 to 20000 do
@@ -389,9 +385,8 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
         (float *. 3_600_000_000_000.)
         ~tolerance:1
     done;
-    (* The fraction of exact equalities should be *very close* to 1.
-         The exact fraction might change if [Random.State] ever changes in a future ocaml
-         version, that's okay. *)
+    (* The fraction of exact equalities should be *very close* to 1. The exact fraction
+       might change if [Random.State] ever changes in a future ocaml version, that's okay. *)
     print_ratio ();
     [%expect {| 19981/20000 equality tests were exact |}];
     for _ = 1 to 20000 do
@@ -404,16 +399,16 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
         (float *. 86_400_000_000_000.)
         ~tolerance:1
     done;
-    (* The fraction of exact equalities should be *reasonably close* to 1.
-         The exact fraction might change if [Random.State] ever changes in a future ocaml
-         version, that's okay. *)
+    (* The fraction of exact equalities should be *reasonably close* to 1. The exact
+       fraction might change if [Random.State] ever changes in a future ocaml version,
+       that's okay. *)
     print_ratio ();
     [%expect {| 19664/20000 equality tests were exact |}]
   ;;
 
   (* Test a bunch of random floats, but this time specifically generated to be on
-       half-nanosecond-boundaries a large fraction of time, and therefore trigger
-       "ties" a lot, to test the exact rounding behavior. *)
+     half-nanosecond-boundaries a large fraction of time, and therefore trigger "ties" a
+     lot, to test the exact rounding behavior. *)
   let%expect_test "random-float-parsing-exact" =
     let rand =
       Random.State.make [| Hashtbl.hash "Time_ns random-float-parsing-exact" |]
@@ -424,8 +419,8 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
       let int63 = Int63.random_incl ~state:rand min max in
       let float = Int63.to_float int63 in
       (* Divide by 4_000_000_000 so that we end up exactly on quarter-nanosecond values,
-           so that we test exact half-nanosecond rounding behavior a lot, as well as the
-           behavior in the intervals in between. *)
+         so that we test exact half-nanosecond rounding behavior a lot, as well as the
+         behavior in the intervals in between. *)
       let seconds_divisor = 4_000_000_000. in
       let ns_divisor = 4. in
       let span_str = sprintf "%.11fs" (float /. seconds_divisor) in
@@ -518,8 +513,8 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
 
   let%expect_test "precise overflow boundary testing" =
     (* Use Bigint to do some fixed-point computations with precision well exceeding that
-         of an Int63 to compute things like the decimal number of hours needed to overflow
-         or underflow an Int63 number of nanoseconds. *)
+       of an Int63 to compute things like the decimal number of hours needed to overflow
+       or underflow an Int63 number of nanoseconds. *)
     let open Bigint.O in
     let max = Bigint.of_int64 (Int63.to_int64 Int63.max_value) in
     let min = Bigint.of_int64 (Int63.to_int64 Int63.min_value) in
@@ -547,7 +542,7 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
       print_endline string;
       show_raise (fun () -> print_nanos string)
     in
-    (* Nanosecond overflow boundary ----------------------------------------- *)
+    (*=Nanosecond overflow boundary ----------------------------------------- *)
     test max "ns";
     test max_wont_round_x100 ~decimals:2 "ns";
     test max_will_round_x100 ~decimals:2 "ns";
@@ -600,7 +595,7 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
         (string -4611686018427387905ns)
         (reason "span would be outside of int63 range")))
       |}];
-    (* Microsecond overflow boundary ----------------------------------------- *)
+    (*=Microsecond overflow boundary ----------------------------------------- *)
     test max_x100 ~decimals:5 "us";
     test max_wont_round_x100 ~decimals:5 "us";
     test max_will_round_x100 ~decimals:5 "us";
@@ -653,7 +648,7 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
         (string -4611686018427387.90500us)
         (reason "span would be outside of int63 range")))
       |}];
-    (* Millisecond overflow boundary ----------------------------------------- *)
+    (*=Millisecond overflow boundary ----------------------------------------- *)
     test max_x100 ~decimals:8 "ms";
     test max_wont_round_x100 ~decimals:8 "ms";
     test max_will_round_x100 ~decimals:8 "ms";
@@ -706,7 +701,7 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
         (string -4611686018427.38790500ms)
         (reason "span would be outside of int63 range")))
       |}];
-    (* Second overflow boundary ----------------------------------------- *)
+    (*=Second overflow boundary ----------------------------------------- *)
     test max_x100 ~decimals:11 "s";
     test max_wont_round_x100 ~decimals:11 "s";
     test max_will_round_x100 ~decimals:11 "s";
@@ -968,7 +963,7 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
         (reason "span would be outside of int63 range")))
       |}];
     (* Should be overflow directly on the integer part, upon the multiply by ten rather
-         than upon adding the digit. *)
+       than upon adding the digit. *)
     test "53380d";
     test "-53380d";
     [%expect
@@ -1855,7 +1850,7 @@ module%test Time_ns = struct
 
   let%expect_test _ =
     (* Ensure that midnight_cache doesn't interfere with converting times that are much
-         earlier or later than each other. *)
+       earlier or later than each other. *)
     check (to_ofday ~zone:(force Time_ns.Zone.local) epoch);
     check (to_ofday ~zone:(force Time_ns.Zone.local) (now ()));
     check (to_ofday ~zone:(force Time_ns.Zone.local) epoch);
@@ -1894,8 +1889,8 @@ module%test Time_ns = struct
            DST (Daylight Saving Time) transition. *)
       ; add (of_string "2015-11-01 01:59:59 US/Eastern") Span.second, "02:00:00"
       ]
-      (* We can denote specific linear times during the repeated wall-clock hour
-           relative to a time before the ambiguity. *)
+      (* We can denote specific linear times during the repeated wall-clock hour relative
+         to a time before the ambiguity. *)
       @ List.map
           ~f:(fun (span, ofday) ->
             add (of_string "2015-11-01 00:59:59 US/Eastern") span, ofday)
@@ -1912,8 +1907,8 @@ module%test Time_ns = struct
     match Word_size.word_size with
     | W64 -> fun () -> random ()
     | W32 ->
-      (* In 32 bits, some functions in [Time] don't work on all the float values, but
-           only the part that fits in a native int. *)
+      (* In 32 bits, some functions in [Time] don't work on all the float values, but only
+         the part that fits in a native int. *)
       let in_ns = Int63.of_float 1e9 in
       let max_time_ns = Int63.(of_nativeint_exn Nativeint.max_value * in_ns) in
       let min_time_ns = Int63.(of_nativeint_exn Nativeint.min_value * in_ns) in
@@ -1957,9 +1952,10 @@ module%test Time_ns = struct
            1:00am by [of_date_ofday] *)
       ; 1478408399999999999L (* just before 1am *)
       ; 1478408400000000000L
-        (* 1ns later, at 1am (for the first time),
-           NOTE: we're off by 1h when we try the round-trip, see
-           [3600000000000] in the expect_test below.  *)
+        (* 1ns later, at 1am (for the first time), NOTE: we're off by 1h when we try the
+           round-trip, see
+
+           [3600000000000] in the expect_test below. *)
       ; 1478412000000000000L (* 1h later, which is 1am again (this time we round-trip) *)
       ; 1478412000000000001L (* another 1ns later *)
       ]

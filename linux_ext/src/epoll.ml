@@ -7,7 +7,7 @@ module Epoll_flags (Flag_values : sig
     val in_ : Int63.t
     val out : Int63.t
 
-    (* val rdhup   : Int63.t *)
+    (*=val rdhup   : Int63.t *)
     val pri : Int63.t
     val err : Int63.t
     val hup : Int63.t
@@ -43,7 +43,7 @@ module Null_impl : S = struct
       let in_ = Int63.of_int (1 lsl 0)
       let out = Int63.of_int (1 lsl 1)
 
-      (* let rdhup   = Int63.of_int (1 lsl 2) *)
+      (*=let rdhup   = Int63.of_int (1 lsl 2) *)
       let pri = Int63.of_int (1 lsl 3)
       let err = Int63.of_int (1 lsl 4)
       let hup = Int63.of_int (1 lsl 5)
@@ -71,7 +71,7 @@ module Null_impl : S = struct
     let clear_ready _ = assert false
   end
 
-  (* let pwait _ ~timeout:_ _      = assert false *)
+  (*=let pwait _ ~timeout:_ _      = assert false *)
 end
 
 module _ = Null_impl
@@ -86,7 +86,7 @@ module Impl = struct
   external flag_epollin : unit -> Int63.t = "core_linux_epoll_EPOLLIN_flag"
   external flag_epollout : unit -> Int63.t = "core_linux_epoll_EPOLLOUT_flag"
 
-  (* external flag_epollrdhup   : unit -> Int63.t  = "core_linux_epoll_EPOLLRDHUP_flag" *)
+  (*=external flag_epollrdhup   : unit -> Int63.t  = "core_linux_epoll_EPOLLRDHUP_flag" *)
   external flag_epollpri : unit -> Int63.t = "core_linux_epoll_EPOLLPRI_flag"
   external flag_epollerr : unit -> Int63.t = "core_linux_epoll_EPOLLERR_flag"
   external flag_epollhup : unit -> Int63.t = "core_linux_epoll_EPOLLHUP_flag"
@@ -97,7 +97,7 @@ module Impl = struct
       let in_ = flag_epollin ()
       let out = flag_epollout ()
 
-      (* let rdhup   = flag_epollrdhup () *)
+      (*=let rdhup   = flag_epollrdhup () *)
       let pri = flag_epollpri ()
       let err = flag_epollerr ()
       let hup = flag_epollhup ()
@@ -112,9 +112,9 @@ module Impl = struct
      be filled.
 
      Since this is at the core of the I/O loop, we'd like to avoid reallocating that
-     buffer on every call to poll.  We're allocating the array on the ocaml side (as a
+     buffer on every call to poll. We're allocating the array on the ocaml side (as a
      Bigstring), then iterating through it in-place, reducing allocation, copies, and any
-     intermediate lists.  For very high message rates and many fds this could be a very
+     intermediate lists. For very high message rates and many fds this could be a very
      beneficial. *)
   type ready_events = Bigstring.t
 
@@ -163,10 +163,10 @@ module Impl = struct
     type 'a t =
       { epollfd : File_descr.t
       ; (* [flags_by_fd] has one entry for each file-descr in the epoll set, and stores
-           the epoll flags that the kernel's epoll set currently has for that
-           file-descr.  Keeping our own representation of the kernel data structure is
-           useful for debugging, since the information appears in a human-readable way
-           in [sexp_of_t]'s output.  It also allows us to hide the distinction between
+           the epoll flags that the kernel's epoll set currently has for that file-descr.
+           Keeping our own representation of the kernel data structure is useful for
+           debugging, since the information appears in a human-readable way in
+           [sexp_of_t]'s output. It also allows us to hide the distinction between
            [epoll_ctl_add] and [epoll_ctl_mod], since we know which to use based on
            whether the file descriptor is already being watched. *)
         flags_by_fd : (File_descr.t, Flags.t) Table.t
@@ -336,9 +336,9 @@ module Impl = struct
       then 0
       else (
         (* For positive timeouts, we use a minimum timeout of one millisecond, to ensure
-           that we are guaranteed that the timeout has passed when we wake up.  If we
+           that we are guaranteed that the timeout has passed when we wake up. If we
            allowed a positive sub-millisecond timeout, we would round down and end up
-           using a timeout of zero, causing [wait_internal] to return immediately.  Such
+           using a timeout of zero, causing [wait_internal] to return immediately. Such
            behaviour has been seen to cause Async to spin, repeatedly requesting slightly
            smaller timeouts. *)
         let span = Time_ns.Span.max span Time_ns.Span.millisecond in
@@ -353,7 +353,7 @@ module Impl = struct
   ;;
 
   let wait t ~timeout =
-    (* From the epoll man page:
+    (*=From the epoll man page:
 
        | Specifying a timeout of -1 makes epoll_wait() wait indefinitely, while
        | specifying a timeout equal to zero makes epoll_wait() to return immediately

@@ -31,9 +31,7 @@ module%test [@name "word wrap"] _ = struct
 
   let%test _ =
     word_wrap long_text 39
-    = (*
-         .........1.........2.........3.........4
-           1234567890123456789012345678901234567890
+    = (* .........1.........2.........3.........4 1234567890123456789012345678901234567890
       *)
     [ "Lorem ipsum dolor sit amet, consectetur"
     ; "adipiscing elit. Vivamus fermentum"

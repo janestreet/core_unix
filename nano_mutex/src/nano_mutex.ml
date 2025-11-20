@@ -15,7 +15,7 @@ module Blocker : sig
   val save_unused : t -> unit
 end = struct
   (* Our use of mutexes is always via [Mutex.critical_section], so that we always lock
-     them and unlock them from a single thread.  So, we use [Core.Mutex], which is
+     them and unlock them from a single thread. So, we use [Core.Mutex], which is
      error-checking mutexes, which will catch any use that is not what we expect. *)
   module Condition = Condition
   module Mutex = Error_checking_mutex
@@ -27,7 +27,7 @@ end = struct
   [@@deriving sexp_of]
 
   (* We keep a cache of unused blockers, since they are relatively costly to create, and
-     we should never need very many simultaneously.  We should never need more blockers
+     we should never need very many simultaneously. We should never need more blockers
      than the number of nano mutexes being simultaneously blocked on, which of course is
      no more than the total number of simultaneous threads. *)
   let unused : t Thread_safe_queue.t = Thread_safe_queue.create ()
@@ -66,13 +66,13 @@ end = struct
 
   (* The atomicity of some sections marked "BEGIN/END ATOMIC" later in this file require
      [equal] to be implemented such that the OCaml compiler will not insert safepoints in
-     its prelude.  We write out the definition rather than deriving it for this reason. *)
+     its prelude. We write out the definition rather than deriving it for this reason. *)
   let%template[@inline] equal (t1 : int) t2 = t1 = t2 [@@mode m = (global, local)]
 end
 
-(* We represent a nano mutex using an OCaml record.  The [id_of_thread_holding_lock] field
+(* We represent a nano mutex using an OCaml record. The [id_of_thread_holding_lock] field
    represents whether the mutex is locked or not, and if it is locked, which thread holds
-   the lock.  We use [Thread_id_option] instead of [int option] for performance reasons
+   the lock. We use [Thread_id_option] instead of [int option] for performance reasons
    (using [int option] slows down lock+unlock by a factor of almost two).
 
    The mutex record has an optional [blocker] field for use when the mutex is contended.
@@ -82,15 +82,15 @@ end
    When thinking about the implementation, it is helpful to remember the following
    desiderata:
 
- * Safety -- only one thread can acquire the lock at a time.  This is accomplished
-   usng a test-and-set to set [id_of_thread_holding_lock].
+   * Safety -- only one thread can acquire the lock at a time. This is accomplished usng a
+   test-and-set to set [id_of_thread_holding_lock].
 
- * Liveness -- if the mutex is unlocked and some threads are waiting on it, then one of
-   those threads will be woken up and given a chance to acquire it.  This is accomplished
+   * Liveness -- if the mutex is unlocked and some threads are waiting on it, then one of
+   those threads will be woken up and given a chance to acquire it. This is accomplished
    by only waiting when we can ensure that there will be a [signal] of the condition
-   variable in the future.  See the more detailed comment in [lock].
+   variable in the future. See the more detailed comment in [lock].
 
- * Performance -- do not spin trying to acquire the lock.  This is accomplished by
+   * Performance -- do not spin trying to acquire the lock. This is accomplished by
    waiting on a condition variable if a lock is contended. *)
 type t =
   { mutable id_of_thread_holding_lock : Thread_id_option.t
@@ -103,11 +103,11 @@ let invariant t =
   try
     assert (t.num_using_blocker >= 0);
     (* It is the case that if [t.num_using_blocker = 0] then [Option.is_none t.blocker],
-       however the converse does not necessarily hold.  The code in [with_blocker] doesn't
+       however the converse does not necessarily hold. The code in [with_blocker] doesn't
        take care to atomically increment [t.num_using_blocker] and set [t.blocker] to
-       [Some].  It could, but doing so is not necessary for the correctness of of
-       [with_blocker], which only relies on test-and-set of [t.blocker] to make sure
-       there is an agreed-upon winner in the race to create a blocker. *)
+       [Some]. It could, but doing so is not necessary for the correctness of of
+       [with_blocker], which only relies on test-and-set of [t.blocker] to make sure there
+       is an agreed-upon winner in the race to create a blocker. *)
     if t.num_using_blocker = 0 then assert (Uopt.is_none t.blocker)
   with
   | exn -> failwiths "invariant failed" (exn, t) [%sexp_of: exn * t]
@@ -172,7 +172,7 @@ let[@inline never] [@specialise never] [@local never] with_blocker0 t ~new_block
 
 (* END ATOMIC *)
 
-(* [with_blocker t f] runs [f blocker] in a critical section.  It allocates a blocker for
+(* [with_blocker t f] runs [f blocker] in a critical section. It allocates a blocker for
    [t] if [t] doesn't already have one. *)
 let with_blocker t (local_ f) =
   t.num_using_blocker <- t.num_using_blocker + 1;
@@ -212,21 +212,21 @@ let rec lock t =
      everybody agrees who acquired the lock.
 
      If [is_locked t], we block the locking thread using [Blocker.wait], until some
-     unlocking thread [Blocker.signal]s us.  There is a race between the [wait] and the
-     [signal].  If the unlocking thread signals in between our test of
+     unlocking thread [Blocker.signal]s us. There is a race between the [wait] and the
+     [signal]. If the unlocking thread signals in between our test of
      [t.id_of_thread_holding_lock] and our [wait], then our [wait] could miss the signal
-     and block forever.  We avoid this race by committing to waiting inside a
-     [with_blocker], which increments [t.num_using_blocker].  If the [signal] occurs
-     before the [with_blocker], then it will have cleared [t.id_of_thread_holding_lock],
-     which we will notice as [not (is_locked t)], and then not [wait], and loop trying to
-     [lock] again.  Otherwise, when an [unlock] occurs, it will see that [is_some
-     t.blocker], and will enter a critical section on [blocker].  But then it must wait
-     until our critical section on [blocker] finishes, and hence until our call to [wait]
-     finishes.  Hence, the [signal] will occur after the [wait].
+     and block forever. We avoid this race by committing to waiting inside a
+     [with_blocker], which increments [t.num_using_blocker]. If the [signal] occurs before
+     the [with_blocker], then it will have cleared [t.id_of_thread_holding_lock], which we
+     will notice as [not (is_locked t)], and then not [wait], and loop trying to [lock]
+     again. Otherwise, when an [unlock] occurs, it will see that [is_some t.blocker], and
+     will enter a critical section on [blocker]. But then it must wait until our critical
+     section on [blocker] finishes, and hence until our call to [wait] finishes. Hence,
+     the [signal] will occur after the [wait].
 
-     The recursive call to [lock] will not spin.  It happens either because we just lost
-     the race with an unlocker, in which case the subsequent [lock] will succeed, or
-     we actually had to block because someone is holding the lock.  The latter is the
+     The recursive call to [lock] will not spin. It happens either because we just lost
+     the race with an unlocker, in which case the subsequent [lock] will succeed, or we
+     actually had to block because someone is holding the lock. The latter is the
      overwhelmingly common case.
 
      Other threads can change [t.id_of_thread_holding_lock] concurrently with this code.

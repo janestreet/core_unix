@@ -18,7 +18,7 @@ module type Gen = sig
   val is_empty_or_singleton : 'a t -> bool
 
   (*_ If you are looking for a simple interval type where the bounds are not optional,
-    consider Min_max_pair.t. *)
+      consider Min_max_pair.t. *)
   val bounds : 'a t -> ('a bound * 'a bound) option
   val lbound : 'a t -> 'a bound option
   val ubound : 'a t -> 'a bound option
@@ -274,7 +274,7 @@ module type%template Interval = sig @@ portable
 
     (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-      https://opensource.janestreet.com/standards/#private-submodules *)
+        https://opensource.janestreet.com/standards/#private-submodules *)
     module Private : sig
       val get : t -> int -> int
     end
@@ -350,7 +350,7 @@ module type%template Interval = sig @@ portable
 
       (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-        https://opensource.janestreet.com/standards/#private-submodules *)
+          https://opensource.janestreet.com/standards/#private-submodules *)
       module (Private @@ nonportable) : sig
         type 'a interval := 'a t
 
@@ -374,7 +374,7 @@ module type%template Interval = sig @@ portable
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+      https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     module%template.portable
       [@mode m = (global, local)] Make (Bound : sig

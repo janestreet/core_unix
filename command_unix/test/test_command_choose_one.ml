@@ -772,8 +772,8 @@ let%expect_test "choose_one with an optional that can be set from an environment
      |> unstage)
       ~on_success
   in
-  (* We expect [choose_one] to succeed in this case because the optional parameter
-     is set via the environment variable. *)
+  (* We expect [choose_one] to succeed in this case because the optional parameter is set
+     via the environment variable. *)
   test_choose_one (Some "value") [];
   [%expect {| (data value) |}];
   (* If the environment_variable is set AND "the other option" is set, we expect

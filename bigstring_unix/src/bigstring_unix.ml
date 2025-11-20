@@ -404,9 +404,9 @@ let unsafe_recvmmsg_assume_fd_is_nonblocking = Ok unsafe_recvmmsg_assume_fd_is_n
 
 let recvmmsg_assume_fd_is_nonblocking =
   (* At Jane Street, we link with [--wrap recvmmsg] so that we can use our own wrapper
-     around [recvmmsg].  This allows us to compile an executable on a machine that has
+     around [recvmmsg]. This allows us to compile an executable on a machine that has
      recvmmsg (e.g., CentOS 6) but then run the executable on a machine that does not
-     (e.g., CentOS 5), but that has our wrapper library.  We set up our wrapper so that
+     (e.g., CentOS 5), but that has our wrapper library. We set up our wrapper so that
      when running on a machine that doesn't have it, [recvmmsg] always returns -1 and sets
      errno to ENOSYS. *)
   let ok = Ok recvmmsg_assume_fd_is_nonblocking in

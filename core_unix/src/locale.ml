@@ -282,9 +282,9 @@ let create ?base ?(category_mask = Category_set.all) s =
     | None -> zero_value (* newlocale interprets a base of (locale_t)0 as POSIX. *)
     | Some base -> duplocale base
   in
-  (* POSIX isn't completely clear on whether [newlocale] handles the degenerate case of
-     a [category_mask] of 0, but we pass it on anyway. At least glibc does explicitly
-     handle it. *)
+  (* POSIX isn't completely clear on whether [newlocale] handles the degenerate case of a
+     [category_mask] of 0, but we pass it on anyway. At least glibc does explicitly handle
+     it. *)
   newlocale (Category_set.to_int32 category_mask) s base
 ;;
 

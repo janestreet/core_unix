@@ -72,11 +72,7 @@ end
 (* This expands a kernel command-line cpu-list string, which is a comma-separated list
    with elements:
 
-   {|
-   N        single value
-   N-M      closed range
-   N-M:A/S  groups of (A)mount in closed range with (S)tride
-   |}
+   [{| N        single value N-M      closed range N-M:A/S  groups of (A)mount in closed range with (S)tride |}]
 
    See: https://www.kernel.org/doc/html/v4.14/admin-guide/kernel-parameters.html
 *)
@@ -125,8 +121,7 @@ let cpu_list_of_string_exn str =
       let amt, stride = parse_int_pair ~sep:'/' amt_stride in
       if amt <= 0 || stride <= 0
       then
-        (* A kernel won't treat these kindly, they're wrong and we'll
-           raise in this code. *)
+        (* A kernel won't treat these kindly, they're wrong and we'll raise in this code. *)
         raise_s
           [%message
             "cpu_list_of_string_exn: invalid grouped range stride or amount"
@@ -138,8 +133,8 @@ let cpu_list_of_string_exn str =
         let rlist = List.init (last - first + 1) ~f:(Int.( + ) first) in
         acc @ rlist)
       else (
-        (* This is probably simpler with procedural code, but
-           we'll do it functional-style :o).  *)
+        (* This is probably simpler with procedural code, but we'll do it functional-style
+           :o). *)
         let n_sublists = Float.round_up ((last - first + 1) // stride) |> Float.to_int in
         let starts = List.init n_sublists ~f:(fun li -> first + (li * stride)) in
         let rlist =
@@ -445,8 +440,8 @@ module _ = Null
 module Clock = struct
   type t
 
-  (* These functions should be in Unix, but due to the dependency on Time,
-     this is not possible (cyclic dependency). *)
+  (* These functions should be in Unix, but due to the dependency on Time, this is not
+     possible (cyclic dependency). *)
   external get_time : t -> float @@ portable = "core_unix_clock_gettime"
 
   let get_time t = Time_float.Span.of_sec (get_time t)
@@ -613,12 +608,11 @@ module Timerfd = struct
     @@ portable
     = "core_linux_timerfd_create"
 
-  (* At Jane Street, we link with [--wrap timerfd_create] so that we can use
-     our own wrapper around [timerfd_create].  This allows us to compile an executable on
-     a machine that has timerfd (e.g. CentOS 6) but then run the executable on a machine
-     that does not (e.g. CentOS 5), but that has our wrapper library.  We set up our
-     wrapper so that when running on a machine that doesn't have it, [timerfd_create]
-     raises ENOSYS. *)
+  (* At Jane Street, we link with [--wrap timerfd_create] so that we can use our own
+     wrapper around [timerfd_create]. This allows us to compile an executable on a machine
+     that has timerfd (e.g. CentOS 6) but then run the executable on a machine that does
+     not (e.g. CentOS 5), but that has our wrapper library. We set up our wrapper so that
+     when running on a machine that doesn't have it, [timerfd_create] raises ENOSYS. *)
   let create =
     let create ?(flags = Flags.empty) clock =
       File_descr.of_int (timerfd_create clock flags)
@@ -631,8 +625,7 @@ module Timerfd = struct
       Or_error.unimplemented "Linux_ext.Timerfd.create"
     | Error _ ->
       (* [timerfd_create] is implemented but fails with the arguments we used above.
-         [create] might still be usable with different arguments, so we expose it
-         here. *)
+         [create] might still be usable with different arguments, so we expose it here. *)
       Ok create
   ;;
 
@@ -1097,10 +1090,9 @@ let cores @ portable =
     match Option.bind (Core_unix.sysconf NPROCESSORS_ONLN) ~f:Int64.to_int with
     | None ->
       (* Fall back to our own implementation on the off-chance that the C library for some
-         reason doesn't support this conf.
-         We use this as a fallback instead of the only implementation because glibc tries
-         hard to be robust, for example it's resilient to /sys or even /proc not
-         being mounted. *)
+         reason doesn't support this conf. We use this as a fallback instead of the only
+         implementation because glibc tries hard to be robust, for example it's resilient
+         to /sys or even /proc not being mounted. *)
       List.length (online_cpus ())
     | Some n -> n)
 ;;

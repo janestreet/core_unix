@@ -2,8 +2,8 @@ open Core
 module Unix = Core_unix
 
 (* Currently this test doesn't always pass for Nfs lock: it detects both a safety bug
-   where we're cleaning up someone else's lock and a liveness bug
-   where we're trying to unlock an empty [lockfile]. *)
+   where we're cleaning up someone else's lock and a liveness bug where we're trying to
+   unlock an empty [lockfile]. *)
 
 (* this is so that after safety violation everything stops *)
 let exit_if_safety_violation_observed () =
@@ -67,8 +67,8 @@ let critical_section (type a) ~lock ~unlock ~(f : unit -> a) : a =
   protect ~f ~finally:(fun () -> unlock lock)
 ;;
 
-(* not quite a critical section because it only ends when the process dies,
-   but close enough *)
+(* not quite a critical section because it only ends when the process dies, but close
+   enough *)
 let local_critical_section path ~f =
   let rec obtain () =
     exit_if_safety_violation_observed ();
