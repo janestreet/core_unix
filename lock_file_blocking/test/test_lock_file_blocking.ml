@@ -94,8 +94,7 @@ module%test [@name "[Nfs-v2]"] _ = struct
           | `Old ->
             Unix.utimes
               attempt_file_path
-              (* apparently 0 is a special value that corresponds to "now",
-                   thus +1 here *)
+              (* apparently 0 is a special value that corresponds to "now", thus +1 here *)
               ~modif:(Float.of_int (i + 1))
               ~access:(Float.of_int (i + 1))
         in
@@ -104,7 +103,7 @@ module%test [@name "[Nfs-v2]"] _ = struct
           let additional_file_path = tmp_dir ^/ additional_file in
           Unix.openfile ~mode:[ O_WRONLY; O_CREAT ] additional_file_path |> Unix.close;
           (* Always make additional files old to make sure that we don't accidentally
-               clean them up. *)
+             clean them up. *)
           Unix.utimes additional_file_path ~modif:1. ~access:1.);
         let ls () =
           List.iter
@@ -136,8 +135,8 @@ module%test [@name "[Nfs-v2]"] _ = struct
       lock.00000002ffffffffffffffffffffffff.lock-attempt
       lock.00000003ffffffffffffffffffffffff.lock-attempt
       |}];
-    (* Old attempt lock files are cleared, but we keep the last 3 around. Unrelated
-         files are not affected. *)
+    (* Old attempt lock files are cleared, but we keep the last 3 around. Unrelated files
+       are not affected. *)
     test_lock_unlock ~additional_files:[ "unrelated" ] (List.init 5 ~f:(Fn.const `Old));
     [%expect
       {|
@@ -173,8 +172,8 @@ module%test [@name "[Nfs-v2]"] _ = struct
 
   let%expect_test "early return on permission error" =
     Filesystem_core.within_temp_dir (fun () ->
-      (* chdir to make the error messages more predictable
-         (although we still need to erase the file paths from them...) *)
+      (* chdir to make the error messages more predictable (although we still need to
+         erase the file paths from them...) *)
       Unix.chmod "." ~perm:0o555;
       let path = "./lock" in
       let hex32 = lazy (Re.compile (Re.seq [ Re.repn Re.xdigit 32 (Some 32) ])) in

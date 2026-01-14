@@ -84,10 +84,9 @@ let%expect_test "t" =
 ;;
 
 let%expect_test "Ofday_string_conversion" =
-  (* We want to test a number of times during the day, but testing all
-     possible times is too expensive.  We also want the test to always be
-     the same, so this uses a specific Random.State to generate a repeatable
-     series of random times to test *)
+  (* We want to test a number of times during the day, but testing all possible times is
+     too expensive. We also want the test to always be the same, so this uses a specific
+     Random.State to generate a repeatable series of random times to test *)
   let rand_state = Random.State.make [| 1; 2; 3; 4; 5; 6; 7 |] in
   for _ = 0 to 100_000 do
     let secs = Random.State.int rand_state 86_400_000 in
@@ -581,8 +580,8 @@ let%expect_test "diff" =
 
 let roundtrip s =
   let t = Span.of_string s in
-  (* we only test rountrip in one direction because the other direction does not hold!
-     for example 1.34m comes back as 1m20.400000000000006s *)
+  (* we only test rountrip in one direction because the other direction does not hold! for
+     example 1.34m comes back as 1m20.400000000000006s *)
   require_equal (module Span) t (Time.Span.of_string (Time.Span.to_string t))
 ;;
 

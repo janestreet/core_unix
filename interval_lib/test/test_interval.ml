@@ -364,34 +364,40 @@ module%test _ = struct
   ;;
 
   (* As long as the tests are passing anyway, there's no reason to bother writing a
-       sophisticated shrinker. *)
+     sophisticated shrinker. *)
   let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
 
-  let%quick_test "union" =
-    fun (t1 : t) (t2 : t) (xs : int list) ->
-    let t3 = Set.union t1 t2 in
-    List.iter xs ~f:(fun x ->
-      [%test_result: bool]
-        (Set.contains t3 x)
-        ~expect:(Set.contains t1 x || Set.contains t2 x))
+  let%expect_test "union" =
+    let%quick_test prop (t1 : t) (t2 : t) (xs : int list) =
+      let t3 = Set.union t1 t2 in
+      List.iter xs ~f:(fun x ->
+        [%test_result: bool]
+          (Set.contains t3 x)
+          ~expect:(Set.contains t1 x || Set.contains t2 x))
+    in
+    ()
   ;;
 
-  let%quick_test "intersect" =
-    fun (t1 : t) (t2 : t) (xs : int list) ->
-    let t3 = Set.inter t1 t2 in
-    List.iter xs ~f:(fun x ->
-      [%test_result: bool]
-        (Set.contains t3 x)
-        ~expect:(Set.contains t1 x && Set.contains t2 x))
+  let%expect_test "intersect" =
+    let%quick_test prop (t1 : t) (t2 : t) (xs : int list) =
+      let t3 = Set.inter t1 t2 in
+      List.iter xs ~f:(fun x ->
+        [%test_result: bool]
+          (Set.contains t3 x)
+          ~expect:(Set.contains t1 x && Set.contains t2 x))
+    in
+    ()
   ;;
 
-  let%quick_test "union_list" =
-    fun (ts : t list) (xs : int list) ->
-    let t = Set.union_list ts in
-    List.iter xs ~f:(fun x ->
-      [%test_result: bool]
-        (Set.contains t x)
-        ~expect:(List.exists ts ~f:(fun t -> Set.contains t x)))
+  let%expect_test "union_list" =
+    let%quick_test prop (ts : t list) (xs : int list) =
+      let t = Set.union_list ts in
+      List.iter xs ~f:(fun x ->
+        [%test_result: bool]
+          (Set.contains t x)
+          ~expect:(List.exists ts ~f:(fun t -> Set.contains t x)))
+    in
+    ()
   ;;
 
   let t1 = Set.create_exn [ 1, 5; 6, 10; 15, 20 ]

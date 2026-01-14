@@ -91,8 +91,8 @@ end
 module Cat = struct
   open Async
 
-  (* async has its own Command overlay module that introduces functions for
-     constructing commands with a body that returns a [Deferred.t]. *)
+  (* async has its own Command overlay module that introduces functions for constructing
+     commands with a body that returns a [Deferred.t]. *)
   let command =
     Command.async
       ~summary:"example async command: cat a file to stdout"

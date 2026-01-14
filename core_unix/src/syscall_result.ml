@@ -42,7 +42,7 @@ module%template [@mode m = (global, local)] Make (M : Arg [@mode m]) () = struct
 
   let preallocated_ms =
     let rec loop i rev_acc =
-      (* Preallocate at most a handful of Ms.  2048 is the first round binary number after
+      (* Preallocate at most a handful of Ms. 2048 is the first round binary number after
          1500, the likely maximum result for many network functions that use
          [Syscall_result.Int]. *)
       if i = 2048

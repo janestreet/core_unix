@@ -83,8 +83,8 @@ let command_exn string =
 let fold_dir ~init ~f directory = Array.fold (readdir directory) ~f ~init
 let ls_dir directory = Array.to_list (readdir directory)
 
-(* This function takes six units to cause ocaml to call a different
-   function when executing bytecode:
+(* This function takes six units to cause ocaml to call a different function when
+   executing bytecode:
    http://caml.inria.fr/pub/docs/manual-ocaml/intfc.html#ss:c-prim-impl
 *)
 external executing_bytecode

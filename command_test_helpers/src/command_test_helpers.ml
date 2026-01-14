@@ -55,8 +55,8 @@ let cannot_validate_exec_error (exec_info : Command.Shape.Exec_info.t) =
   let s =
     "[Exec _] commands are not validated to avoid unexpected external dependencies."
   in
-  (* Elide working dir unconditionally because this is only called in tests. But
-     show the [exec_info] in case people don't know where their execs are. *)
+  (* Elide working dir unconditionally because this is only called in tests. But show the
+     [exec_info] in case people don't know where their execs are. *)
   let exec_info = { exec_info with working_dir = "ELIDED-IN-TEST" } in
   error_s [%message s (exec_info : Command.Shape.Exec_info.t)]
 ;;

@@ -3,8 +3,8 @@ open Expect_test_helpers_core
 module Unix = Core_unix
 module Time = Time_float_unix
 
-(* We don't test Feb 29th because generating proper leap year dates is
-   trickier.  Also, there are no time zone changes on leap dates. *)
+(* We don't test Feb 29th because generating proper leap year dates is trickier. Also,
+   there are no time zone changes on leap dates. *)
 let month_limits =
   Int.Map.of_alist_exn
     [ 1, 31
@@ -190,9 +190,9 @@ let%expect_test "random test against Unix.localtime" =
       (* Fill in [wday], [yday] fields *)
       let tm = Unix.gmtime (Unix.timegm tm) in
       List.iter (Time.Zone.initialized_zones ()) ~f:(fun (zone_name, zone) ->
-        (* goes through the dance of setting the env variable, then calling localtime, then
-           setting the TZ back.  We call localtime on 1000. each time to reset the internal
-           state of localtime, which matters when we convert indeterminate times. *)
+        (* goes through the dance of setting the env variable, then calling localtime,
+           then setting the TZ back. We call localtime on 1000. each time to reset the
+           internal state of localtime, which matters when we convert indeterminate times. *)
         (Unix.putenv [@ocaml.alert "-unsafe_multidomain"]) ~key:"TZ" ~data:zone_name;
         ignore (Unix.localtime 1000. : Unix.tm);
         let unix_time, _ = Unix.mktime tm in

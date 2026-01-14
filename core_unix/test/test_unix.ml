@@ -605,7 +605,7 @@ let%expect_test "unix socket path limit workaround" =
 let%expect_test ("Clock.get_cpuclock_for" [@tags "64-bits-only"]) =
   let get_cpuclock_for = ok_exn Unix.Clock.get_cpuclock_for in
   let gettime = ok_exn Unix.Clock.gettime in
-  (* This pid is too large to be real  *)
+  (* This pid is too large to be real *)
   let bad_pid = Pid.of_int 100_000_000 in
   require_does_raise (fun () -> get_cpuclock_for bad_pid);
   [%expect {| (Unix.Unix_error "No such process" clock_getcpuclockid "") |}];

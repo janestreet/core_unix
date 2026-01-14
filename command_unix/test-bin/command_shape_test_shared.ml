@@ -1,5 +1,5 @@
-(* These tests check that [Command_unix.shape] returns regardless of the order in which the
-   child writes and closes its stderr and stdout.  Returning an error is a successful
+(* These tests check that [Command_unix.shape] returns regardless of the order in which
+   the child writes and closes its stderr and stdout. Returning an error is a successful
    outcome.
 
    We also used to have some tests where the child process hung and never closed its

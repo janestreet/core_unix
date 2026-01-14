@@ -124,9 +124,9 @@ module%test _ = struct
   end
 
   (* The following tests check to see that the errors in presampled data are within
-       acceptable bounds.  Errors are checked at two different sampling rates to simulate
-       calls to [Calibrator.calibrate] at different rates to tests how errors accumulate in
-       this module.*)
+     acceptable bounds. Errors are checked at two different sampling rates to simulate
+     calls to [Calibrator.calibrate] at different rates to tests how errors accumulate in
+     this module. *)
 
   let test_time_and_cycles samples_file ~error_limit ~alpha ~verbose =
     let samples = Samples.load samples_file in
@@ -162,11 +162,11 @@ module%test _ = struct
   ;;
 
   (* For this test, the data sample consists of 2,000 samples of Time.t and TSC.t sampled
-       randomly with intervals up to 1sec.
+     randomly with intervals up to 1sec.
 
-       The error ewma of absolute error is atmost 1.2us, and the actual error ranges between
-       7.6us and -1.4us.  It is worth noting that the errors are usually in the range of 1us
-       and only occassionaly spike to the max/min values mentioned.*)
+     The error ewma of absolute error is atmost 1.2us, and the actual error ranges between
+     7.6us and -1.4us. It is worth noting that the errors are usually in the range of 1us
+     and only occassionaly spike to the max/min values mentioned. *)
   let%test_unit _ =
     test_time_and_cycles
       ~error_limit:3.
@@ -176,10 +176,10 @@ module%test _ = struct
   ;;
 
   (* For this test, the data sample consists of 600 samples of Time.t and TSC.t sampled
-       randomly with intervals up to 1minute.
+     randomly with intervals up to 1minute.
 
-       Errors range between -8.5 and 7.6 us and ewma of absolute error goes upto about
-       2.4us.  The errors in this case tend to oscillate between +/-5us. *)
+     Errors range between -8.5 and 7.6 us and ewma of absolute error goes upto about
+     2.4us. The errors in this case tend to oscillate between +/-5us. *)
   let%test_unit _ =
     test_time_and_cycles
       ~error_limit:3.
@@ -245,9 +245,8 @@ module%test _ = struct
         |> Span.to_ns ~calibrator
         |> Int63.to_int_exn
       in
-      (* Accept a difference of at most [nanos_per_cycle] because of the precision
-           lost during float truncation.
-           [trunc (x / nanos_per_cycle) * nanos_per_cycle]
+      (* Accept a difference of at most [nanos_per_cycle] because of the precision lost
+         during float truncation. [trunc (x / nanos_per_cycle) * nanos_per_cycle]
       *)
       assert (
         Int.(abs (x - y) <= Float.to_int (Calibrator.Private.nanos_per_cycle calibrator)))
@@ -266,9 +265,8 @@ module%test _ = struct
         |> Span.Private.to_int63
         |> Int63.to_int_exn
       in
-      (* Accept a difference of at most [1/nanos_per_cycle] because of the precision
-           lost during float truncation.
-           [trunc (x * nanos_per_cycle) / nanos_per_cycle]
+      (* Accept a difference of at most [1/nanos_per_cycle] because of the precision lost
+         during float truncation. [trunc (x * nanos_per_cycle) / nanos_per_cycle]
       *)
       assert (
         Int.(

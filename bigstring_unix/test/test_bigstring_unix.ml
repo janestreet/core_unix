@@ -69,8 +69,8 @@ module%test [@name "recvmmsg smoke"] _ = struct
            recvmmsg_assume_fd_is_nonblocking fd iovecs ?count ?srcs ~lens))
   ;;
 
-  (* We return -EAGAIN and -EWOULDBLOCK directly as values, rather than as exceptions.
-       So, allow negative results. *)
+  (* We return -EAGAIN and -EWOULDBLOCK directly as values, rather than as exceptions. So,
+     allow negative results. *)
   let%test_unit _ =
     test ~count ~srcs ~lens (( >= ) 0) (function
       | Unix_error _ -> true

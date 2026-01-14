@@ -102,10 +102,10 @@ let%test "lo interface addr is 127.0.0.1" =
   | Ok f -> f "lo" = "127.0.0.1"
 ;;
 
-(* Epoll unit test included here for some example usage. Creates 2 sockets,
-   adds them to an epoll set, sends data to one of them and calls Epoll.wait.
-   The test passes if the resulting Ready_fds set has 1 ready fd, matching
-   the one we sent to, with read, !write, and !error. *)
+(* Epoll unit test included here for some example usage. Creates 2 sockets, adds them to
+   an epoll set, sends data to one of them and calls Epoll.wait. The test passes if the
+   resulting Ready_fds set has 1 ready fd, matching the one we sent to, with read, !write,
+   and !error. *)
 module%test _ = struct
   module Flags = Epoll.Flags
 
@@ -135,7 +135,7 @@ module%test _ = struct
       let tmp = "temporary-file-for-testing-epoll" in
       let fd = Unix.openfile tmp ~mode:[ Unix.O_CREAT; Unix.O_WRONLY ] in
       (* Epoll does not support ordinary files, and so should fail if you ask it to watch
-           one. *)
+         one. *)
       assert (Result.is_error (Result.try_with (fun () -> Epoll.set t fd Flags.none)));
       Unix.close fd;
       Unix.unlink tmp)
@@ -157,10 +157,10 @@ module%test _ = struct
             if flags = Flags.in_ then fd :: ac else ac)
         in
         (* Explanation of the test:
-             1) I create two udp sockets, sock1 listening on 7070 and sock2, on 7071
-             2) These two sockets are both added to epoll for read notification
-             3) I send a packet, _using_ sock2 to sock1 (who is listening on 7070)
-             4) epoll_wait should return, with [ sock1 ] ready to be read.
+           1) I create two udp sockets, sock1 listening on 7070 and sock2, on 7071
+           2) These two sockets are both added to epoll for read notification
+           3) I send a packet, _using_ sock2 to sock1 (who is listening on 7070)
+           4) epoll_wait should return, with [ sock1 ] ready to be read.
         *)
         (match ready with
          | [ sock ] when sock = sock1 -> ()
@@ -237,7 +237,7 @@ module%test _ = struct
        | () -> assert false
        | exception Unix.Unix_error (EBADF, _, _) -> ());
       (* Even though the above failed, the FD should be removed from the tracking set.
-           When the FD numbers are reused below, they should work fine. *)
+         When the FD numbers are reused below, they should work fine. *)
       let r, w = Unix.pipe () in
       Epoll.set epoll w Epoll.Flags.out;
       Epoll.remove epoll w;
@@ -412,12 +412,12 @@ module%test [@name "getpriority and setpriority"] _ = struct
     let ready_for_thread_to_exit = Set_once.create () in
     (* [mutex] guards the vars above; [condition] is signalled when any change.
 
-         As there are only two threads involved, [signal] will suffice, but we may as well
-         broadcast since we do not care about performance and don't want to ambush someone
-         that modifies this test to add three threads.
+       As there are only two threads involved, [signal] will suffice, but we may as well
+       broadcast since we do not care about performance and don't want to ambush someone
+       that modifies this test to add three threads.
 
-         The [`Locked] argument indicates that the caller knows they must have the mutex
-         locked. *)
+       The [`Locked] argument indicates that the caller knows they must have the mutex
+       locked. *)
     let mutex = Caml_threads.Mutex.create () in
     let condition = Caml_threads.Condition.create () in
     let rec wait_for_set_once set_once `Locked =
@@ -500,8 +500,8 @@ let%test_unit "get_terminal_size" =
          [%sexp "get_terminal_size should have failed but returned", (res : int * int)])
 ;;
 
-(* Tested by hand:
-   eprintf !"get_terminal_size: %{sexp: int * int}\n%!" (f `Controlling);
+(* Tested by hand: eprintf !"get_terminal_size: %[{sexp: int * int}]\n%!" (f
+   `Controlling);
 *)
 
 (* Extended file attributes *)
@@ -744,8 +744,8 @@ let%expect_test "TCP_CONGESTION" =
   let str = gettcpopt_string sock TCP_CONGESTION in
   print_s [%sexp (str : string)];
   [%expect {| reno |}];
-  (* basically everyone uses cubic as the default these days, so for the purposes of
-     this test I'm willing to assume that it's available for this test. *)
+  (* basically everyone uses cubic as the default these days, so for the purposes of this
+     test I'm willing to assume that it's available for this test. *)
   settcpopt_string sock TCP_CONGESTION "cubic";
   let str = gettcpopt_string sock TCP_CONGESTION in
   print_s [%sexp (str : string)];

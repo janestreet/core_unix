@@ -6,9 +6,9 @@ let nanosleep t = Span.of_sec (Unix.nanosleep (Span.to_sec t))
 
 let pause_for t =
   let time_remaining =
-    (* If too large a float is passed in (Span.max_value for instance) then nanosleep
-       will return immediately, leading to an infinite and expensive select loop.  This
-       is handled by pausing for no longer than 100 days. *)
+    (* If too large a float is passed in (Span.max_value for instance) then nanosleep will
+       return immediately, leading to an infinite and expensive select loop. This is
+       handled by pausing for no longer than 100 days. *)
     nanosleep (Span.min t (Span.scale Span.day 100.))
   in
   if Span.( > ) time_remaining Span.zero then `Remaining time_remaining else `Ok
@@ -51,8 +51,8 @@ let format ?locale (t : t) s ~zone = Unix.strftime ?locale (to_tm t ~zone) s
 let format_with_locale (t : t) s ~zone ~locale = Unix.strftime_l (to_tm t ~zone) s ~locale
 
 let of_tm tm ~zone =
-  (* Explicitly ignoring isdst, wday, yday (they are redundant with the other fields
-     and the [zone] argument) *)
+  (* Explicitly ignoring isdst, wday, yday (they are redundant with the other fields and
+     the [zone] argument) *)
   let ({ tm_year
        ; tm_mon
        ; tm_mday

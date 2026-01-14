@@ -33,8 +33,8 @@ module%test [@name "Interval.V1.Time"] _ = struct
     ;;
   end
 
-  (* Bypass sexp serialization tests because [Time.sexp_of_t] gives different
-       results depending on the local zone. *)
+  (* Bypass sexp serialization tests because [Time.sexp_of_t] gives different results
+     depending on the local zone. *)
   include Stable_unit_test.Make_sexp_deserialization_test (Arg)
   include Stable_unit_test.Make_bin_io_test (Arg)
 end

@@ -1589,6 +1589,16 @@ char *strptime_callback(const char *s, const char *fmt, struct tm *tm, locale_t 
   return strptime(s, fmt, tm);
 }
 
+/* [musl] infamously does not define its own preprocessor macro, but this is a
+   reasonable way of detecting it. This shim exists because [musl] doesn't implement
+   [strptime_l], so we fall back to calling [strptime] and simply discard the locale. */
+#if defined(__linux__) && !defined(__GLIBC__)
+static char *strptime_l(const char *s, const char *fmt, struct tm *tm, locale_t locale) {
+  (void)locale;
+  return strptime(s, fmt, tm);
+}
+#endif
+
 CAMLprim value core_unix_strptime(value v_allow_trailing_input, value v_fmt, value v_s) {
   return core_unix_strptime_gen((locale_t)0, v_allow_trailing_input, v_fmt, v_s,
                                 strptime_callback);
@@ -2218,8 +2228,19 @@ do_fork_exec(value v_paths, char *const *argv, char *const *envp, sigset_t *pare
     }
 
     case PREEXEC_FD_CLOSE: {
-      if (close(Int_val(Field(cmd, 0))) < 0)
-        goto fail;
+      /* Explicitly ignore any error coming out of [close].
+
+         A desired use case for [Fd_PREEXEC_FD_CLOSE] is to close all non-io file
+         descriptors of a process pre-exec, but there isn't any great way of
+         deterministically fetching all your current open file descriptors (e.g., the act
+         of reading [/proc/self/fd] opens a new file descriptor).
+
+         A much easier way is to iterate over all possible file descriptors and close
+         everything > 2, but this only possible if errors are silenced.
+
+         A [PREEXEC_FD_CLOSE_RANGE] flag would help in some cases, but not all (e.g.,
+         wanting to keep stdio open but also a handful of other descriptors). */
+      close(Int_val(Field(cmd, 0)));
       break;
     }
 

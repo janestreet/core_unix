@@ -174,7 +174,7 @@ module Error : sig
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+      https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     val to_errno : t -> int
   end
@@ -238,8 +238,8 @@ val unsetenv : string -> unit
 
 (** The termination status of a process. *)
 module Exit : sig
-  type error = [ `Exit_non_zero of int ] [@@deriving compare ~localize, sexp]
-  type t = (unit, error) Result.t [@@deriving compare ~localize, sexp]
+  type error = [ `Exit_non_zero of int ] [@@deriving bin_io, compare ~localize, sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, compare ~localize, sexp]
 
   val to_string_hum : t -> string
   val code : t -> int
@@ -252,9 +252,9 @@ module Exit_or_signal : sig
     [ Exit.error
     | `Signal of Signal.t
     ]
-  [@@deriving compare ~localize, sexp]
+  [@@deriving bin_io, compare ~localize, sexp]
 
-  type t = (unit, error) Result.t [@@deriving compare ~localize, sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, compare ~localize, sexp]
 
   (** [of_unix] assumes that any signal numbers in the incoming value are OCaml internal
       signal numbers. *)
@@ -269,9 +269,9 @@ module Exit_or_signal_or_stop : sig
     [ Exit_or_signal.error
     | `Stop of Signal.t
     ]
-  [@@deriving sexp]
+  [@@deriving bin_io, sexp]
 
-  type t = (unit, error) Result.t [@@deriving sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, sexp]
 
   (** [of_unix] assumes that any signal numbers in the incoming value are OCaml internal
       signal numbers. *)
@@ -1524,7 +1524,8 @@ end
 (** {6 Internet addresses} *)
 
 module Inet_addr : sig
-  type t = Unix.inet_addr [@@deriving bin_io, compare ~localize, hash, sexp_of]
+  type t = Unix.inet_addr
+  [@@deriving bin_io, compare ~localize, hash, sexp_of, sexp_grammar]
 
   val arg_type : t Core.Command.Arg_type.t
 
@@ -1536,7 +1537,8 @@ module Inet_addr : sig
 
   (** [Blocking_sexp] performs DNS lookup to resolve hostnames to IP addresses. *)
   module Blocking_sexp : sig
-    type t = Unix.inet_addr [@@deriving bin_io, compare ~localize, hash, sexp]
+    type t = Unix.inet_addr
+    [@@deriving bin_io, compare ~localize, hash, sexp, sexp_grammar]
   end
 
   include%template Comparable.S [@mode local] with type t := t
@@ -1583,12 +1585,14 @@ module Inet_addr : sig
 
   module Stable : sig
     module V1 : sig
-      type nonrec t = t [@@deriving hash, compare ~localize]
+      type nonrec t = t [@@deriving compare ~localize, hash]
 
       include
         Stable_with_witness
         with type t := t
          and type comparator_witness = comparator_witness
+
+      include Sexplib.Sexp_grammar.S with type t := t
     end
   end
 end
@@ -1598,7 +1602,7 @@ end
     are always normalized so the base address is the lowest IP address in the range, so
     for example [to_string (of_string "192.168.1.101/24") = "192.168.1.0/24"]. *)
 module Cidr : sig
-  type t [@@deriving sexp, bin_io]
+  type t [@@deriving bin_io, sexp, sexp_grammar]
 
   val arg_type : t Core.Command.Arg_type.t
 
@@ -1647,11 +1651,15 @@ module Cidr : sig
   val is_subset : t -> of_:t -> bool
 
   module Stable : sig
-    module%template V1 :
-      Stable_comparable.With_stable_witness.V1
-      [@mode local]
-      with type t = t
-      with type comparator_witness = comparator_witness
+    module%template V1 : sig
+      include
+        Stable_comparable.With_stable_witness.V1
+        [@mode local]
+        with type t = t
+        with type comparator_witness = comparator_witness
+
+      include Sexplib.Sexp_grammar.S with type t := t
+    end
   end
 end
 
@@ -2610,7 +2618,7 @@ module Ifaddr : sig
 
     (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-      https://opensource.janestreet.com/standards/#private-submodules *)
+        https://opensource.janestreet.com/standards/#private-submodules *)
     module Private : sig
       val core_unix_iff_to_int : t -> int
       val set_of_int : int -> Set.t

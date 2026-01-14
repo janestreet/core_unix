@@ -166,7 +166,7 @@ and Core\_kernel's
 
 - Changed `Command.exec` to allow executing a subcommand of the child executable.
 
-- Added `Command.Param.flag_optional_with_default_doc`, which takes a default
+- Added `Command.Param.flag_optional_with_default_doc_sexp`, which takes a default
   value and formats that value into the doc.
 
 - Added `Command.lazy_group` and `Command.Sexpable.Lazy`, so that help for lazy
