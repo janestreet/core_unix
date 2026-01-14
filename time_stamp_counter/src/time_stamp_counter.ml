@@ -374,8 +374,8 @@ module Calibrator = struct
 
   (* performance hack: [@cold] so [time] is always unboxed. [now_float] and
      [calibrate_using] need to be inlined into the same function for unboxed [time].
-     Preventing [calibrate] from being inlined makes the compiler's inlining decision
-     more predictable. *)
+     Preventing [calibrate] from being inlined makes the compiler's inlining decision more
+     predictable. *)
   let[@cold] calibrate t =
     calibrate_using t ~tsc:(now ()) ~time:(now_float ()) ~am_initializing:false
   ;;

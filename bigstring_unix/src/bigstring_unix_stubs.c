@@ -28,7 +28,7 @@
 #define bswap_16 OSSwapInt16
 #define bswap_32 OSSwapInt32
 #define bswap_64 OSSwapInt64
-#elif __GLIBC__
+#elif defined(__linux__)
 #include <byteswap.h>
 #include <malloc.h>
 #else

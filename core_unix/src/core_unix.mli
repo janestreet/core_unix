@@ -1385,7 +1385,7 @@ val times : unit -> process_times
 
 (** Set the last access time (second arg) and last modification time (third arg) for a
     file. Times are expressed in seconds from 00:00:00 GMT, Jan. 1, 1970. *)
-val utimes : string -> access:float @ local -> modif:float @ local -> unit
+val utimes : string @ local -> access:float @ local -> modif:float @ local -> unit
 
 (** Set the last access time and last modification time for a file with nanosecond
     precision. Setting [access] or [modif] to [None] will leave that value unchanged.
@@ -1527,7 +1527,8 @@ end
 (** {6 Internet addresses} *)
 
 module (Inet_addr @@ nonportable) : sig @@ portable
-  type t = Unix.inet_addr [@@deriving bin_io, compare ~localize, hash, sexp_of]
+  type t = Unix.inet_addr
+  [@@deriving bin_io, compare ~localize, hash, sexp_of, sexp_grammar]
 
   val arg_type : t Core.Command.Arg_type.t @@ nonportable
 
@@ -1539,7 +1540,8 @@ module (Inet_addr @@ nonportable) : sig @@ portable
 
   (** [Blocking_sexp] performs DNS lookup to resolve hostnames to IP addresses. *)
   module (Blocking_sexp @@ nonportable) : sig
-    type t = Unix.inet_addr [@@deriving bin_io, compare ~localize, hash, sexp]
+    type t = Unix.inet_addr
+    [@@deriving bin_io, compare ~localize, hash, sexp, sexp_grammar]
   end
 
   include%template Comparable.S [@mode local] with type t := t
@@ -1586,12 +1588,14 @@ module (Inet_addr @@ nonportable) : sig @@ portable
 
   module Stable : sig
     module V1 : sig
-      type nonrec t = t [@@deriving hash, compare ~localize]
+      type nonrec t = t [@@deriving compare ~localize, hash]
 
       include
         Stable_with_witness
         with type t := t
          and type comparator_witness = comparator_witness
+
+      include Sexplib.Sexp_grammar.S with type t := t
     end
   end
 end
@@ -1601,7 +1605,7 @@ end
     are always normalized so the base address is the lowest IP address in the range, so
     for example [to_string (of_string "192.168.1.101/24") = "192.168.1.0/24"]. *)
 module (Cidr @@ nonportable) : sig @@ portable
-  type t : immutable_data [@@deriving sexp, bin_io]
+  type t : immutable_data [@@deriving bin_io, sexp, sexp_grammar]
 
   val arg_type : t Core.Command.Arg_type.t @@ nonportable
 
@@ -1650,11 +1654,15 @@ module (Cidr @@ nonportable) : sig @@ portable
   val is_subset : t -> of_:t -> bool
 
   module Stable : sig
-    module%template V1 :
-      Stable_comparable.With_stable_witness.V1
-      [@mode local]
-      with type t = t
-      with type comparator_witness = comparator_witness
+    module%template V1 : sig
+      include
+        Stable_comparable.With_stable_witness.V1
+        [@mode local]
+        with type t = t
+        with type comparator_witness = comparator_witness
+
+      include Sexplib.Sexp_grammar.S with type t := t
+    end
   end
 end
 

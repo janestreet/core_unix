@@ -1269,10 +1269,10 @@ end
 
 [%%else]
 
-(* Uncomment this if you need to suppress "unused <blah>" warnings.
-   Keeping commented out because this section is not checked by the CI, so is likely
-   to go stale / cause maintenance pains.  *)
-(* module _ = Thread
+(* Uncomment this if you need to suppress "unused <blah>" warnings. Keeping commented out
+   because this section is not checked by the CI, so is likely to go stale / cause
+   maintenance pains. *)
+(*=module _ = Thread
 module _ = Syscall_result
 
 let _ = isolated_cpus

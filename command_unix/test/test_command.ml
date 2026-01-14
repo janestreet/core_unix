@@ -4,7 +4,12 @@ open! Import
 open! Expect_test_helpers_core
 open! Command
 open! Command.Private
-module Expect_test_config = Core.Expect_test_config
+
+module Expect_test_config = struct
+  include Core.Expect_test_config
+
+  let sanitize = Expect_test_helpers_core.hide_positions_in_string
+end
 
 let run ~argv ?when_parsing_succeeds ?verbose_on_parse_error command =
   try Command_unix.run ~argv ?when_parsing_succeeds ?verbose_on_parse_error command with
@@ -419,7 +424,6 @@ let%expect_test "choose_one strings" =
             (flag "-a" no_arg ~doc:"")
             (flag "-b,c" (optional int) ~doc:""))));
   Expect_test_patterns.require_match
-    [%here]
     {|
     (Error
      ("For simplicity, [Command.Spec.choose_one] does not support names with commas."
@@ -1052,4 +1056,99 @@ let%expect_test "COMMAND_OUTPUT_HELP_SEXP" =
             (aliases (-?))))))))
      (command.ml.Exit_called (status 0)))
     |}]
+;;
+
+let empty_cmd name =
+  Command.basic
+    ~summary:name
+    (let%map_open.Command () = return () in
+     fun () -> print_endline name)
+;;
+
+let%expect_test "extend_group_exn adds subcommands" =
+  let base = Command.group ~summary:"base" [ "foo", empty_cmd "foo" ] in
+  let extended =
+    Command.extend_group_exn
+      base
+      ~subcommands:[ "added-subcommand", empty_cmd "added-subcommand" ]
+  in
+  run ~argv:[ "exe"; "foo" ] extended;
+  [%expect {| foo |}];
+  run ~argv:[ "exe"; "bar" ] extended;
+  [%expect
+    {|
+    base
+
+      exe SUBCOMMAND
+
+    === subcommands ===
+
+      added-subcommand           . added-subcommand
+      foo                        . foo
+      version                    . print version information
+      help                       . explain a given subcommand (perhaps recursively)
+
+    unknown subcommand bar
+    (raised (command.ml.Exit_called (status 1)))
+    |}];
+  run ~argv:[ "exe"; "-help" ] extended;
+  [%expect
+    {|
+    base
+
+      exe SUBCOMMAND
+
+    === subcommands ===
+
+      added-subcommand           . added-subcommand
+      foo                        . foo
+      version                    . print version information
+      help                       . explain a given subcommand (perhaps recursively)
+
+    (command.ml.Exit_called (status 0))
+    |}]
+;;
+
+let%expect_test "extend_group_exn raises on duplicate subcommand" =
+  let subcommand_name = "foo" in
+  let base = Command.group ~summary:"base" [ subcommand_name, empty_cmd "foo" ] in
+  let extended =
+    Command.extend_group_exn base ~subcommands:[ subcommand_name, empty_cmd "foo" ]
+  in
+  run ~argv:[ "exe"; "foo" ] extended;
+  [%expect {| (raised (Failure "there is already a subcommand named foo")) |}]
+;;
+
+let%expect_test "extend_group_exn raises on non-group command" =
+  require_does_raise (fun () ->
+    Command.extend_group_exn (empty_cmd "base") ~subcommands:[ "bar", empty_cmd "bar" ]);
+  [%expect
+    {|
+    ("cannot extend a basic command, expected a group"
+     (called_from lib/command_unix/test/test_command.ml:LINE:COL))
+    |}]
+;;
+
+let%expect_test "extend_group_exn rejects underscores in names" =
+  let base = Command.group ~summary:"base" [] in
+  require_does_raise (fun () ->
+    Command.extend_group_exn base ~subcommands:[ "foo_bar", empty_cmd "test" ]);
+  [%expect
+    {| (Failure "subcommand foo_bar contains an underscore. Use a dash instead.") |}]
+;;
+
+let%expect_test "extend_group_exn normalizes case" =
+  let base = Command.group ~summary:"base" [] in
+  let extended = Command.extend_group_exn base ~subcommands:[ "FOO", empty_cmd "foo" ] in
+  run ~argv:[ "exe"; "foo" ] extended;
+  [%expect {| foo |}]
+;;
+
+let%expect_test "extend_group_exn works with lazy_group" =
+  let base = Command.lazy_group ~summary:"base" (lazy [ "foo", empty_cmd "foo" ]) in
+  let extended = Command.extend_group_exn base ~subcommands:[ "bar", empty_cmd "bar" ] in
+  run ~argv:[ "exe"; "foo" ] extended;
+  [%expect {| foo |}];
+  run ~argv:[ "exe"; "bar" ] extended;
+  [%expect {| bar |}]
 ;;

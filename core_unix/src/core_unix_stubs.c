@@ -1589,6 +1589,16 @@ char *strptime_callback(const char *s, const char *fmt, struct tm *tm, locale_t 
   return strptime(s, fmt, tm);
 }
 
+/* [musl] infamously does not define its own preprocessor macro, but this is a
+   reasonable way of detecting it. This shim exists because [musl] doesn't implement
+   [strptime_l], so we fall back to calling [strptime] and simply discard the locale. */
+#if defined(__linux__) && !defined(__GLIBC__)
+static char *strptime_l(const char *s, const char *fmt, struct tm *tm, locale_t locale) {
+  (void)locale;
+  return strptime(s, fmt, tm);
+}
+#endif
+
 CAMLprim value core_unix_strptime(value v_allow_trailing_input, value v_fmt, value v_s) {
   return core_unix_strptime_gen((locale_t)0, v_allow_trailing_input, v_fmt, v_s,
                                 strptime_callback);

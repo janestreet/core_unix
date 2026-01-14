@@ -27,8 +27,8 @@ let read_stdout_and_stderr (process_info : Core_unix.Process_info.t) =
       | Some (Error exn) -> raise exn)
   in
   (* We might hang forever trying to join the reading threads if the child process keeps
-     the file descriptor open. Not handling this because I think we've never seen it
-     in the wild despite running vulnerable code for years. *)
+     the file descriptor open. Not handling this because I think we've never seen it in
+     the wild despite running vulnerable code for years. *)
   (* We have to start both threads before joining any of them. *)
   let finish_stdout = start_reading process_info.stdout (Info.of_string "stdout") in
   let finish_stderr = start_reading process_info.stderr (Info.of_string "stderr") in

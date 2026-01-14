@@ -230,9 +230,13 @@ CAMLprim value core_linux_sendmsg_nonblocking_no_sigpipe_stub(value v_fd, value 
   int count = Int_val(v_count);
   ssize_t ret;
   struct iovec *iovecs = caml_stat_alloc(sizeof(struct iovec) * count);
-  struct msghdr msghdr = {NULL, 0, NULL, 0, NULL, 0, 0};
-  msghdr.msg_iov = iovecs;
-  msghdr.msg_iovlen = count;
+  struct msghdr msghdr = {.msg_name = NULL,
+                          .msg_namelen = 0,
+                          .msg_iov = iovecs,
+                          .msg_iovlen = count,
+                          .msg_control = NULL,
+                          .msg_controllen = 0,
+                          .msg_flags = 0};
   for (--count; count >= 0; --count) {
     struct iovec *iovec = &iovecs[count];
     value v_iovec = Field(v_iovecs, count);

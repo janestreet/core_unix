@@ -272,9 +272,8 @@ let[@cold] error_attempt_to_unlock_an_unlocked_mutex t =
 
 let unlock t =
   let current_thread_id = current_thread_id () in
-  (* We need the following test-and-set to be atomic so that there is a definitive
-     winner in a race between multiple unlockers, so that one unlock succeeds and the
-     rest fail. *)
+  (* We need the following test-and-set to be atomic so that there is a definitive winner
+     in a race between multiple unlockers, so that one unlock succeeds and the rest fail. *)
   (* BEGIN ATOMIC *)
   if Thread_id_option.is_some t.id_of_thread_holding_lock
   then

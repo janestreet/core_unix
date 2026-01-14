@@ -202,7 +202,7 @@ let unsafe_sent t result =
   else Syscall_result.Int.reinterpret_error_exn result
 ;;
 
-(* Don't use [Or_error.map].  The natural usage results in a partially applied function,
+(* Don't use [Or_error.map]. The natural usage results in a partially applied function,
    which is slower to call. *)
 let send_nonblocking_no_sigpipe () =
   match Bigstring_unix.send_nonblocking_no_sigpipe with

@@ -754,7 +754,7 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
         (string -4611686018.42738790500s)
         (reason "span would be outside of int63 range")))
       |}];
-    (* Minute overflow boundary ----------------------------------------- *)
+    (*=Minute overflow boundary ----------------------------------------- *)
     (* Round towards zero vs round away from zero *)
     let minuteify_rtz x = x * Bigint.of_int 100 / Bigint.of_int 60 in
     let minuteify_raz x =
@@ -814,7 +814,7 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
         (string -76861433.6404564650834m)
         (reason "span would be outside of int63 range")))
       |}];
-    (* Hour overflow boundary ----------------------------------------- *)
+    (*=Hour overflow boundary ----------------------------------------- *)
     (* Round towards zero vs round away from zero *)
     let hourify_rtz x = x * Bigint.of_int 10000 / Bigint.of_int 3600 in
     let hourify_raz x =
@@ -874,7 +874,7 @@ module%test [@name "Time_ns.Span.to_string,of_string"] _ = struct
         (string -1281023.894007607751389h)
         (reason "span would be outside of int63 range")))
       |}];
-    (* Day overflow boundary ----------------------------------------- *)
+    (*=Day overflow boundary ----------------------------------------- *)
     (* Round towards zero vs round away from zero *)
     let dayify_rtz x = x * Bigint.of_int 1000000 / Bigint.of_int 86400 in
     let dayify_raz x =
