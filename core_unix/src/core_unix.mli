@@ -390,6 +390,8 @@ module Pre_exec_command : sig
         ; ignore_eperm : bool
         }
     | Sched_setaffinity of int list
+    | Chdir of string
+    | Setsid of unit
   [@@deriving sexp]
 end
 
@@ -2564,23 +2566,6 @@ val set_mcast_ifname : File_descr.t -> string -> unit
 
 module Priority : sig
   val nice : int -> int
-end
-
-(** For keeping your memory in RAM, i.e. preventing it from being swapped out. *)
-module Mman : sig
-  module Mcl_flags : sig
-    type t =
-      | Current
-      | Future
-    [@@deriving sexp]
-  end
-
-  (** Lock all pages in this process's virtual address space into physical memory. See
-      [man mlockall] for more details. *)
-  val mlockall : Mcl_flags.t list -> unit
-
-  (** Unlock previously locked pages. See [man munlockall]. *)
-  val munlockall : unit -> unit
 end
 
 (** A network interface on the local machine. See [man getifaddrs]. *)

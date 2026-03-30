@@ -5,7 +5,7 @@
  (name error_checking_mutex)
  (public_name core_unix.error_checking_mutex)
  (preprocess
-  (pps ppx_jane))
+  (pps ppx_jane -compare-require-explicit-locality))
  (libraries core_kernel.caml_threads core threads))
 
 (rule

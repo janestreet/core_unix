@@ -6,4 +6,4 @@
  (public_name core_unix.syslog)
  (libraries core)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

@@ -6,4 +6,4 @@
  (public_name core_unix.signal_unix)
  (libraries core_kernel.caml_unix core unix)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

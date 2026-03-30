@@ -190,7 +190,8 @@ module type S1 = sig
       [[@@deriving bin_io, sexp]] extensions, which inline the relevant function
       signatures (like [bin_read_t] and [t_of_sexp]). *)
   type 'a t
-  [@@deriving (bin_io [@mode m]), sexp, (compare [@mode m]), (equal [@mode m]), hash]
+  [@@deriving
+    (bin_io [@mode m]), sexp ~stackify, (compare [@mode m]), (equal [@mode m]), hash]
 
   include Gen with type 'a t := 'a t with type 'a bound := 'a (** @inline *)
 
@@ -198,6 +199,10 @@ module type S1 = sig
       type 'a t [@@deriving bin_io, sexp]
 
       include Gen_set with type 'a t := 'a t with type 'a bound := 'a (** @inline *)
+
+      (** [to_list] will return a list of non-overlapping intervals defining the set, in
+          ascending order. *)
+      val to_list : 'a t -> 'a interval list
     end
     with type 'a interval := 'a t
 end
@@ -309,7 +314,7 @@ module type%template Interval = sig
       {[
         module Percent = struct
           module T = struct
-            type t = float [@@deriving bin_io, compare, equal, hash, sexp]
+            type t = float [@@deriving bin_io, compare, equal, hash, sexp ~stackify]
           end
 
           include T
@@ -335,7 +340,7 @@ module type%template Interval = sig
         , compare ~localize
         , equal ~localize
         , hash
-        , sexp
+        , sexp ~stackify
         , sexp_grammar
         , stable_witness]
 

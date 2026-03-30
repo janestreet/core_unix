@@ -65,7 +65,7 @@ module Level = struct
       | NOTICE
       | INFO
       | DEBUG
-    [@@deriving sexp, enumerate, compare]
+    [@@deriving sexp, enumerate, compare ~localize]
 
     let compare a b = compare b a (* listed in descending order *)
     let%test_unit _ = [%test_result: int] ~expect:1 (compare EMERG DEBUG)

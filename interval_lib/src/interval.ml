@@ -41,10 +41,11 @@ module Stable = struct
              of_sexp_error "Interval.t_of_sexp: expected pair or empty list" sexp)
       ;;
 
-      let sexp_of_interval sexp_of_a t =
+      let%template[@alloc a = (heap, stack)] sexp_of_interval sexp_of_a t =
         match t with
         | Empty -> Sexp.List []
-        | Interval (lb, ub) -> Sexp.List [ sexp_of_a lb; sexp_of_a ub ]
+        | Interval (lb, ub) ->
+          Sexp.List [ sexp_of_a lb; sexp_of_a ub ] [@exclave_if_stack a]
       ;;
 
       let interval_sexp_grammar a_sexp_grammar =
@@ -64,7 +65,7 @@ module Stable = struct
 
     type 'a t = 'a interval
     [@@deriving
-      sexp
+      sexp ~stackify
       , bin_io ~localize
       , compare ~localize
       , equal ~localize
@@ -77,7 +78,7 @@ module Stable = struct
       module T = struct
         type t = float interval
         [@@deriving
-          sexp
+          sexp ~stackify
           , bin_io ~localize
           , compare ~localize
           , equal ~localize
@@ -95,7 +96,7 @@ module Stable = struct
       module T = struct
         type t = int interval
         [@@deriving
-          sexp
+          sexp ~stackify
           , bin_io ~localize
           , compare ~localize
           , equal ~localize
@@ -116,7 +117,7 @@ module Stable = struct
       module T = struct
         type t = Core.Time_float.Stable.Ofday.V1.t interval
         [@@deriving
-          sexp
+          sexp ~stackify
           , bin_io ~localize
           , compare ~localize
           , equal ~localize
@@ -134,7 +135,7 @@ module Stable = struct
       module T = struct
         type t = Core.Time_ns.Stable.Ofday.V1.t interval
         [@@deriving
-          sexp
+          sexp ~stackify
           , bin_io ~localize
           , compare ~localize
           , equal ~localize
@@ -430,7 +431,7 @@ module%template.portable [@modality p] Raw_make (T : Bound) = struct
 end
 
 type 'a t = 'a interval
-[@@deriving bin_io ~localize, sexp, compare ~localize, equal ~localize, hash]
+[@@deriving bin_io ~localize, sexp ~stackify, compare ~localize, equal ~localize, hash]
 
 module%template C = Raw_make [@modality portable] (struct
     type 'a bound = 'a
@@ -451,6 +452,8 @@ module Set = struct
   [@@deriving bin_io ~localize, sexp, compare ~localize, equal ~localize, hash]
 
   include C.Set
+
+  let to_list (t : 'a t) : 'a interval list = t
 end
 
 [%%template

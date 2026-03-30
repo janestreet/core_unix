@@ -589,22 +589,6 @@ module Priority = struct
   external nice : int -> int = "core_unix_nice"
 end
 
-module Mman = struct
-  module Mcl_flags = struct
-    type t =
-      (* Do not change the ordering of this type without also changing the C stub. *)
-      | Current
-      | Future
-    [@@deriving sexp]
-  end
-
-  external unix_mlockall : Mcl_flags.t array -> unit = "core_unix_mlockall"
-  external unix_munlockall : unit -> unit = "core_unix_munlockall"
-
-  let mlockall flags = unix_mlockall (List.to_array flags)
-  let munlockall = unix_munlockall
-end
-
 let dirname_r filename = "dirname", atom filename
 let filename_r filename = "filename", atom filename
 let file_perm_r perm = "perm", atom (Printf.sprintf "0o%o" perm)
@@ -1199,7 +1183,7 @@ let%template read_write f ?restart ?pos ?len fd ~buf =
     ?restart
     (fun () -> f fd ~buf ~pos ~len)
     (fun () -> [ fd_r fd; "pos", Int.sexp_of_t pos; len_r len ]) [@nontail]
-[@@mode c = (uncontended, shared)]
+[@@mode v = (read_write, read)]
 ;;
 
 let read_write_string f ?restart ?pos ?len fd ~buf =
@@ -1217,9 +1201,9 @@ let read_write_string f ?restart ?pos ?len fd ~buf =
 ;;
 
 let read = read_write Unix.read
-let write = [%template read_write [@mode shared]] Unix.write ?restart:None
+let write = [%template read_write [@mode read]] Unix.write ?restart:None
 let write_substring = read_write_string Unix.write_substring ?restart:None
-let single_write = [%template read_write [@mode shared]] Unix.single_write
+let single_write = [%template read_write [@mode read]] Unix.single_write
 let single_write_substring = read_write_string Unix.single_write_substring
 let in_channel_of_descr = Unix.in_channel_of_descr
 let out_channel_of_descr = Unix.out_channel_of_descr
@@ -2123,6 +2107,8 @@ module Pre_exec_command = struct
         ; ignore_eperm : bool
         }
     | Sched_setaffinity of int list
+    | Chdir of string
+    | Setsid of unit (* Takes a unit argument to simplify C stubs - all ctors are boxed *)
   [@@deriving sexp]
 end
 

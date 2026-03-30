@@ -32,6 +32,12 @@ type tcp_bool_option =
   | TCP_QUICKACK
 [@@deriving sexp, bin_io]
 
+type tcp_int_option =
+  | TCP_KEEPIDLE
+  | TCP_KEEPINTVL
+  | TCP_KEEPCNT
+[@@deriving sexp, bin_io]
+
 type tcp_string_option = TCP_CONGESTION [@@deriving sexp, bin_io]
 
 module Bound_to_interface = struct
@@ -210,6 +216,7 @@ module Null_toplevel = struct
   let get_bind_to_interface = u "Linux_ext.get_bind_to_interface"
   let get_terminal_size = u "Linux_ext.get_terminal_size"
   let gettcpopt_bool = u "Linux_ext.gettcpopt_bool"
+  let gettcpopt_int = u "Linux_ext.gettcpopt_int"
   let gettcpopt_string = u "Linux_ext.gettcpopt_string"
   let setpriority = u "Linux_ext.setpriority"
   let getpriority = u "Linux_ext.getpriority"
@@ -227,12 +234,26 @@ module Null_toplevel = struct
   let sendfile = u "Linux_ext.sendfile"
   let sendmsg_nonblocking_no_sigpipe = u "Linux_ext.sendmsg_nonblocking_no_sigpipe"
   let settcpopt_bool = u "Linux_ext.settcpopt_bool"
+  let settcpopt_int = u "Linux_ext.settcpopt_int"
   let settcpopt_string = u "Linux_ext.settcpopt_string"
   let peer_credentials = u "Linux_ext.peer_credentials"
   let setfsuid = u "Linux_ext.setfsuid"
   let setfsgid = u "Linux_ext.setfsgid"
   let getfsuid = u "Linux_ext.getfsuid"
   let getfsgid = u "Linux_ext.getfsgid"
+
+  module Mman = struct
+    module Mcl_flags = struct
+      type t =
+        | Current
+        | Future
+        | Onfault
+      [@@deriving sexp]
+    end
+
+    let mlockall = u "Linux_ext.Mman.mlockall"
+    let munlockall = u "Linux_ext.Mman.munlockall"
+  end
 
   module Epoll = Epoll.Impl
 end
@@ -241,6 +262,12 @@ module Null : Linux_ext_intf.S = struct
   type nonrec tcp_bool_option = tcp_bool_option =
     | TCP_CORK
     | TCP_QUICKACK
+  [@@deriving sexp, bin_io]
+
+  type nonrec tcp_int_option = tcp_int_option =
+    | TCP_KEEPIDLE
+    | TCP_KEEPINTVL
+    | TCP_KEEPCNT
   [@@deriving sexp, bin_io]
 
   type nonrec tcp_string_option = tcp_string_option = TCP_CONGESTION
@@ -896,6 +923,19 @@ external settcpopt_bool
   -> unit
   = "core_linux_settcpopt_bool_stub"
 
+external gettcpopt_int
+  :  file_descr
+  -> tcp_int_option
+  -> int
+  = "core_linux_gettcpopt_int_stub"
+
+external settcpopt_int
+  :  file_descr
+  -> tcp_int_option
+  -> int
+  -> unit
+  = "core_linux_settcpopt_int_stub"
+
 external gettcpopt_string
   :  file_descr
   -> tcp_string_option
@@ -1102,6 +1142,25 @@ external setfsgid : gid:int -> int = "core_linux_setfsgid"
 let getfsuid () = setfsuid ~uid:(-1)
 let getfsgid () = setfsgid ~gid:(-1)
 
+module Mman = struct
+  module Mcl_flags = struct
+    type t =
+      (* Do not change the ordering of this type without also changing the C stub. *)
+      | Current
+      | Future
+      | Onfault
+    [@@deriving sexp]
+  end
+
+  external unix_mlockall : Mcl_flags.t array -> unit = "core_unix_mlockall"
+  external unix_munlockall : unit -> unit = "core_unix_munlockall"
+
+  let mlockall_raw flags = unix_mlockall (List.to_array flags)
+  let munlockall_raw = unix_munlockall
+  let mlockall = Ok mlockall_raw
+  let munlockall = Ok munlockall_raw
+end
+
 module Epoll = Epoll.Impl
 
 let cores = Ok cores
@@ -1116,6 +1175,7 @@ let bind_to_interface = Ok bind_to_interface
 let get_bind_to_interface = Ok get_bind_to_interface
 let get_terminal_size = Ok get_terminal_size
 let gettcpopt_bool = Ok gettcpopt_bool
+let gettcpopt_int = Ok gettcpopt_int
 let gettcpopt_string = Ok gettcpopt_string
 let setpriority = Ok setpriority
 let getpriority = Ok getpriority
@@ -1133,6 +1193,7 @@ let send_nonblocking_no_sigpipe = Ok send_nonblocking_no_sigpipe
 let sendfile = Ok sendfile
 let sendmsg_nonblocking_no_sigpipe = Ok sendmsg_nonblocking_no_sigpipe
 let settcpopt_bool = Ok settcpopt_bool
+let settcpopt_int = Ok settcpopt_int
 let settcpopt_string = Ok settcpopt_string
 let peer_credentials = Ok peer_credentials
 let setfsuid = Ok setfsuid

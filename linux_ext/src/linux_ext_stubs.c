@@ -35,6 +35,7 @@
 #include <linux/limits.h> /* needed to build with musl */
 
 #include <sys/sysinfo.h>
+#include <sys/mman.h>
 
 #include "ocaml_utils.h"
 #include "unix_utils.h"
@@ -93,6 +94,7 @@ CAMLprim value core_linux_sysinfo(value __unused v_unit) {
 /**/
 
 static const int linux_tcpopt_bool[] = {TCP_CORK, TCP_QUICKACK};
+static const int linux_tcpopt_int[] = {TCP_KEEPIDLE, TCP_KEEPINTVL, TCP_KEEPCNT};
 static const int linux_tcpopt_string[] = {TCP_CONGESTION};
 
 enum option_type {
@@ -126,6 +128,18 @@ CAMLprim value core_linux_settcpopt_bool_stub(value v_socket, value v_option,
                                               value v_status) {
   int option = linux_tcpopt_bool[Int_val(v_option)];
   return caml_unix_setsockopt_aux("setsockopt", TYPE_BOOL, SOL_TCP, option, v_socket,
+                                  v_status);
+}
+
+CAMLprim value core_linux_gettcpopt_int_stub(value v_socket, value v_option) {
+  int option = linux_tcpopt_int[Int_val(v_option)];
+  return caml_unix_getsockopt_aux("getsockopt", TYPE_INT, SOL_TCP, option, v_socket);
+}
+
+CAMLprim value core_linux_settcpopt_int_stub(value v_socket, value v_option,
+                                             value v_status) {
+  int option = linux_tcpopt_int[Int_val(v_option)];
+  return caml_unix_setsockopt_aux("setsockopt", TYPE_INT, SOL_TCP, option, v_socket,
                                   v_status);
 }
 
@@ -959,6 +973,29 @@ CAMLprim value core_linux_setxattr(value v_follow_symlinks, value v_path, value 
 }
 
 #endif /* JSC_EVENTFD */
+
+/* Memory locking */
+
+static const int mman_mcl_flags_table[] = {MCL_CURRENT, MCL_FUTURE, MCL_ONFAULT};
+
+CAMLprim value core_unix_mlockall(value v_flags) {
+  CAMLparam1(v_flags);
+  size_t i, mask;
+
+  for (i = 0, mask = 0; i < Wosize_val(v_flags); i++)
+    mask |= mman_mcl_flags_table[Int_val(Field(v_flags, i))];
+
+  if (mlockall(mask) < 0)
+    uerror("mlockall", Nothing);
+
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value core_unix_munlockall() {
+  if (munlockall() < 0)
+    uerror("munlockall", Nothing);
+  return Val_unit;
+}
 
 #else
 

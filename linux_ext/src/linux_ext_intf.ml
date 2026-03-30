@@ -87,6 +87,20 @@ module type S = sig
         This option should not be used in code intended to be portable. *)
   [@@deriving sexp, bin_io]
 
+  type tcp_int_option =
+    | TCP_KEEPIDLE
+    (** (since Linux 2.4) The time (in seconds) the connection needs to remain idle before
+        TCP starts sending keepalive probes, if the socket option SO_KEEPALIVE has been
+        set on this socket. This option should not be used in code intended to be
+        portable. *)
+    | TCP_KEEPINTVL
+    (** (since Linux 2.4) The time (in seconds) between individual keepalive probes. This
+        option should not be used in code intended to be portable. *)
+    | TCP_KEEPCNT
+    (** (since Linux 2.4) The maximum number of keepalive probes TCP should send before
+        dropping the connection. This option should not be used in code intended to be
+        portable. *)
+
   type tcp_string_option =
     | TCP_CONGESTION
     (** (Since Linux 2.6.13) Get or set the congestion-control algorithm for this socket.
@@ -108,6 +122,14 @@ module type S = sig
   (** [settcpopt_bool sock opt v] sets the current value of the boolean TCP socket option
       [opt] for socket [sock] to value [v]. *)
   val settcpopt_bool : (File_descr.t -> tcp_bool_option -> bool -> unit) Or_error.t
+
+  (** [gettcpopt_int sock opt] Returns the current value of the int TCP socket option
+      [opt] for socket [sock]. *)
+  val gettcpopt_int : (File_descr.t -> tcp_int_option -> int) Or_error.t
+
+  (** [settcpopt_int sock opt v] sets the current value of the int TCP socket option [opt]
+      for socket [sock] to value [v]. *)
+  val settcpopt_int : (File_descr.t -> tcp_int_option -> int -> unit) Or_error.t
 
   (** [gettcpopt_string sock opt] Returns the current value of the string TCP socket
       option [opt] for socket [sock]. *)
@@ -589,6 +611,36 @@ module type S = sig
   (** Get the group identity used for filesystem checks. This is a wrapper around
       [setfsgid ~fsgid:(-1)] *)
   val getfsgid : (unit -> int) Or_error.t
+
+  (** For keeping your memory in RAM, i.e. preventing it from being swapped out. *)
+  module Mman : sig
+    module Mcl_flags : sig
+      type t =
+        | Current
+        (** Lock all pages which are currently mapped into the address space of the
+            process *)
+        | Future
+        (** Lock all pages which will become mapped into the address space of the process
+            in the future *)
+        | Onfault (** Lock pages only when they are faulted in (since Linux 4.4) *)
+      [@@deriving sexp]
+    end
+
+    (** [mlockall flags] locks all pages mapped into the address space of the calling
+        process. This includes the pages of the code, data and stack segment, as well as
+        shared libraries, user space kernel data, shared memory, and memory-mapped files.
+        All mapped pages are guaranteed to be resident in RAM when the call returns
+        successfully; the pages are guaranteed to stay in RAM until later unlocked.
+
+        Raises [Unix_error] on error. See [man 2 mlockall] for details. *)
+    val mlockall : (Mcl_flags.t list -> unit) Or_error.t
+
+    (** [munlockall ()] unlocks all pages mapped into the address space of the calling
+        process.
+
+        Raises [Unix_error] on error. See [man 2 munlockall] for details. *)
+    val munlockall : (unit -> unit) Or_error.t
+  end
 
   module Epoll : Epoll.S
 
