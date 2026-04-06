@@ -735,6 +735,39 @@ let%expect_test "cpu_list_of_string_exn" =
     |}]
 ;;
 
+let%expect_test "TCP_KEEPALIVE" =
+  let gettcpopt_int = Or_error.ok_exn Linux_ext.gettcpopt_int in
+  let settcpopt_int = Or_error.ok_exn Linux_ext.settcpopt_int in
+  let sock = Unix.socket ~domain:PF_INET ~kind:SOCK_STREAM ~protocol:0 () in
+  settcpopt_int sock TCP_KEEPIDLE 30;
+  let idle = gettcpopt_int sock TCP_KEEPIDLE in
+  print_s [%sexp (idle : int)];
+  [%expect {| 30 |}];
+  settcpopt_int sock TCP_KEEPCNT 4;
+  let idle = gettcpopt_int sock TCP_KEEPCNT in
+  print_s [%sexp (idle : int)];
+  [%expect {| 4 |}];
+  settcpopt_int sock TCP_KEEPINTVL 15;
+  let idle = gettcpopt_int sock TCP_KEEPINTVL in
+  print_s [%sexp (idle : int)];
+  [%expect {| 15 |}];
+  List.iter [ 0; -1 ] ~f:(fun garbage ->
+    Expect_test_helpers_base.show_raise (fun () -> settcpopt_int sock TCP_KEEPCNT garbage));
+  [%expect
+    {|
+    (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
+    (raised (Unix.Unix_error "Invalid argument" setsockopt ""))
+    |}];
+  Unix.close sock;
+  Expect_test_helpers_base.show_raise (fun () -> gettcpopt_int sock TCP_KEEPIDLE);
+  Expect_test_helpers_base.show_raise (fun () -> settcpopt_int sock TCP_KEEPIDLE 30);
+  [%expect
+    {|
+    (raised (Unix.Unix_error "Bad file descriptor" getsockopt ""))
+    (raised (Unix.Unix_error "Bad file descriptor" setsockopt ""))
+    |}]
+;;
+
 let%expect_test "TCP_CONGESTION" =
   let gettcpopt_string = Or_error.ok_exn Linux_ext.gettcpopt_string in
   let settcpopt_string = Or_error.ok_exn Linux_ext.settcpopt_string in

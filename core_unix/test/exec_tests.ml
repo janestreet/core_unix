@@ -322,3 +322,40 @@ let%expect_test "fork_exec fork failure" =
       Unix.waitpid_exn pid;
       [%expect {| (raised (Core_unix.fork_exec vfork EAGAIN)) |}])
 ;;
+
+let%expect_test "fork_exec preexec chdir" =
+  let parent_cwd = Unix.getcwd () in
+  Unix.fork_exec ~preexec:[ Chdir "/tmp" ] ~use_path:true ~prog:"pwd" ~argv:[ "pwd" ] ()
+  |> Unix.waitpid_exn;
+  [%expect {| /tmp |}];
+  (* Test that chdir to a nonexistent directory fails *)
+  show_raise (fun () ->
+    Unix.fork_exec
+      ~preexec:[ Chdir "/nonexistent/directory/that/does/not/exist" ]
+      ~prog:"/bin/true"
+      ~argv:[ "true" ]
+      ()
+    |> Unix.waitpid_exn);
+  [%expect
+    {|
+    (raised (
+      Core_unix.fork_exec
+      (Chdir /nonexistent/directory/that/does/not/exist)
+      ENOENT))
+    |}];
+  assert (String.equal parent_cwd (Unix.getcwd ()))
+;;
+
+let%expect_test "fork_exec preexec setsid" =
+  Unix.fork_exec ~preexec:[ Setsid () ] ~prog:"/bin/echo" ~argv:[ "echo"; "ok" ] ()
+  |> Unix.waitpid_exn;
+  [%expect {| ok |}];
+  show_raise (fun () ->
+    Unix.fork_exec
+      ~preexec:[ Setsid (); Setsid () ]
+      ~prog:"/bin/echo"
+      ~argv:[ "echo"; "ok" ]
+      ()
+    |> Unix.waitpid_exn);
+  [%expect {| (raised (Core_unix.fork_exec (Setsid ()) EPERM)) |}]
+;;

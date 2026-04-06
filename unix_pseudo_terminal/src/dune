@@ -7,7 +7,7 @@
  (libraries core_kernel.caml_unix core)
  (preprocessor_deps config_ext.h)
  (preprocess
-  (pps ppx_jane ppx_optcomp)))
+  (pps ppx_jane ppx_optcomp -compare-require-explicit-locality)))
 
 (install
  (section lib)

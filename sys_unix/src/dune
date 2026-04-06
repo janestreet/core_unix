@@ -6,4 +6,4 @@
  (public_name core_unix.sys_unix)
  (libraries core_kernel.caml_unix core)
  (preprocess
-  (pps ppx_jane ppx_optcomp)))
+  (pps ppx_jane ppx_optcomp -compare-require-explicit-locality)))

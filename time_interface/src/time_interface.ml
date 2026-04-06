@@ -3,11 +3,11 @@
 
 open! Core
 
-module type S = sig
+module type%template [@mode m = (local, global)] S = sig
   type t
 
   include Binable.S with type t := t
-  include Comparable.S with type t := t
+  include Comparable.S [@mode m] with type t := t
   include Hashable.S with type t := t
   include Sexpable.S with type t := t
   include Stringable.S with type t := t
@@ -16,7 +16,7 @@ module type S = sig
     type t
 
     include Binable.S with type t := t
-    include Comparable.S with type t := t
+    include Comparable.S [@mode m] with type t := t
     include Comparable.With_zero with type t := t
     include Hashable.S with type t := t
     include Sexpable.S with type t := t
@@ -75,7 +75,7 @@ module type S = sig
     type t
 
     include Binable with type t := t
-    include Comparable.S with type t := t
+    include Comparable.S [@mode m] with type t := t
     include Hashable.S with type t := t
     include Sexpable.S with type t := t
 

@@ -108,7 +108,7 @@ let[@inline] now () =
   | Bytecode | Other _ -> tsc64 |> Int63.of_int64_trunc
 ;;
 
-external nanosleep : float -> float = "tsc_nanosleep"
+external nanosleep : float -> float @@ portable = "tsc_nanosleep"
 
 module Calibrator = struct
   (* performance hack: prevent writes to this record from boxing floats by making all

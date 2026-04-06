@@ -1,3 +1,5 @@
+@@ portable
+
 (** High-performance timing.
 
     This module provides the fast function [now ()] which is our best effort
@@ -120,6 +122,7 @@ module Span : sig
   val ( + ) : t -> t -> t
   val ( - ) : t -> t -> t
   val zero : t
+  val max_value : t
   val to_ns : t -> calibrator:Calibrator.t -> Int63.t
   val of_ns : Int63.t -> calibrator:Calibrator.t -> t
   val to_time_ns_span : t -> calibrator:Calibrator.t -> Time_ns.Span.t
@@ -139,7 +142,7 @@ end
 val now : unit -> t @@ portable
 val diff : t -> t -> Span.t
 val add : t -> Span.t -> t
-val to_int63 : t -> Int63.t @@ portable
+val to_int63 : t -> Int63.t
 val zero : t
 
 (** A default calibrator for the current process. Most programs can just use this
@@ -155,7 +158,7 @@ val calibrator : Calibrator.t Lazy.t
 (** It is guaranteed that repeated calls will return nondecreasing [Time.t] values. *)
 val to_time : t -> calibrator:Calibrator.t -> Time_float.t
 
-val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t @@ portable [@@zero_alloc]
+val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t [@@zero_alloc]
 
 (**/**)
 
@@ -164,7 +167,7 @@ val to_time_ns : t -> calibrator:Calibrator.t -> Time_ns.t @@ portable [@@zero_a
     https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   val ewma : alpha:float -> old:float -> add:float -> float
-  val of_int63 : Int63.t -> t @@ portable
+  val of_int63 : Int63.t -> t
   val max_percent_change_from_real_slope : float
   val to_nanos_since_epoch : t -> calibrator:Calibrator.t -> t
 end

@@ -392,6 +392,8 @@ module Pre_exec_command : sig
         ; ignore_eperm : bool
         }
     | Sched_setaffinity of int list
+    | Chdir of string
+    | Setsid of unit
   [@@deriving sexp]
 end
 
@@ -613,7 +615,7 @@ val read
   -> ?pos:int
   -> ?len:int
   -> File_descr.t
-  -> buf:Bytes.t
+  -> buf:Bytes.t @ local
   -> int
 
 (** [write ~pos ~len fd ~buf] writes [len] bytes to descriptor [fd], taking them from byte
@@ -625,10 +627,10 @@ val read
 
     WARNING: write is an interruptible call and has no way to handle EINTR properly. You
     should most probably be using single write. *)
-val write : ?pos:int -> ?len:int -> File_descr.t -> buf:Bytes.t @ shared -> int
+val write : ?pos:int -> ?len:int -> File_descr.t -> buf:Bytes.t @ local read -> int
 
 (** Same as [write] but with a string buffer. *)
-val write_substring : ?pos:int -> ?len:int -> File_descr.t -> buf:string -> int
+val write_substring : ?pos:int -> ?len:int -> File_descr.t -> buf:string @ local -> int
 
 (** Same as [write] but ensures that all errors are reported and that no character has
     ever been written when an error is reported. *)
@@ -637,7 +639,7 @@ val single_write
   -> ?pos:int
   -> ?len:int
   -> File_descr.t
-  -> buf:Bytes.t @ shared
+  -> buf:Bytes.t @ local read
   -> int
 
 (** Same as [single_write] but with a string buffer. *)
@@ -646,7 +648,7 @@ val single_write_substring
   -> ?pos:int
   -> ?len:int
   -> File_descr.t
-  -> buf:string
+  -> buf:string @ local
   -> int
 
 (** {6 Interfacing with the standard input/output library} *)
@@ -1553,14 +1555,14 @@ module (Inet_addr @@ nonportable) : sig @@ portable
       ([XXX.YYY.ZZZ.TTT]) for IPv4 addresses, and up to 8 numbers separated by colons for
       IPv6 addresses. Raise [Failure] when given a string that does not match these
       formats. *)
-  val of_string : string -> t
+  val of_string : string @ local -> t
 
   (** Call [of_string] and if that fails, use [Host.getbyname]. *)
   val of_string_or_getbyname : string -> t @@ nonportable
 
   (** Return the printable representation of the given Internet address. See [of_string]
       for a description of the printable representation. *)
-  val to_string : t -> string
+  val to_string : t @ local -> string
 
   (** A special address, for use only with [bind], representing all the Internet addresses
       that the host machine possesses. *)
@@ -1700,7 +1702,7 @@ val sockaddr_of_sexp : Sexp.t -> sockaddr @@ nonportable
 type sockaddr_blocking_sexp = sockaddr [@@deriving bin_io, sexp]
 
 (** Return the socket domain adequate for the given socket address. *)
-val domain_of_sockaddr : sockaddr -> socket_domain
+val domain_of_sockaddr : sockaddr @ local -> socket_domain
 
 (** Create a new socket in the given domain, and with the given kind. The third argument
     is the protocol type; 0 selects the default protocol for that kind of sockets. *)
@@ -1776,24 +1778,36 @@ type msg_flag = Unix.msg_flag =
 [@@deriving sexp]
 
 (** Receive data from a connected socket. *)
-val recv : File_descr.t -> buf:Bytes.t -> pos:int -> len:int -> mode:msg_flag list -> int
+val recv
+  :  File_descr.t
+  -> buf:Bytes.t @ local
+  -> pos:int
+  -> len:int
+  -> mode:msg_flag list
+  -> int
 
 (** Receive data from an unconnected socket. *)
 val recvfrom
   :  File_descr.t
-  -> buf:Bytes.t
+  -> buf:Bytes.t @ local
   -> pos:int
   -> len:int
   -> mode:msg_flag list
   -> int * sockaddr
 
 (** Send data over a connected socket. *)
-val send : File_descr.t -> buf:Bytes.t -> pos:int -> len:int -> mode:msg_flag list -> int
+val send
+  :  File_descr.t
+  -> buf:Bytes.t @ local
+  -> pos:int
+  -> len:int
+  -> mode:msg_flag list
+  -> int
 
 (** Same as [send] but with a string buffer. *)
 val send_substring
   :  File_descr.t
-  -> buf:string
+  -> buf:string @ local
   -> pos:int
   -> len:int
   -> mode:msg_flag list
@@ -1802,7 +1816,7 @@ val send_substring
 (** Send data over an unconnected socket. *)
 val sendto
   :  File_descr.t
-  -> buf:Bytes.t @ shared
+  -> buf:Bytes.t @ local read
   -> pos:int
   -> len:int
   -> mode:msg_flag list
@@ -1812,7 +1826,7 @@ val sendto
 (** Same as [sendto] but with a string buffer. *)
 val sendto_substring
   :  File_descr.t
-  -> buf:string
+  -> buf:string @ local
   -> pos:int
   -> len:int
   -> mode:msg_flag list
@@ -2130,7 +2144,7 @@ module Terminal_io : sig
       all pending output has been transmitted ([TCSADRAIN]), or after flushing all input
       that has been received but not read ([TCSAFLUSH]). [TCSADRAIN] is recommended when
       changing the output parameters; [TCSAFLUSH], when changing the input parameters. *)
-  val tcsetattr : t @ shared -> File_descr.t -> mode:setattr_when -> unit
+  val tcsetattr : t @ read -> File_descr.t -> mode:setattr_when -> unit
 
   (** Send a break condition on the given file descriptor. The second argument is the
       duration of the break, in 0.1s units; 0 means standard duration (0.25s). *)
@@ -2292,7 +2306,12 @@ val fdatasync : File_descr.t -> unit
 
     @param pos = 0
     @param len = [String.length buf - pos] *)
-val read_assume_fd_is_nonblocking : File_descr.t -> ?pos:int -> ?len:int -> Bytes.t -> int
+val read_assume_fd_is_nonblocking
+  :  File_descr.t
+  -> ?pos:int
+  -> ?len:int
+  -> Bytes.t @ local
+  -> int
 
 (** [write_assume_fd_is_nonblocking fd ?pos ?len buf] calls the system call [write]
     ASSUMING THAT IT IS NOT GOING TO BLOCK. Writes at most [len] bytes from buffer [buf]
@@ -2308,7 +2327,7 @@ val write_assume_fd_is_nonblocking
   :  File_descr.t
   -> ?pos:int
   -> ?len:int
-  -> Bytes.t @ shared
+  -> Bytes.t @ local read
   -> int
 
 (** [writev_assume_fd_is_nonblocking fd ?count iovecs] calls the system call [writev]
@@ -2320,7 +2339,7 @@ val write_assume_fd_is_nonblocking
 val writev_assume_fd_is_nonblocking
   :  File_descr.t
   -> ?count:int
-  -> string IOVec.t array @ shared
+  -> string IOVec.t array @ local read
   -> int
 
 (** [writev fd ?count iovecs] like {!writev_assume_fd_is_nonblocking}, but does not
@@ -2333,7 +2352,7 @@ val writev_assume_fd_is_nonblocking
 
     @raise Invalid_argument if the designated ranges are invalid.
     @raise Unix_error on Unix-errors. *)
-val writev : File_descr.t -> ?count:int -> string IOVec.t array @ shared -> int
+val writev : File_descr.t -> ?count:int -> string IOVec.t array @ local read -> int
 
 (** [pselect rfds wfds efds timeout sigmask] like {!Core_unix.select} but also allows one
     to wait for the arrival of signals. *)
@@ -2573,23 +2592,6 @@ val set_mcast_ifname : File_descr.t -> string -> unit
 
 module Priority : sig
   val nice : int -> int
-end
-
-(** For keeping your memory in RAM, i.e. preventing it from being swapped out. *)
-module Mman : sig
-  module Mcl_flags : sig
-    type t =
-      | Current
-      | Future
-    [@@deriving sexp]
-  end
-
-  (** Lock all pages in this process's virtual address space into physical memory. See
-      [man mlockall] for more details. *)
-  val mlockall : Mcl_flags.t list -> unit
-
-  (** Unlock previously locked pages. See [man munlockall]. *)
-  val munlockall : unit -> unit
 end
 
 (** A network interface on the local machine. See [man getifaddrs]. *)

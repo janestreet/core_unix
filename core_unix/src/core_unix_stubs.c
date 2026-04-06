@@ -1531,27 +1531,6 @@ CAMLprim value core_unix_unsetenv(value var) {
   return Val_unit;
 }
 
-static const int mman_mcl_flags_table[] = {MCL_CURRENT, MCL_FUTURE};
-
-CAMLprim value core_unix_mlockall(value v_flags) {
-  CAMLparam1(v_flags);
-  size_t i, mask;
-
-  for (i = 0, mask = 0; i < Wosize_val(v_flags); i++)
-    mask |= mman_mcl_flags_table[Int_val(Field(v_flags, i))];
-
-  if (mlockall(mask) < 0)
-    uerror("mlockall", Nothing);
-
-  CAMLreturn(Val_unit);
-}
-
-CAMLprim value core_unix_munlockall() {
-  if (munlockall() < 0)
-    uerror("munlockall", Nothing);
-  return Val_unit;
-}
-
 static value alloc_tm(const struct tm *tm) {
   value res;
   res = caml_alloc_small(9, 0);
@@ -2134,7 +2113,9 @@ enum preexec_cmd_tag {
   PREEXEC_SIGNAL_SETPDEATHSIG,
   PREEXEC_SCHED_SETSCHEDULER,
   PREEXEC_SCHED_NICE,
-  PREEXEC_SCHED_SETAFFINITY
+  PREEXEC_SCHED_SETAFFINITY,
+  PREEXEC_CHDIR,
+  PREEXEC_SETSID,
 };
 
 struct subprocess_err {
@@ -2341,6 +2322,19 @@ do_fork_exec(value v_paths, char *const *argv, char *const *envp, sigset_t *pare
       errno = ENOSYS;
       goto fail;
 #endif
+    }
+
+    case PREEXEC_CHDIR: {
+      const char *path = String_val(Field(cmd, 0));
+      if (chdir(path) < 0)
+        goto fail;
+      break;
+    }
+
+    case PREEXEC_SETSID: {
+      if (setsid() < 0)
+        goto fail;
+      break;
     }
 
     default:
