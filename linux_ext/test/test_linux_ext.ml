@@ -512,8 +512,13 @@ module%test [@name "getxattr and setxattr"] _ = struct
     | _ -> raise_s [%message "expected error but returned"]
   ;;
 
-  let with_tmpfile f =
-    let tmpfile = "temporary-file-for-testing-xattr" in
+  let with_tmpfile ?in_dir f =
+    let tmpfile =
+      let name = "temporary-file-for-testing-xattr" in
+      match in_dir with
+      | Some dir -> dir ^/ name
+      | None -> name
+    in
     let fd = Unix.openfile tmpfile ~mode:[ Unix.O_CREAT; Unix.O_WRONLY ] in
     Unix.close fd;
     (try f tmpfile with
@@ -526,6 +531,11 @@ module%test [@name "getxattr and setxattr"] _ = struct
       (Extended_file_attributes.getxattr |> ok_exn) ~follow_symlinks ~path ~name
     in
     print_s [%sexp (value : Extended_file_attributes.Get_attr_result.t)]
+  ;;
+
+  let list_and_print ~follow_symlinks ~path =
+    let value = (Extended_file_attributes.listxattr |> ok_exn) ~follow_symlinks ~path in
+    print_s [%sexp (value : Extended_file_attributes.List_attr_result.t)]
   ;;
 
   let set_and_print ?how ~follow_symlinks ~path ~name ~value () =
@@ -541,6 +551,13 @@ module%test [@name "getxattr and setxattr"] _ = struct
     print_s [%sexp (result : Extended_file_attributes.Set_attr_result.t)]
   ;;
 
+  let remove_and_print ~follow_symlinks ~path ~name =
+    let result =
+      (Extended_file_attributes.removexattr |> ok_exn) ~follow_symlinks ~path ~name
+    in
+    print_s [%sexp (result : Extended_file_attributes.Remove_attr_result.t)]
+  ;;
+
   let%expect_test "simple test" =
     with_tmpfile (fun path ->
       let name = "user.foo" in
@@ -549,7 +566,57 @@ module%test [@name "getxattr and setxattr"] _ = struct
       set_and_print ~follow_symlinks:true ~path ~name ~value:"bar" ();
       [%expect {| Ok |}];
       get_and_print ~follow_symlinks:true ~path ~name;
-      [%expect {| (Ok bar) |}])
+      [%expect {| (Ok bar) |}];
+      remove_and_print ~follow_symlinks:true ~path ~name;
+      [%expect {| Ok |}];
+      get_and_print ~follow_symlinks:true ~path ~name;
+      [%expect {| ENOATTR |}])
+  ;;
+
+  let%expect_test "list" =
+    with_tmpfile (fun path ->
+      list_and_print ~follow_symlinks:true ~path;
+      [%expect {| (Ok ()) |}];
+      set_and_print ~follow_symlinks:true ~path ~name:"user.foo" ~value:"bar" ();
+      [%expect {| Ok |}];
+      list_and_print ~follow_symlinks:true ~path;
+      [%expect {| (Ok (user.foo)) |}];
+      set_and_print ~follow_symlinks:true ~path ~name:"user.foo2" ~value:"bar" ();
+      [%expect {| Ok |}];
+      list_and_print ~follow_symlinks:true ~path;
+      [%expect {| (Ok (user.foo user.foo2)) |}];
+      remove_and_print ~follow_symlinks:true ~path ~name:"user.foo2";
+      [%expect {| Ok |}];
+      list_and_print ~follow_symlinks:true ~path;
+      [%expect {| (Ok (user.foo)) |}])
+  ;;
+
+  let%expect_test ("list too long" [@tags "disabled"]) =
+    with_tmpfile ~in_dir:"/dev/shm" (fun path ->
+      list_and_print ~follow_symlinks:true ~path;
+      [%expect {| (Ok ()) |}];
+      let setxattr name value =
+        match
+          (Extended_file_attributes.setxattr |> ok_exn)
+            ~follow_symlinks:true
+            ~path
+            ~name
+            ~value
+            ()
+        with
+        | Ok -> ()
+        | error ->
+          let error =
+            Extended_file_attributes.Set_attr_result.sexp_of_t error |> Sexp.to_string
+          in
+          failwith [%string "setxattr failed: %{error}"]
+      in
+      (* XATTR_SIZE_MAX was 64k when I wrote this test. Since our text is more than 8
+         characters long, 8k attributes is enough *)
+      List.init (8 * 1024) ~f:Fn.id
+      |> List.iter ~f:(fun i -> setxattr [%string "user.attr%{i#Int}"] "1");
+      list_and_print ~follow_symlinks:true ~path;
+      [%expect {| E2BIG |}])
   ;;
 
   let%expect_test "symlink test" =
@@ -561,6 +628,10 @@ module%test [@name "getxattr and setxattr"] _ = struct
       [%expect {| ENOATTR |}];
       get_and_print ~follow_symlinks:true ~path:symlink_to_path ~name;
       [%expect {| ENOATTR |}];
+      list_and_print ~follow_symlinks:false ~path:symlink_to_path;
+      [%expect {| (Ok ()) |}];
+      list_and_print ~follow_symlinks:true ~path:symlink_to_path;
+      [%expect {| (Ok ()) |}];
       expect_error (fun () ->
         set_and_print ~follow_symlinks:false ~path:symlink_to_path ~name ~value:"baz" ());
       [%expect
@@ -570,12 +641,31 @@ module%test [@name "getxattr and setxattr"] _ = struct
          lsetxattr
          temporary-file-for-testing-xattr.symlink)
         |}];
+      expect_error (fun () ->
+        remove_and_print ~follow_symlinks:false ~path:symlink_to_path ~name);
+      [%expect
+        {|
+        (Unix.Unix_error
+         "Operation not permitted"
+         lremovexattr
+         temporary-file-for-testing-xattr.symlink)
+        |}];
       set_and_print ~follow_symlinks:true ~path:symlink_to_path ~name ~value:"bar" ();
       [%expect {| Ok |}];
       get_and_print ~follow_symlinks:false ~path:symlink_to_path ~name;
       [%expect {| ENOATTR |}];
       get_and_print ~follow_symlinks:true ~path:symlink_to_path ~name;
       [%expect {| (Ok bar) |}];
+      list_and_print ~follow_symlinks:false ~path:symlink_to_path;
+      [%expect {| (Ok ()) |}];
+      list_and_print ~follow_symlinks:true ~path:symlink_to_path;
+      [%expect {| (Ok (user.foo)) |}];
+      remove_and_print ~follow_symlinks:true ~path:symlink_to_path ~name;
+      [%expect {| Ok |}];
+      get_and_print ~follow_symlinks:false ~path:symlink_to_path ~name;
+      [%expect {| ENOATTR |}];
+      get_and_print ~follow_symlinks:true ~path:symlink_to_path ~name;
+      [%expect {| ENOATTR |}];
       Unix.unlink symlink_to_path)
   ;;
 
@@ -624,7 +714,7 @@ module%test [@name "getxattr and setxattr"] _ = struct
       [%expect {| (Ok xyz) |}])
   ;;
 
-  let%expect_test "test getxattr and setxattr on a non-existent file" =
+  let%expect_test "test on a non-existent file" =
     let path = "some-file-that-doesnt-exist" in
     let name = "user.foo" in
     expect_error (fun () ->
@@ -642,6 +732,22 @@ module%test [@name "getxattr and setxattr"] _ = struct
       (Unix.Unix_error
        "No such file or directory"
        getxattr
+       some-file-that-doesnt-exist)
+      |}];
+    expect_error (fun () -> list_and_print ~follow_symlinks:true ~path);
+    [%expect
+      {|
+      (Unix.Unix_error
+       "No such file or directory"
+       listxattr
+       some-file-that-doesnt-exist)
+      |}];
+    expect_error (fun () -> remove_and_print ~follow_symlinks:true ~path ~name);
+    [%expect
+      {|
+      (Unix.Unix_error
+       "No such file or directory"
+       removexattr
        some-file-that-doesnt-exist)
       |}]
   ;;
@@ -807,6 +913,114 @@ let%expect_test "TCP_CONGESTION" =
     (raised (Unix.Unix_error "Bad file descriptor" setsockopt ""))
     |}]
 ;;
+
+module%test Copy_file_range = struct
+  let copy_file_range_data = "hello, copy_file_range!"
+  let copy_file_range_data_len = String.length copy_file_range_data
+
+  let with_copy_file_range_fds ~f =
+    protectx
+      (Filename_unix.temp_file "linux_ext_cfr_in" "")
+      ~finally:Unix.unlink
+      ~f:(fun in_fname ->
+        protectx
+          (Filename_unix.temp_file "linux_ext_cfr_out" "")
+          ~finally:Unix.unlink
+          ~f:(fun out_fname ->
+            let fd_in = Unix.openfile in_fname ~mode:[ O_RDWR; O_TRUNC ] ~perm:0o600 in
+            let (_ : int) =
+              Unix.write_substring
+                fd_in
+                ~buf:copy_file_range_data
+                ~pos:0
+                ~len:copy_file_range_data_len
+            in
+            let fd_out = Unix.openfile out_fname ~mode:[ O_RDWR; O_TRUNC ] ~perm:0o600 in
+            Exn.protect
+              ~f:(fun () -> f ~fd_in ~fd_out)
+              ~finally:(fun () ->
+                Unix.close fd_in;
+                Unix.close fd_out)))
+  ;;
+
+  let read_fd_contents fd ~len =
+    let (_ : int64) = Unix.lseek fd 0L ~mode:SEEK_SET in
+    let buf = Bytes.create len in
+    let (_ : int) = Unix.read fd ~buf ~pos:0 ~len in
+    Bytes.to_string buf
+  ;;
+
+  let copy_file_range = ok_exn Linux_ext.copy_file_range
+
+  let%expect_test "copy_file_range with no offsets" =
+    with_copy_file_range_fds ~f:(fun ~fd_in ~fd_out ->
+      let (_ : int64) = Unix.lseek fd_in 0L ~mode:SEEK_SET in
+      let n = copy_file_range ~fd_in ~fd_out ~len:copy_file_range_data_len () in
+      print_s [%message (n : int)];
+      [%expect {| (n 23) |}];
+      let contents = read_fd_contents fd_out ~len:copy_file_range_data_len in
+      print_s [%message contents];
+      [%expect {| "hello, copy_file_range!" |}])
+  ;;
+
+  let%expect_test "copy_file_range with explicit offsets" =
+    with_copy_file_range_fds ~f:(fun ~fd_in ~fd_out ->
+      let n = copy_file_range ~fd_in ~off_in:7 ~fd_out ~off_out:0 ~len:16 () in
+      print_s [%message (n : int)];
+      [%expect {| (n 16) |}];
+      let contents = read_fd_contents fd_out ~len:16 in
+      print_s [%message contents];
+      [%expect {| copy_file_range! |}])
+  ;;
+
+  let%expect_test "really_copy_file_range" =
+    let really_copy_file_range = ok_exn Linux_ext.really_copy_file_range in
+    with_copy_file_range_fds ~f:(fun ~fd_in ~fd_out ->
+      really_copy_file_range
+        ~fd_in
+        ~off_in:0
+        ~fd_out
+        ~off_out:0
+        ~len:copy_file_range_data_len
+        ();
+      let contents = read_fd_contents fd_out ~len:copy_file_range_data_len in
+      print_s [%message contents];
+      [%expect {| "hello, copy_file_range!" |}])
+  ;;
+
+  let%expect_test "copy_file_range too large" =
+    with_copy_file_range_fds ~f:(fun ~fd_in ~fd_out ->
+      let (_ : int64) = Unix.lseek fd_in 0L ~mode:SEEK_SET in
+      let n = copy_file_range ~fd_in ~fd_out ~len:1000 () in
+      print_s [%message (n : int)];
+      [%expect {| (n 23) |}];
+      let contents = read_fd_contents fd_out ~len:copy_file_range_data_len in
+      print_s [%message contents];
+      [%expect {| "hello, copy_file_range!" |}])
+  ;;
+
+  let%expect_test "copy_file_range min_len too large" =
+    with_copy_file_range_fds ~f:(fun ~fd_in ~fd_out ->
+      let (_ : int64) = Unix.lseek fd_in 0L ~mode:SEEK_SET in
+      let n = copy_file_range ~fd_in ~fd_out ~len:100 ~min_len:100 () in
+      print_s [%message (n : int)];
+      [%expect {| (n 23) |}];
+      let contents = read_fd_contents fd_out ~len:copy_file_range_data_len in
+      print_s [%message contents];
+      [%expect {| "hello, copy_file_range!" |}])
+  ;;
+
+  let%expect_test "copy_file_range min_len too large with offset" =
+    with_copy_file_range_fds ~f:(fun ~fd_in ~fd_out ->
+      let (_ : int64) = Unix.lseek fd_in 0L ~mode:SEEK_SET in
+      let n = copy_file_range ~fd_in ~off_in:7 ~fd_out ~len:100 ~min_len:100 () in
+      print_s [%message (n : int)];
+      [%expect {| (n 16) |}];
+      let contents = read_fd_contents fd_out ~len:n in
+      print_s [%message contents];
+      [%expect {| copy_file_range! |}])
+  ;;
+end
 
 let%expect_test "fallocate" =
   let open Linux_ext.Fallocate in

@@ -52,6 +52,44 @@ module type S = sig
        -> int)
         Or_error.t
 
+  (** [copy_file_range ~fd_in ?off_in ~fd_out ?off_out ~len ()] copies up to [len] bytes
+      from file descriptor [fd_in] to file descriptor [fd_out], handling the data transfer
+      within the kernel. When [off_in] is [None], data is read starting at the file offset
+      of [fd_in], which is advanced by the number of bytes copied. When [off_in] is
+      [Some n], data is read starting at offset [n] without changing the file offset of
+      [fd_in]. [off_out] behaves analogously for [fd_out]. Returns the number of bytes
+      copied, which may be less than [len].
+
+      If [~min_len] is supplied, retries on partial copies and [EINTR] until at least
+      [min_len] bytes have been copied (or no more progress can be made). [min_len]
+      defaults to 0.
+
+      Raises [Unix_error] on failure. *)
+  val copy_file_range
+    : (fd_in:File_descr.t
+       -> ?off_in:int
+       -> fd_out:File_descr.t
+       -> ?off_out:int
+       -> len:int
+       -> ?min_len:int
+       -> unit
+       -> int)
+        Or_error.t
+
+  (** [really_copy_file_range ~fd_in ?off_in ~fd_out ?off_out ~len ()] is like
+      {!copy_file_range} but retries on partial copies and [EINTR] until exactly [len]
+      bytes have been copied or all the bytes from [fd_in] if it has <[len] bytes before
+      eof. Raises [Unix_error] on failure. *)
+  val really_copy_file_range
+    : (fd_in:File_descr.t
+       -> ?off_in:int
+       -> fd_out:File_descr.t
+       -> ?off_out:int
+       -> len:int
+       -> unit
+       -> unit)
+        Or_error.t
+
   (** Type for status of SO_BINDTODEVICE socket option. The socket may either restrict the
       traffic to a given (by name, e.g. "eth0") interface, or do no restriction at all. *)
   module Bound_to_interface : sig
@@ -514,6 +552,10 @@ module type S = sig
   (** [online_cpus ()] returns the list of cores online for scheduling. *)
   val online_cpus : (unit -> int list) Or_error.t
 
+  (** [non_isolated_cpus ()] returns the list of online cores not marked as isolated. This
+      is exactly the set difference between [online_cpus] and [isolated_cpus]. *)
+  val non_isolated_cpus : (unit -> int list) Or_error.t
+
   (** [allowed_cpus ?include_offline ?pid ()] returns the list of cores allowed for
       scheduling for this particular PID. If no PID is specified, this checks the current
       PID. By default, this function automatically filters the returned list of cores to
@@ -711,6 +753,56 @@ module type S = sig
          -> value:string
          -> unit
          -> Set_attr_result.t)
+          Or_error.t
+
+    (** [listxattr] retrieves the list of extended attribute names associated with the
+        given path in the filesystem.
+
+        If the call succeeds, the attribute names are returned as [Ok (string list)].
+        Several common errors are returned as possible constructors, namely:
+        - [ERANGE]: The size of the internal buffer is too small to hold the result.
+        - [ENOTSUP]: Extended attributes are not supported by the filesystem, or are
+          disabled.
+        - [E2BIG]: The size of the result is larger than 64K, which means it is impossible
+          to retrieve the list of attributes due to a VFS limitation.
+
+        Many other errors are possible, and will raise an exception. See the man pages for
+        full details. *)
+
+    module List_attr_result : sig
+      type t =
+        | Ok of string list
+        | ERANGE
+        | ENOTSUP
+        | E2BIG
+      [@@deriving sexp_of]
+    end
+
+    val listxattr : (follow_symlinks:bool -> path:string -> List_attr_result.t) Or_error.t
+
+    (** [removexattr] removes the extended attribute identified by name and associated
+        with the given path in the filesystem.
+
+        If the call succeeds, [Ok] is returned. Otherwise, several common errors are
+        returned as possible constructors, namely:
+        - [ENOATTR]: The named attribute does not exist, or the process has no access to
+          this attribute.
+        - [ENOTSUP]: Extended attributes are not supported by the filesystem, or are
+          disabled.
+
+        Many other errors are possible, and will raise an exception. See the man pages for
+        full details. *)
+
+    module Remove_attr_result : sig
+      type t =
+        | Ok
+        | ENOATTR
+        | ENOTSUP
+      [@@deriving sexp_of]
+    end
+
+    val removexattr
+      : (follow_symlinks:bool -> path:string -> name:string -> Remove_attr_result.t)
           Or_error.t
   end
 end

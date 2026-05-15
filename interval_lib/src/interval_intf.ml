@@ -155,7 +155,12 @@ end
 
 module type S = sig
   type t
-  [@@deriving (bin_io [@mode m]), sexp, (compare [@mode m]), (equal [@mode m]), hash]
+  [@@deriving
+    (bin_io [@mode m])
+    , sexp
+    , (compare [@mode.explicit m])
+    , (equal [@mode.explicit m])
+    , hash]
 
   type bound
 
@@ -191,7 +196,11 @@ module type S1 = sig
       signatures (like [bin_read_t] and [t_of_sexp]). *)
   type 'a t
   [@@deriving
-    (bin_io [@mode m]), sexp ~stackify, (compare [@mode m]), (equal [@mode m]), hash]
+    (bin_io [@mode m])
+    , sexp ~stackify
+    , (compare [@mode.explicit m])
+    , (equal [@mode.explicit m])
+    , hash]
 
   include Gen with type 'a t := 'a t with type 'a bound := 'a (** @inline *)
 
@@ -208,7 +217,7 @@ module type S1 = sig
 end
 
 module type S_stable = sig
-  type t [@@deriving (equal [@mode m]), hash, sexp_grammar]
+  type t [@@deriving (equal [@mode.explicit m]), hash, sexp_grammar]
 
   include Stable_with_witness [@mode m] with type t := t
 end]
@@ -324,7 +333,12 @@ module type%template Interval = sig
   module%template.portable
     [@mode m = (global, local)] Make (Bound : sig
       type t
-      [@@deriving (bin_io [@mode m]), (compare [@mode m]), (equal [@mode m]), hash, sexp]
+      [@@deriving
+        (bin_io [@mode m])
+        , (compare [@mode.explicit m])
+        , (equal [@mode.explicit m])
+        , hash
+        , sexp]
 
       include Comparable.S [@mode m] with type t := t
     end) : S [@mode m] with type bound = Bound.t and type t = Bound.t t

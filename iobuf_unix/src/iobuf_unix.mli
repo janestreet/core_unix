@@ -4,7 +4,7 @@ module Unix := Core_unix
 type ok_or_eof =
   | Ok
   | Eof
-[@@deriving compare ~localize, sexp_of]
+[@@deriving compare ~localize, sexp_of, variants]
 
 (** [Iobuf] has analogs of various [Bigstring] functions. These analogs advance by the
     amount written/read. *)
@@ -104,6 +104,12 @@ val write : ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t -> Unix.File_descr.t -
 val really_write
   :  ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t
   -> Unix.File_descr.t
+  -> unit
+
+val really_pwrite
+  :  ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t
+  -> Unix.File_descr.t
+  -> offset:int
   -> unit
 
 val write_assume_fd_is_nonblocking

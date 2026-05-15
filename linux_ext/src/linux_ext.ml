@@ -169,6 +169,13 @@ let isolated_cpus =
 
 let online_cpus = memo (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/online")
 
+let non_isolated_cpus =
+  memo (fun () ->
+    let online = online_cpus () |> Int.Set.of_list in
+    let isolated = isolated_cpus () |> Int.Set.of_list in
+    Set.diff online isolated |> Set.to_list)
+;;
+
 let allowed_cpus ?(include_offline = false) ?pid () =
   let status_path =
     match pid with
@@ -207,6 +214,7 @@ module Null_toplevel = struct
   let cpu_list_of_string_exn = cpu_list_of_string_exn
   let isolated_cpus = u "Linux_ext.isolated_cores"
   let online_cpus = u "Linux_ext.online_cores"
+  let non_isolated_cpus = u "Linux_ext.non_isolated_cpus"
   let allowed_cpus = u "Linux_ext.allowed_cores"
   let cpus_local_to_nic = u "Linux_ext.cpus_local_to_nic"
   let file_descr_realpath = u "Linux_ext.file_descr_realpath"
@@ -232,6 +240,8 @@ module Null_toplevel = struct
   let send_no_sigpipe = u "Linux_ext.send_no_sigpipe"
   let send_nonblocking_no_sigpipe = u "Linux_ext.send_nonblocking_no_sigpipe"
   let sendfile = u "Linux_ext.sendfile"
+  let copy_file_range = u "Linux_ext.copy_file_range"
+  let really_copy_file_range = u "Linux_ext.really_copy_file_range"
   let sendmsg_nonblocking_no_sigpipe = u "Linux_ext.sendmsg_nonblocking_no_sigpipe"
   let settcpopt_bool = u "Linux_ext.settcpopt_bool"
   let settcpopt_int = u "Linux_ext.settcpopt_int"
@@ -452,6 +462,29 @@ module Null : Linux_ext_intf.S = struct
     end
 
     let setxattr = Or_error.unimplemented "Linux_ext.Extended_file_attributes.setxattr"
+
+    module List_attr_result = struct
+      type t =
+        | Ok of string list
+        | ERANGE
+        | ENOTSUP
+        | E2BIG
+      [@@deriving sexp_of]
+    end
+
+    let listxattr = Or_error.unimplemented "Linux_ext.Extended_file_attributes.listxattr"
+
+    module Remove_attr_result = struct
+      type t =
+        | Ok
+        | ENOATTR
+        | ENOTSUP
+      [@@deriving sexp_of]
+    end
+
+    let removexattr =
+      Or_error.unimplemented "Linux_ext.Extended_file_attributes.removexattr"
+    ;;
   end
 
   include Null_toplevel
@@ -863,6 +896,57 @@ let sendfile ?(pos = 0) ?len ~fd sock =
   sendfile ~sock ~fd ~pos ~len
 ;;
 
+external copy_file_range
+  :  fd_in:file_descr
+  -> off_in:int option
+  -> fd_out:file_descr
+  -> off_out:int option
+  -> len:int
+  -> int
+  = "core_linux_copy_file_range_stub"
+
+let copy_file_range_raw = copy_file_range
+
+let copy_file_range ~fd_in ?off_in ~fd_out ?off_out ~len ?min_len () =
+  if len < 0 then raise_s [%message "[copy_file_range] [len] is negative" (len : int)];
+  let min_len =
+    match min_len with
+    | None -> 0
+    | Some min_len ->
+      if min_len > len
+      then invalid_arg (sprintf "copy_file_range: min_len (%d) > len (%d)" min_len len)
+      else if min_len < 0
+      then invalid_arg (sprintf "copy_file_range: min_len (%d) < 0" min_len)
+      else min_len
+  in
+  let rec loop ~off_in ~off_out ~remaining ~total_copied =
+    match copy_file_range_raw ~fd_in ~off_in ~fd_out ~off_out ~len:remaining with
+    | exception Unix.Unix_error (EINTR, _, _) ->
+      loop ~off_in ~off_out ~remaining ~total_copied
+    | 0 ->
+      (* A return value of 0 means there was nothing left to copy. On interrupt we either
+         get EINTR (above) or a positive number of bytes copied (below). *)
+      total_copied
+    | n ->
+      let total_copied = total_copied + n in
+      if total_copied >= min_len
+      then total_copied
+      else (
+        (* If we passed in [None] in the original call, then [copy_file_range] will
+           advance the internal offset in the file descriptor. So we don't have to do
+           anything. But if we passed an offset in, then we have to update the offset for
+           recursive calls. *)
+        let off_in = Option.map off_in ~f:(( + ) n) in
+        let off_out = Option.map off_out ~f:(( + ) n) in
+        loop ~off_in ~off_out ~remaining:(remaining - n) ~total_copied)
+  in
+  loop ~off_in ~off_out ~remaining:len ~total_copied:0
+;;
+
+let really_copy_file_range ~fd_in ?off_in ~fd_out ?off_out ~len () =
+  ignore (copy_file_range ~fd_in ?off_in ~fd_out ?off_out ~len ~min_len:len () : int)
+;;
+
 (* Raw result of sysinfo syscall *)
 module Raw_sysinfo = struct
   type t =
@@ -1166,6 +1250,7 @@ module Epoll = Epoll.Impl
 let cores = Ok cores
 let isolated_cpus = Ok isolated_cpus
 let online_cpus = Ok online_cpus
+let non_isolated_cpus = Ok non_isolated_cpus
 let allowed_cpus = Ok allowed_cpus
 let cpus_local_to_nic = Ok cpus_local_to_nic
 let file_descr_realpath = Ok file_descr_realpath
@@ -1191,6 +1276,8 @@ let sched_setaffinity_this_thread = Ok sched_setaffinity_this_thread
 let send_no_sigpipe = Ok send_no_sigpipe
 let send_nonblocking_no_sigpipe = Ok send_nonblocking_no_sigpipe
 let sendfile = Ok sendfile
+let copy_file_range = Ok copy_file_range
+let really_copy_file_range = Ok really_copy_file_range
 let sendmsg_nonblocking_no_sigpipe = Ok sendmsg_nonblocking_no_sigpipe
 let settcpopt_bool = Ok settcpopt_bool
 let settcpopt_int = Ok settcpopt_int
@@ -1255,8 +1342,39 @@ module Extended_file_attributes = struct
     setxattr follow_symlinks path name value flags
   ;;
 
+  module List_attr_result = struct
+    type t =
+      | Ok of string list
+      | ERANGE
+      | ENOTSUP
+      | E2BIG
+    [@@deriving sexp_of]
+  end
+
+  external listxattr : bool -> string -> List_attr_result.t = "core_linux_listxattr"
+
+  let listxattr ~follow_symlinks ~path = listxattr follow_symlinks path
+
+  module Remove_attr_result = struct
+    type t =
+      | Ok
+      | ENOATTR
+      | ENOTSUP
+    [@@deriving sexp_of]
+  end
+
+  external removexattr
+    :  bool
+    -> string
+    -> string
+    -> Remove_attr_result.t
+    = "core_linux_removexattr"
+
+  let removexattr ~follow_symlinks ~path ~name = removexattr follow_symlinks path name
   let getxattr = Ok getxattr
   let setxattr = Ok setxattr
+  let listxattr = Ok listxattr
+  let removexattr = Ok removexattr
 end
 
 [%%else]

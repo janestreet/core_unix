@@ -11,6 +11,12 @@ let boot_time () =
     | _ -> failwith "can't find btime in /proc/stat")
 ;;
 
+let is_pid_namespace_check_enabled =
+  lazy (Sys.getenv "NFS_LOCK_ENABLE_PID_NAMESPACE_CHECK" |> Option.is_some)
+;;
+
+let get_pid_namespace () = Option.try_with (fun () -> Unix.readlink "/proc/self/ns/pid")
+
 let process_start_time pid =
   (* Find the start time for a process, without requiring the [Procfs] library -- start
      time is represented in USER_HZ units in /proc/<pid>/stat (confusingly referred to as
@@ -39,8 +45,9 @@ module Info = struct
       ; pid : Pid.Stable.V1.t
       ; message : string
       ; start_time : Time_float.Stable.With_utc_sexp.V2.t option [@sexp.option]
+      ; pid_namespace : string option [@sexp.option]
       }
-    [@@deriving compare ~localize, sexp, fields ~getters]
+    [@@sexp.allow_extra_fields] [@@deriving compare ~localize, sexp, fields ~getters]
   end
 
   include T
@@ -48,7 +55,13 @@ module Info = struct
 
   let create ~message =
     let pid = Unix.getpid () in
-    { host = Unix.gethostname (); pid; message; start_time = process_start_time pid }
+    let pid_namespace = get_pid_namespace () in
+    { host = Unix.gethostname ()
+    ; pid
+    ; message
+    ; start_time = process_start_time pid
+    ; pid_namespace
+    }
   ;;
 
   let of_file = read_file_and_convert ~of_string
@@ -144,8 +157,21 @@ let prepare_to_lock_exn path =
   let error s = failwithf "lock file %S: %s" lock_path s () in
   do_if_locked_exn path ~error ~f:(fun ~info ->
     let my_hostname = Unix.gethostname () in
+    let my_pid_namespace = get_pid_namespace () in
     let locking_hostname = Info.host info in
+    let locking_pid_namespace = Info.pid_namespace info in
     let locking_pid = Info.pid info in
+    let locking_pid_is_in_my_namespace () =
+      match locking_pid_namespace, my_pid_namespace with
+      | Some locking_pid_namespace, Some my_pid_namespace ->
+        String.equal locking_pid_namespace my_pid_namespace
+      | None, _ | _, None ->
+        (* For backward compatibility with lock files written by processes before pid
+           namespace awareness was introduced, we fall back to the historical behavior,
+           which is to implicitly assume that we are in the same namespace as the locking
+           process. *)
+        true
+    in
     if String.( <> ) my_hostname locking_hostname
     then
       error
@@ -153,6 +179,17 @@ let prepare_to_lock_exn path =
            "lock already held on %s, unlock attempted from %s"
            locking_hostname
            my_hostname)
+    else if force is_pid_namespace_check_enabled
+            && not (locking_pid_is_in_my_namespace ())
+    then
+      error
+        (sprintf
+           "lock already held by a process in a different pid namespace (pid %i in \
+            namespace %s), unlock attempted from pid %i in namespace %s"
+           (Pid.to_int locking_pid)
+           (Option.value ~default:"<unknown>" locking_pid_namespace)
+           (Pid.to_int (Unix.getpid ()))
+           (Option.value ~default:"<unknown>" my_pid_namespace))
     else (
       let locking_pid_exists () =
         Signal_unix.can_send_to locking_pid && pid_start_matches_lock ~info

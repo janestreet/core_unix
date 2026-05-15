@@ -2131,15 +2131,17 @@ let fork_exec ~prog ~argv ?(preexec = []) ?(use_path = true) ?env () =
   match do_fork_exec ~progs ~argv ~env ~preexec with
   | Ok pid -> pid
   | Error (ix, errno) ->
-    let cmd =
+    let function_name =
       assert (ix >= -1);
       if ix = -1
-      then [%sexp "vfork"]
+      then "Core_unix.fork_exec: vfork"
       else if ix < List.length preexec
-      then [%sexp (List.nth_exn preexec ix : Pre_exec_command.t)]
-      else [%sexp (("exec", prog) : string * string)]
+      then
+        "Core_unix.fork_exec: "
+        ^ Sexp.to_string [%sexp (List.nth_exn preexec ix : Pre_exec_command.t)]
+      else "Core_unix.fork_exec: exec"
     in
-    raise_s [%sexp (("Core_unix.fork_exec", cmd, errno) : string * Sexp.t * Error.t)]
+    raise (Unix.Unix_error (errno, function_name, prog))
 ;;
 
 external setpgid : int -> int -> unit = "core_unix_setpgid"

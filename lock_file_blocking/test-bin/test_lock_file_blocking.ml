@@ -167,54 +167,94 @@ let go ~which_lock ~test_stale_locks path =
   | `In_the_parent pid -> pid
 ;;
 
+let cmd_test_contention =
+  Command.basic
+    ~summary:"This puts a lock file at [path] under heavy contention"
+    (let%map_open.Command which_lock =
+       flag
+         ~doc:"Nfs|Nfs_v2|Local|Mkdir|Flock which lock protocol to use"
+         "which"
+         (required
+            (sexp_conv
+               [%of_sexp:
+                 [ `Nfs
+                 | `Nfs_v2
+                 | `Nfs_v1_or_v2
+                 | `Local
+                 | `Mkdir_or_symlink
+                 | `Symlink
+                 | `Flock
+                 ]]))
+     and path =
+       flag
+         ~doc:"FILE the path of the file to lock"
+         "path"
+         (optional_with_default "test-lock-file/lockfile" string)
+     and count =
+       flag
+         ~doc:"NUM number of concurrent processes trying to take the for lock"
+         "n"
+         (optional_with_default 200 int)
+     and test_stale_locks =
+       flag
+         ~doc:
+           "BOOL test what happens when stale lock files are introduced (processes \
+            killed with SIGKILL mid-critical-section). Defaults to false because some \
+            lock types deadlock in this scenario."
+         "stale-locks"
+         (optional_with_default false bool)
+     in
+     fun () ->
+       let dirname, basename = Filename.split path in
+       Unix.mkdir_p dirname;
+       Unix.chdir dirname;
+       let ps =
+         List.init count ~f:(fun _i -> go ~which_lock ~test_stale_locks basename)
+       in
+       List.iter ps ~f:(fun _pid ->
+         let _pid, status = Unix.wait `Any in
+         match status with
+         | Error (`Signal s) when Signal.equal Signal.kill s && test_stale_locks -> ()
+         | e -> Unix.Exit_or_signal.or_error e |> Or_error.ok_exn))
+;;
+
+let cmd_take_nfs_lock =
+  Command.basic
+    ~summary:"Takes a nfs lock at [path]"
+    (let%map_open.Command path =
+       flag
+         ~doc:"FILE the path of the file to lock"
+         "path"
+         (optional_with_default "test-lock-file/lockfile" string)
+     and timeout =
+       flag
+         ~doc:"SPAN how long to wait to acquire the lock"
+         "timeout"
+         (required Time_float.Span.arg_type)
+     and hold_for =
+       flag
+         ~doc:
+           "SPAN how long to wait while holding the lock (rounded down to nearest second)"
+         "hold-for"
+         (optional Time_float.Span.arg_type)
+     in
+     fun () ->
+       Lock_file_blocking.Nfs.critical_section path ~timeout ~f:(fun () ->
+         print_endline "Lock obtained";
+         match hold_for with
+         | None -> ()
+         | Some hold_for ->
+           let seconds_to_hold =
+             hold_for |> Time_float.Span.to_sec |> Float.iround_down_exn
+           in
+           print_endline
+             [%string "Waiting for %{seconds_to_hold#Int} seconds before exiting"];
+           Unix.sleep seconds_to_hold))
+;;
+
 let () =
   Command_unix.run
-    (Command.basic
-       ~summary:"This puts a lock file at [path] under heavy contention"
-       (let%map_open.Command which_lock =
-          flag
-            ~doc:"Nfs|Nfs_v2|Local|Mkdir|Flock which lock protocol to use"
-            "which"
-            (required
-               (sexp_conv
-                  [%of_sexp:
-                    [ `Nfs
-                    | `Nfs_v2
-                    | `Nfs_v1_or_v2
-                    | `Local
-                    | `Mkdir_or_symlink
-                    | `Symlink
-                    | `Flock
-                    ]]))
-        and path =
-          flag
-            ~doc:"FILE the path of the file to lock"
-            "path"
-            (optional_with_default "test-lock-file/lockfile" string)
-        and count =
-          flag
-            ~doc:"NUM number of concurrent processes trying to take the for lock"
-            "n"
-            (optional_with_default 200 int)
-        and test_stale_locks =
-          flag
-            ~doc:
-              "BOOL test what happens when stale lock files are introduced (processes \
-               killed with SIGKILL mid-critical-section). Defaults to false because some \
-               lock types deadlock in this scenario."
-            "stale-locks"
-            (optional_with_default false bool)
-        in
-        fun () ->
-          let dirname, basename = Filename.split path in
-          Unix.mkdir_p dirname;
-          Unix.chdir dirname;
-          let ps =
-            List.init count ~f:(fun _i -> go ~which_lock ~test_stale_locks basename)
-          in
-          List.iter ps ~f:(fun _pid ->
-            let _pid, status = Unix.wait `Any in
-            match status with
-            | Error (`Signal s) when Signal.equal Signal.kill s && test_stale_locks -> ()
-            | e -> Unix.Exit_or_signal.or_error e |> Or_error.ok_exn)))
+    (Command.group
+       ~summary:"Commands for testing [lock_file_blocking]"
+       [ "test-contention", cmd_test_contention; "take-nfs-lock", cmd_take_nfs_lock ])
 ;;

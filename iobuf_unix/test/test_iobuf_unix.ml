@@ -206,6 +206,50 @@ let%test_unit _ =
       Unix.close fd)
 ;;
 
+let really_pwrite = really_pwrite
+
+let%test_unit "really_pwrite" =
+  let s = "000000000011111111112222222222" in
+  let n = String.length s in
+  let t = Iobuf.of_string s in
+  let file, fd = Unix.mkstemp "iobuf_test" in
+  protect
+    ~finally:(fun () -> Unix.unlink file)
+    ~f:(fun () ->
+      (* Write entire string at offset 0 using really_pwrite *)
+      (Iobuf.sub_shared t ~pos:0 ~len:n
+       |> fun t ->
+       really_pwrite t fd ~offset:0;
+       assert (Iobuf.is_empty t));
+      (* Read back a portion at offset 10 and verify we get "1111111111" *)
+      (Iobuf.sub_shared t ~pos:0 ~len:10
+       |> fun t ->
+       pread_assume_fd_is_nonblocking t fd ~offset:10;
+       assert (Iobuf.is_empty t));
+      (Iobuf.sub_shared t ~pos:0 ~len:10
+       |> fun t -> assert (String.equal (Iobuf.to_string t) "1111111111"));
+      (* Overwrite the first 10 bytes at offset 0 with "2222222222" *)
+      (Iobuf.sub_shared t ~pos:20 ~len:10
+       |> fun t ->
+       really_pwrite t fd ~offset:0;
+       assert (Iobuf.is_empty t));
+      (* Read back from offset 0 and verify the overwrite *)
+      (Iobuf.sub_shared t ~pos:0 ~len:10
+       |> fun t ->
+       pread_assume_fd_is_nonblocking t fd ~offset:0;
+       assert (Iobuf.is_empty t));
+      (Iobuf.sub_shared t ~pos:0 ~len:10
+       |> fun t -> assert (String.equal (Iobuf.to_string t) "2222222222"));
+      (* Verify the rest of the file is unchanged: offset 10 still has "1111111111" *)
+      (Iobuf.sub_shared t ~pos:0 ~len:10
+       |> fun t ->
+       pread_assume_fd_is_nonblocking t fd ~offset:10;
+       assert (Iobuf.is_empty t));
+      (Iobuf.sub_shared t ~pos:0 ~len:10
+       |> fun t -> assert (String.equal (Iobuf.to_string t) "1111111111"));
+      Unix.close fd)
+;;
+
 let send_nonblocking_no_sigpipe = send_nonblocking_no_sigpipe
 let sendto_nonblocking_no_sigpipe = sendto_nonblocking_no_sigpipe
 
