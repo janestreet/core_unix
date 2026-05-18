@@ -5,8 +5,8 @@ module Unix = Core_unix
 
 let check_threads ~allow_threads_to_have_been_created =
   (* forking, especially to daemonize, when running multiple threads is tricky, and
-     generally a mistake.  It's so bad, and so hard to catch, that we test in two
-     different ways *)
+     generally a mistake. It's so bad, and so hard to catch, that we test in two different
+     ways *)
   if (not allow_threads_to_have_been_created) && Thread.threads_have_been_created ()
   then
     failwith
@@ -86,7 +86,7 @@ let daemonize
   fork_no_parent ();
   (* Release old working directory. *)
   Unix.chdir cd;
-  (* Ensure sensible umask.  Adjust as needed. *)
+  (* Ensure sensible umask. Adjust as needed. *)
   Option.iter umask ~f:(fun umask -> ignore (Unix.umask umask));
   redirect_stdio_fds ?perm ~stdout:redirect_stdout ~stderr:redirect_stderr ()
 ;;
@@ -146,10 +146,10 @@ let daemonize_wait
             | { Unix.Select_fds.read = [ read_end ]; write = []; except = [] } ->
               (* If the child process exits before detaching and the middle process
                  happens to be in this call to select, the pipe will be closed and select
-                 will return a ready file descriptor, but with zero bytes to read.
-                 In this case, we want to loop back again and call waitpid to obtain
-                 the correct exit status to propagate on to the outermost parent
-                 (otherwise we might incorrectly return a success). *)
+                 will return a ready file descriptor, but with zero bytes to read. In this
+                 case, we want to loop back again and call waitpid to obtain the correct
+                 exit status to propagate on to the outermost parent (otherwise we might
+                 incorrectly return a success). *)
               if Unix.read read_end ~buf:(Bytes.create len) ~pos:0 ~len > 0
               then exit 0
               else loop ()

@@ -2048,8 +2048,8 @@ type getaddrinfo_option =
     be given as the empty string; in this case, the ``any'' address or the ``loopback''
     address are used, depending whether [opts] contains [AI_PASSIVE]. [service] is either
     a service name or the string representation of a port number. [service] can be given
-    as the empty string; in this case, the port field of the returned addresses is set
-    to 0. [opts] is a possibly empty list of options that allows the caller to force a
+    as the empty string; in this case, the port field of the returned addresses is set to
+    0. [opts] is a possibly empty list of options that allows the caller to force a
     particular socket domain (e.g. IPv6 only, or IPv4 only) or a particular socket type
     (e.g. TCP only or UDP only). *)
 val getaddrinfo : string -> string -> getaddrinfo_option list -> addr_info list

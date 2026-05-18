@@ -530,18 +530,43 @@ CAMLprim value bigstring_output_stub(value v_min_len, value v_chan, value v_pos,
 
 MakeReallyOutputFun(write, written = write(fd, bstr, len))
 
-    CAMLprim value
-    bigstring_write_stub(value v_fd, value v_pos, value v_len, value v_bstr) {
+    CAMLprim value bigstring_write_stub(value v_min_len, value v_fd, value v_pos,
+                                        value v_len, value v_bstr) {
   CAMLparam1(v_bstr);
-  char *bstr = get_bstr(v_bstr, v_pos);
+  size_t min_len = Long_val(v_min_len);
+  int fd = Int_val(v_fd);
   size_t len = Long_val(v_len);
   ssize_t written;
+  char *bstr_start = get_bstr(v_bstr, v_pos);
+  char *bstr = bstr_start;
+  char *bstr_min = bstr_start + min_len;
   caml_enter_blocking_section();
-  written = write(Int_val(v_fd), bstr, len);
+  do {
+    do {
+      written = write(fd, bstr, len);
+    } while (written == -1 && errno == EINTR);
+    if (written == -1) {
+      value v_n_good = Val_long(bstr - bstr_start);
+      caml_leave_blocking_section();
+      raise_unix_io_error(v_n_good, "write", Nothing);
+    }
+    if (written == 0) {
+      /* write() returning 0 when len > 0 means we cannot make progress (and should never
+         happen, -1 should be returned instead to signify the error). If min_len hasn't
+         been reached, raise IOError (matching how the read stubs raise on a 0-byte read).
+         Otherwise just return. */
+      if (bstr < bstr_min) {
+        value v_n_good = Val_long(bstr - bstr_start);
+        caml_leave_blocking_section();
+        raise_eof_io_error(v_n_good);
+      }
+      break;
+    }
+    bstr += written;
+    len -= written;
+  } while (bstr < bstr_min);
   caml_leave_blocking_section();
-  if (written == -1)
-    uerror("write", Nothing);
-  CAMLreturn(Val_long(written));
+  CAMLreturn(Val_long(bstr - bstr_start));
 }
 
 CAMLprim value bigstring_pwrite_assume_fd_is_nonblocking_stub(value v_fd, value v_offset,
@@ -555,6 +580,49 @@ CAMLprim value bigstring_pwrite_assume_fd_is_nonblocking_stub(value v_fd, value 
   if (written == -1)
     uerror("bigstring_pwrite_assume_fd_is_nonblocking_stub", Nothing);
   return Val_long(written);
+}
+
+CAMLprim value bigstring_pwrite_stub(value v_min_len, value v_fd, value v_offset,
+                                     value v_pos, value v_len, value v_bstr) {
+  CAMLparam1(v_bstr);
+  size_t min_len = Long_val(v_min_len);
+  int fd = Int_val(v_fd);
+  size_t init_len = Long_val(v_len);
+  size_t offset = Long_val(v_offset);
+  size_t len = init_len;
+  ssize_t written;
+  char *bstr_start = get_bstr(v_bstr, v_pos);
+  char *bstr = bstr_start;
+  char *bstr_min = bstr_start + min_len;
+  caml_enter_blocking_section();
+  do {
+    do {
+      written = pwrite(fd, bstr, len, offset);
+    } while (written == -1 && errno == EINTR);
+    if (written == -1) {
+      value v_n_good = Val_long(bstr - bstr_start);
+      caml_leave_blocking_section();
+      raise_unix_io_error(v_n_good, "pwrite", Nothing);
+    }
+    if (written == 0) {
+      if (bstr < bstr_min) {
+        value v_n_good = Val_long(bstr - bstr_start);
+        caml_leave_blocking_section();
+        raise_eof_io_error(v_n_good);
+      }
+      break;
+    }
+    bstr += written;
+    offset += written;
+    len -= written;
+  } while (bstr < bstr_min);
+  caml_leave_blocking_section();
+  CAMLreturn(Val_long(bstr - bstr_start));
+}
+
+CAMLprim value bigstring_pwrite_bytecode(value *argv, int argn) {
+  assert(argn == 6);
+  return bigstring_pwrite_stub(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
 }
 
 CAMLprim value bigstring_write_assume_fd_is_nonblocking_stub(value v_fd, value v_pos,

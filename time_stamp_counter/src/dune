@@ -5,17 +5,10 @@
  (name time_stamp_counter)
  (public_name core_unix.time_stamp_counter)
  (preprocess
-  (pps ppx_jane -compare-require-explicit-locality ppx_optcomp))
- (preprocessor_deps config.h)
+  (pps ppx_jane -compare-require-explicit-locality ppx_builtin))
  (js_of_ocaml
   (javascript_files time_stamp_counter_stubs.js))
  (libraries core)
  (wasm_of_ocaml
   (javascript_files time_stamp_counter_stubs.js)
   (wasm_files time_stamp_counter_stubs.wat)))
-
-(rule
- (targets config.h)
- (deps)
- (action
-  (bash "cp %{lib:jst-config:config.h} %{targets}")))

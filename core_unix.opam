@@ -18,19 +18,19 @@ depends: [
   "expect_test_helpers_core"
   "jane-street-headers"
   "jst-config"
+  "ppx_builtin"
   "ppx_diff"
   "ppx_jane"
   "ppx_optcomp"
   "ppx_stable_witness"
   "sexplib"
-  "uopt"
   "base-threads"
   "dune"                     {>= "3.17.0"}
   "spawn"                    {= "v0.15.1+ox"}
 ]
-available: arch != "arm32" & arch != "x86_32"
 synopsis: "Unix-specific portions of Core"
 description: "
 Unix-specific extensions to some of the modules defined in [core] and [core_kernel].
 "
 depexts: ["linux-headers"] {os-family = "alpine"}
+available: arch != "arm32" & arch != "x86_32" & arch != "riscv32" & arch != "riscv64"

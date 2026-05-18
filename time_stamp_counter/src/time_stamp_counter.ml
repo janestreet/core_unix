@@ -67,8 +67,6 @@
    computationally more expensive and we use a simpler linear approximation.
 *)
 
-[%%import "config.h"]
-
 open! Core
 open Poly
 open! Import
@@ -94,12 +92,9 @@ let of_int63 t = t
 let to_int63 t = t
 let zero = Int63.zero
 
-[%%ifdef JSC_ARCH_AMD64]
-
 external rdtsc : unit -> (int64[@unboxed]) @@ portable = "caml_rdtsc" "caml_rdtsc_unboxed"
-[@@noalloc] [@@builtin]
+[@@noalloc] [@@builtin amd64]
 
-(* noalloc on x86_64 only *)
 let[@inline] now () =
   let tsc64 = rdtsc () in
   (* Matching on Sys.backend_type is guaranteed to be optimized out. *)
@@ -359,6 +354,7 @@ module Calibrator = struct
   let create () =
     let time = now_float () in
     let tsc = now () in
+    (* Matching on Sys.backend_type is guaranteed to be optimized out. *)
     match Sys.backend_type with
     | Native ->
       let samples = collect_samples ~num_samples:3 ~interval:0.0005 in
@@ -371,6 +367,11 @@ module Calibrator = struct
   (* Creating a calibrator takes about 3ms. *)
   let t = lazy (create ())
   let cpu_mhz = Ok (fun t -> 1. /. (t.floats.sec_per_cycle *. 1E6))
+
+  let[@zero_alloc] cpu_hz t =
+    let local_ cycles_per_sec = 1. /. t.floats.sec_per_cycle in
+    Float.iround_nearest_or_null cycles_per_sec [@nontail]
+  ;;
 
   (* performance hack: [@cold] so [time] is always unboxed. [now_float] and
      [calibrate_using] need to be inlined into the same function for unboxed [time].
@@ -388,41 +389,6 @@ module Calibrator = struct
   end
 end
 
-[%%else]
-
-(* noalloc on x86_64 only *)
-external now : unit -> tsc @@ portable = "tsc_get"
-
-(* Outside of x86_64, [now] returns the result of clock_gettime(), i.e. the current time
-   in nanos past epoch. *)
-
-module Calibrator = struct
-  type t = unit [@@deriving bin_io, sexp]
-
-  let tsc_to_seconds_since_epoch _t tsc = Int63.to_float tsc *. 1e-9
-  let tsc_to_nanos_since_epoch _t tsc = tsc
-  let create_using ~tsc:_ ~time:_ ~samples:_ = ()
-  let create () = ()
-  let initialize _t _samples = ()
-  let calibrate_using _t ~tsc:_ ~time:_ ~am_initializing:_ = ()
-  let calibrate _ = ()
-  let t = lazy (create ())
-
-  let cpu_mhz =
-    Or_error.unimplemented
-      "Time_stamp_counter.Calibrator.cpu_mhz is not defined for 32-bit platforms"
-  ;;
-
-  module Private = struct
-    let create_using = create_using
-    let calibrate_using = calibrate_using
-    let initialize = initialize
-    let nanos_per_cycle _ = 1.
-  end
-end
-
-[%%endif]
-
 module Span = struct
   include Int63
 
@@ -433,8 +399,6 @@ module Span = struct
     let of_int63 t = t
     let to_int63 t = t
   end
-
-  [%%ifdef JSC_ARCH_AMD64]
 
   let to_ns t ~(calibrator : Calibrator.t) =
     (Float.int63_round_nearest_exn [@inlined hint])
@@ -452,15 +416,6 @@ module Span = struct
     with
     | exn -> raise_s [%message "" ~_:(exn : Exn.t) (calibrator : Calibrator.t)]
   ;;
-
-  [%%else]
-
-  (* [tsc_get] already returns the current time in ns *)
-
-  let to_ns t ~calibrator:_ = t
-  let of_ns ns ~calibrator:_ = ns
-
-  [%%endif]
 
   let to_time_ns_span t ~calibrator = Time_ns.Span.of_int63_ns (to_ns t ~calibrator)
   let of_time_ns_span span ~calibrator = of_ns (Time_ns.Span.to_int63_ns span) ~calibrator

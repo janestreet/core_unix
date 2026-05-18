@@ -9,6 +9,16 @@
 
 (rule
  (targets config.h)
+ (enabled_if
+  (<> %{os_type} Win32))
  (deps)
  (action
   (bash "cp %{lib:jst-config:config.h} %{targets}")))
+
+(rule
+ (targets config.h)
+ (enabled_if
+  (= %{os_type} Win32))
+ (deps)
+ (action
+  (system "copy %{lib:jst-config:config.h} %{targets}")))

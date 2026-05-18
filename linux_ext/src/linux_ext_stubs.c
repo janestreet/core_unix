@@ -909,6 +909,76 @@ CAMLprim value core_linux_getxattr(value v_follow_symlinks, value v_path, value 
   CAMLreturn(res);
 }
 
+CAMLprim value core_linux_listxattr(value v_follow_symlinks, value v_path) {
+  CAMLparam2(v_follow_symlinks, v_path);
+  CAMLlocal3(last_cons, res, cons);
+
+  const char *loc;
+  ssize_t (*listxattr_f)(const char *, char *, size_t);
+  if (Bool_val(v_follow_symlinks)) {
+    loc = "listxattr";
+    listxattr_f = listxattr;
+  } else {
+    loc = "llistxattr";
+    listxattr_f = llistxattr;
+  }
+
+  caml_unix_check_path(v_path, loc);
+  char *c_path = strdup(String_val(v_path));
+  if (!c_path) {
+    uerror("strdup", Nothing);
+  }
+
+  char buf[XATTR_LIST_MAX + 1];
+  caml_enter_blocking_section();
+  ssize_t retval = listxattr_f(c_path, buf, XATTR_LIST_MAX);
+  int errno_save = errno;
+  free(c_path);
+  caml_leave_blocking_section();
+
+  if (retval < 0) {
+    switch (errno_save) {
+    case ERANGE:
+      res = Val_int(0);
+      break;
+    case ENOTSUP:
+      res = Val_int(1);
+      break;
+    case E2BIG:
+      res = Val_int(2);
+      break;
+    default:
+      caml_unix_error(errno_save, loc, v_path);
+    }
+  } else {
+    /* Build an OCaml list of attribute names from the null-separated buffer. */
+    res = Val_emptylist;
+    ssize_t pos = 0;
+    while (pos < retval) {
+      size_t len = strlen(buf + pos);
+      if (len == 0)
+        break;
+      cons = caml_alloc(2, 0);
+      Store_field(cons, 0, Val_emptylist);
+      Store_field(cons, 1, Val_emptylist);
+      Store_field(cons, 0, caml_alloc_initialized_string(len, buf + pos));
+      if (pos == 0) {
+        res = cons;
+      } else {
+        Store_field(last_cons, 1, cons);
+      }
+      last_cons = cons;
+      pos += len + 1;
+    }
+    /* Wrap in Ok constructor (tag 0, arity 1) */
+    cons = caml_alloc(1, 0);
+    Store_field(cons, 0, res);
+    res = cons;
+  }
+
+  CAMLreturn(res);
+}
+
 CAMLprim value core_linux_setxattr(value v_follow_symlinks, value v_path, value v_name,
                                    value v_value, value v_flags) {
   CAMLparam5(v_follow_symlinks, v_path, v_name, v_value, v_flags);
@@ -972,6 +1042,57 @@ CAMLprim value core_linux_setxattr(value v_follow_symlinks, value v_path, value 
   CAMLreturn(res);
 }
 
+CAMLprim value core_linux_removexattr(value v_follow_symlinks, value v_path,
+                                      value v_name) {
+  CAMLparam3(v_follow_symlinks, v_path, v_name);
+  CAMLlocal1(res);
+
+  const char *loc;
+  int (*removexattr_f)(const char *, const char *);
+  if (Bool_val(v_follow_symlinks)) {
+    loc = "removexattr";
+    removexattr_f = removexattr;
+  } else {
+    loc = "lremovexattr";
+    removexattr_f = lremovexattr;
+  }
+
+  caml_unix_check_path(v_path, loc);
+  char *c_path = strdup(String_val(v_path));
+  if (!c_path) {
+    uerror("strdup", Nothing);
+  }
+
+  char *c_name = strdup(String_val(v_name));
+  if (!c_name) {
+    free(c_path);
+    uerror("strdup", Nothing);
+  }
+  caml_enter_blocking_section();
+  int retval = removexattr_f(c_path, c_name);
+  int errno_save = errno;
+  free(c_path);
+  free(c_name);
+  caml_leave_blocking_section();
+
+  if (retval < 0) {
+    switch (errno_save) {
+    case ENOATTR:
+      res = Val_int(1);
+      break;
+    case ENOTSUP:
+      res = Val_int(2);
+      break;
+    default:
+      caml_unix_error(errno_save, loc, v_path);
+    }
+  } else {
+    res = Val_int(0);
+  }
+
+  CAMLreturn(res);
+}
+
 #endif /* JSC_EVENTFD */
 
 /* Memory locking */
@@ -995,6 +1116,36 @@ CAMLprim value core_unix_munlockall() {
   if (munlockall() < 0)
     uerror("munlockall", Nothing);
   return Val_unit;
+}
+
+CAMLprim value core_linux_copy_file_range_stub(value v_fd_in, value v_off_in,
+                                               value v_fd_out, value v_off_out,
+                                               value v_len) {
+  int fd_in = Int_val(v_fd_in);
+  int fd_out = Int_val(v_fd_out);
+  size_t len = Long_val(v_len);
+  ssize_t ret;
+
+  loff_t off_in, off_out;
+  loff_t *p_off_in = NULL, *p_off_out = NULL;
+
+  if (Is_block(v_off_in)) {
+    off_in = Long_val(Field(v_off_in, 0));
+    p_off_in = &off_in;
+  }
+  if (Is_block(v_off_out)) {
+    off_out = Long_val(Field(v_off_out, 0));
+    p_off_out = &off_out;
+  }
+
+  caml_enter_blocking_section();
+  ret = copy_file_range(fd_in, p_off_in, fd_out, p_off_out, len, 0);
+  caml_leave_blocking_section();
+
+  if (ret == -1)
+    uerror("copy_file_range", Nothing);
+
+  return Val_long(ret);
 }
 
 #else

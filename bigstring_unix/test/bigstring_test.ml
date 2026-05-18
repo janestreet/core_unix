@@ -124,6 +124,32 @@ let really_pread_test ~n bs fd =
   sprintf "%s: %s" n (repr bs) @? (bs = bs')
 ;;
 
+(** writes [bs] to a temp file using [really_pwrite] at various offsets, then reads back
+    and verifies *)
+let really_pwrite_test ~n bs =
+  let len = Bigstring.length bs in
+  let file, fd = Unix.mkstemp "bigstring_pwrite_test" in
+  protect
+    ~f:(fun () ->
+      (* Write at offset 0 *)
+      Bigstring_unix.really_pwrite fd ~offset:0 bs;
+      (* Read back and verify *)
+      let bs' = Bigstring.create len in
+      Bigstring_unix.really_pread fd ~offset:0 ~len bs';
+      sprintf "pwrite %s: full write" n @? (bs = bs');
+      (* Write a sub-range at a non-zero offset *)
+      if len > 1
+      then (
+        let offset = Int.min (len - 1) 8 in
+        let sub_len = Int.max (len - 8) 1 in
+        let sub = Bigstring.sub ~pos:0 ~len:sub_len bs in
+        Bigstring_unix.really_pwrite fd ~offset ~len:sub_len bs;
+        let bs'' = Bigstring.create sub_len in
+        Bigstring_unix.really_pread fd ~offset ~len:sub_len bs'';
+        sprintf "pwrite %s: sub write at offset" n @? (sub = bs'')))
+    ~finally:(fun () -> Unix.unlink file)
+;;
+
 let socketpair () =
   Unix.socketpair ~domain:Unix.PF_UNIX ~kind:Unix.SOCK_STREAM ~protocol:0 ()
 ;;
@@ -194,6 +220,13 @@ let%expect_test "input" =
     fd_test test ~n:"simple" (bs_of_s "normal length string");
     repeat 100 (fd_test test ~n:"random") (bsg ~size:png);
     repeat 100 (fd_test test ~n:"random big") (bsg ~size:(fun () -> 100 * png ())))
+;;
+
+let%expect_test "really_pwrite" =
+  really_pwrite_test ~n:"single" (bs_of_s "X");
+  really_pwrite_test ~n:"simple" (bs_of_s "normal length string");
+  repeat 100 (really_pwrite_test ~n:"random") (bsg ~size:png);
+  repeat 100 (really_pwrite_test ~n:"random big") (bsg ~size:(fun () -> 100 * png ()))
 ;;
 
 let%expect_test "destruction" =

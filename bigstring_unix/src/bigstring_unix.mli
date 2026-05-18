@@ -229,17 +229,41 @@ val sendto_nonblocking_no_sigpipe
      -> Unix.Syscall_result.Int.t)
       Or_error.t
 
-(** [write fd ?pos ?len bstr] writes [len] bytes in bigstring [bstr] starting at position
+(** [write ?min_len fd ?pos ?len bstr] writes at least [min_len] (must be [>= 0]) and at
+    most [len] (must be [>= min_len]) bytes from bigstring [bstr] starting at position
     [pos] to file descriptor [fd]. Returns the number of bytes actually written.
 
-    Raises [Invalid_argument] if the designated range is out of bounds. Raises
-    [Unix_error] in the case of output errors. *)
+    [NOTE] [write] does not automatically retry on [EINTR] when [min_len = 0]; in that
+    case it behaves like a single [write()] system call.
+
+    Raises [Invalid_argument] if the designated ranges are out of bounds. Raises [IOError]
+    in the case of output errors, if the minimum length could not be written. *)
 val write
-  :  Unix.File_descr.t
+  :  ?min_len:int (** default = 0 *)
+  -> Unix.File_descr.t
   -> ?pos:int (** default = 0 *)
   -> ?len:int (** default = [length bstr - pos] *)
   -> t @ local shared
   -> int
+
+(** Like [write] but uses [pwrite] to write at the given offset in the file. *)
+val pwrite
+  :  ?min_len:int
+  -> Unix.File_descr.t
+  -> offset:int
+  -> ?pos:int (** default = 0 *)
+  -> ?len:int (** default = [length bstr - pos] *)
+  -> t @ local shared
+  -> int
+
+(** Like [really_write] but uses [pwrite] to write at the given offset in the file. *)
+val really_pwrite
+  :  Unix.File_descr.t
+  -> offset:int
+  -> ?pos:int (** default = 0 *)
+  -> ?len:int (** default = [length bstr - pos] *)
+  -> t @ local shared
+  -> unit
 
 (** [pwrite_assume_fd_is_nonblocking fd ~offset ?pos ?len bstr] writes up to [len] bytes
     of bigstring [bstr] starting at position [pos] to file descriptor [fd] at position
@@ -397,10 +421,11 @@ external unsafe_read_assume_fd_is_nonblocking
   -> Unix.Syscall_result.Int.t
   = "bigstring_read_assume_fd_is_nonblocking_stub"
 
-(** [unsafe_write fd ~pos ~len bstr] is similar to {!Bigstring.write}, but does not
-    perform any bounds checks. Will crash on bounds errors! *)
+(** [unsafe_write ~min_len fd ~pos ~len bstr] is similar to {!Bigstring.write}, but does
+    not perform any bounds checks. Will crash on bounds errors! *)
 external unsafe_write
-  :  Unix.File_descr.t
+  :  min_len:int
+  -> Unix.File_descr.t
   -> pos:int
   -> len:int
   -> t @ local shared

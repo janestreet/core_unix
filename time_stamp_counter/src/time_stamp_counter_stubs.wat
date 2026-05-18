@@ -21,8 +21,7 @@
    (data $performance "performance")
    (data $now "now")
 
-   (export "tsc_get" (func $caml_rdtsc))
-   (func $caml_rdtsc (export "caml_rdtsc") (param (ref eq)) (result (ref eq))
+   (func (export "caml_rdtsc") (param (ref eq)) (result (ref eq))
       (call $caml_copy_int64
          (i64.trunc_sat_f64_s
             (f64.mul (f64.const 1000.)

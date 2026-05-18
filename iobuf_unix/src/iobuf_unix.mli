@@ -4,41 +4,44 @@ module Unix := Core_unix
 type ok_or_eof =
   | Ok
   | Eof
-[@@deriving compare ~localize, sexp_of]
+[@@deriving compare ~localize, sexp_of, variants]
 
 (** [Iobuf] has analogs of various [Bigstring] functions. These analogs advance by the
     amount written/read. *)
-val input : ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t -> In_channel.t -> ok_or_eof
+val input
+  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  -> In_channel.t
+  -> ok_or_eof
 
 val read
-  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
   -> Unix.File_descr.t
   -> ok_or_eof
 
 val really_read
-  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
   -> Unix.File_descr.t
   -> ok_or_eof
 
 val really_pread
-  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
   -> Unix.File_descr.t
   -> offset:int
   -> ok_or_eof
 
 val read_assume_fd_is_nonblocking
-  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
   -> Unix.File_descr.t
   -> Unix.Syscall_result.Unit.t
 
 val pread_assume_fd_is_nonblocking
-  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
   -> Unix.File_descr.t
   -> offset:int
   -> unit
 
 val recvfrom_assume_fd_is_nonblocking
-  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
   -> Unix.File_descr.t
   -> Unix.sockaddr
 
@@ -111,6 +114,12 @@ val write
 val really_write
   :  local_ ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t
   -> Unix.File_descr.t
+  -> unit
+
+val really_pwrite
+  :  local_ ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t
+  -> Unix.File_descr.t
+  -> offset:int
   -> unit
 
 val write_assume_fd_is_nonblocking

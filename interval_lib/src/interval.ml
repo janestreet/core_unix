@@ -462,13 +462,23 @@ end
 module%template.portable
   [@modality p] Make (Bound : sig
     type t
-    [@@deriving (bin_io [@mode m]), (compare [@mode m]), (equal [@mode m]), hash, sexp]
+    [@@deriving
+      (bin_io [@mode m])
+      , (compare [@mode.explicit m])
+      , (equal [@mode.explicit m])
+      , hash
+      , sexp]
 
     include Comparable.S [@mode m] with type t := t
   end) =
 struct
   type t = Bound.t interval
-  [@@deriving (bin_io [@mode m]), sexp, (compare [@mode m]), (equal [@mode m]), hash]
+  [@@deriving
+    (bin_io [@mode m])
+    , sexp
+    , (compare [@mode.explicit m])
+    , (equal [@mode.explicit m])
+    , hash]
 
   type interval = t [@@deriving (bin_io [@mode m]), sexp]
   type bound = Bound.t

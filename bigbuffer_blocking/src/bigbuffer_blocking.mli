@@ -1,3 +1,5 @@
+@@ portable
+
 (** Extends {{!Core.Bigbuffer} [Core.Bigbuffer]}. *)
 
 open! Core

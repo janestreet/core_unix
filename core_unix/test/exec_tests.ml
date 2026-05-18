@@ -3,7 +3,14 @@ open! Import
 
 let%expect_test "Unix.fork_exec" =
   show_raise (fun () -> Unix.fork_exec ~prog:"program_that_doesnt_exist" ~argv:[] ());
-  [%expect {| (raised (Core_unix.fork_exec (exec program_that_doesnt_exist) ENOENT)) |}]
+  [%expect
+    {|
+    (raised (
+      Unix.Unix_error
+      "No such file or directory"
+      "Core_unix.fork_exec: exec"
+      program_that_doesnt_exist))
+    |}]
 ;;
 
 let%expect_test "fork then exec /bin/true" =
@@ -69,7 +76,14 @@ let%expect_test "at_exit handlers not executed in child process" =
   let do_exec = ref true in
   Stdlib.at_exit (fun () -> if !do_exec then print_endline "at_exit handler executed");
   show_raise (fun () -> Unix.fork_exec ~prog:"program_that_doesnt_exist" ~argv:[] ());
-  [%expect {| (raised (Core_unix.fork_exec (exec program_that_doesnt_exist) ENOENT)) |}];
+  [%expect
+    {|
+    (raised (
+      Unix.Unix_error
+      "No such file or directory"
+      "Core_unix.fork_exec: exec"
+      program_that_doesnt_exist))
+    |}];
   (* Disable this [at_exit] for other tests *)
   do_exec := false
 ;;
@@ -129,13 +143,10 @@ let%expect_test "fork_exec preexec FD management" =
   [%expect
     {|
     (raised (
-      Core_unix.fork_exec
-      (Fd_open
-        (fd       1)
-        (filename /does/not/exist)
-        (flags (O_WRONLY))
-        (perm 0))
-      ENOENT))
+      Unix.Unix_error
+      "No such file or directory"
+      "Core_unix.fork_exec: (Fd_open(fd 1)(filename /does/not/exist)(flags(O_WRONLY))(perm 0))"
+      /bin/true))
     |}]
 ;;
 
@@ -233,11 +244,10 @@ let%expect_test "fork_exec preexec setscheduler" =
   [%expect
     {|
     (raised (
-      Core_unix.fork_exec
-      (Sched_setscheduler
-        (policy   Round_robin)
-        (priority -100))
-      EINVAL))
+      Unix.Unix_error
+      "Invalid argument"
+      "Core_unix.fork_exec: (Sched_setscheduler(policy Round_robin)(priority -100))"
+      /bin/true))
     |}]
 ;;
 
@@ -276,11 +286,10 @@ let%expect_test "fork_exec preexec niceness" =
     [%expect
       {|
       (raised (
-        Core_unix.fork_exec
-        (Sched_nice
-          (niceness     -20)
-          (ignore_eperm false))
-        EPERM))
+        Unix.Unix_error
+        "Operation not permitted"
+        "Core_unix.fork_exec: (Sched_nice(niceness -20)(ignore_eperm false))"
+        nice))
       |}];
     Unix.RLimit.set resource before
 ;;
@@ -301,7 +310,14 @@ let%expect_test "fork_exec preexec setaffinity" =
       ~argv:[ "true" ]
       ()
     |> Unix.waitpid_exn);
-  [%expect {| (raised (Core_unix.fork_exec (Sched_setaffinity (0 100000)) EINVAL)) |}]
+  [%expect
+    {|
+    (raised (
+      Unix.Unix_error
+      "Invalid argument"
+      "Core_unix.fork_exec: (Sched_setaffinity(0 100000))"
+      /bin/true))
+    |}]
 ;;
 
 let%expect_test "fork_exec fork failure" =
@@ -320,7 +336,14 @@ let%expect_test "fork_exec fork failure" =
       Unix.exit_immediately 0
     | `In_the_parent pid ->
       Unix.waitpid_exn pid;
-      [%expect {| (raised (Core_unix.fork_exec vfork EAGAIN)) |}])
+      [%expect
+        {|
+        (raised (
+          Unix.Unix_error
+          "Resource temporarily unavailable"
+          "Core_unix.fork_exec: vfork"
+          /bin/true))
+        |}])
 ;;
 
 let%expect_test "fork_exec preexec chdir" =
@@ -339,9 +362,10 @@ let%expect_test "fork_exec preexec chdir" =
   [%expect
     {|
     (raised (
-      Core_unix.fork_exec
-      (Chdir /nonexistent/directory/that/does/not/exist)
-      ENOENT))
+      Unix.Unix_error
+      "No such file or directory"
+      "Core_unix.fork_exec: (Chdir /nonexistent/directory/that/does/not/exist)"
+      /bin/true))
     |}];
   assert (String.equal parent_cwd (Unix.getcwd ()))
 ;;
@@ -357,5 +381,12 @@ let%expect_test "fork_exec preexec setsid" =
       ~argv:[ "echo"; "ok" ]
       ()
     |> Unix.waitpid_exn);
-  [%expect {| (raised (Core_unix.fork_exec (Setsid ()) EPERM)) |}]
+  [%expect
+    {|
+    (raised (
+      Unix.Unix_error
+      "Operation not permitted"
+      "Core_unix.fork_exec: (Setsid())"
+      /bin/echo))
+    |}]
 ;;

@@ -8,7 +8,7 @@ module Syscall_result = Unix.Syscall_result
 type ok_or_eof =
   | Ok
   | Eof
-[@@deriving compare ~localize, sexp_of]
+[@@deriving compare ~localize, sexp_of, variants]
 
 let input t ch =
   match
@@ -297,6 +297,16 @@ let pwrite_assume_fd_is_nonblocking t fd ~offset =
       ~len:(Iobuf.length t)
   in
   Iobuf.unsafe_advance t nwritten
+;;
+
+let really_pwrite t fd ~offset =
+  Bigstring_unix.really_pwrite
+    fd
+    ~offset
+    (Iobuf.Expert.buf t)
+    ~pos:(Iobuf.Expert.lo t)
+    ~len:(Iobuf.length t);
+  Iobuf.unsafe_advance t (Iobuf.length t)
 ;;
 
 module Expert = struct

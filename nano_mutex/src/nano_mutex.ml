@@ -38,9 +38,8 @@ end = struct
 
   let create () =
     match Thread_safe_queue.dequeue unused with
-    | Thread_safe_queue.Dequeue_result.Empty ->
-      { mutex = Mutex.create (); condition = Condition.create () }
-    | Not_empty { elt } -> elt
+    | Null -> { mutex = Mutex.create (); condition = Condition.create () }
+    | This elt -> elt
   ;;
 
   let critical_section t ~f = Mutex.critical_section t.mutex ~f
@@ -95,7 +94,7 @@ end
 type t =
   { mutable id_of_thread_holding_lock : Thread_id_option.t
   ; mutable num_using_blocker : int
-  ; mutable blocker : Blocker.t Uopt.t
+  ; mutable blocker : Blocker.t or_null
   }
 [@@deriving sexp_of]
 
@@ -108,7 +107,7 @@ let invariant t =
        [Some]. It could, but doing so is not necessary for the correctness of of
        [with_blocker], which only relies on test-and-set of [t.blocker] to make sure there
        is an agreed-upon winner in the race to create a blocker. *)
-    if t.num_using_blocker = 0 then assert (Uopt.is_none t.blocker)
+    if t.num_using_blocker = 0 then assert (Or_null.is_null t.blocker)
   with
   | exn -> failwiths "invariant failed" (exn, t) [%sexp_of: exn * t]
 ;;
@@ -118,7 +117,7 @@ let equal (t : t) t' = phys_equal t t'
 let create () =
   { id_of_thread_holding_lock = Thread_id_option.none
   ; num_using_blocker = 0
-  ; blocker = Uopt.none
+  ; blocker = Null
   }
 ;;
 
@@ -163,10 +162,10 @@ let try_lock_exn t = ok_exn (try_lock t)
 
 let[@inline never] [@specialise never] [@local never] with_blocker0 t ~new_blocker =
   (* BEGIN ATOMIC *)
-  if Uopt.is_some t.blocker
-  then Uopt.unsafe_value t.blocker
+  if Or_null.is_this t.blocker
+  then Or_null.unsafe_value t.blocker
   else (
-    t.blocker <- Uopt.some new_blocker;
+    t.blocker <- This new_blocker;
     new_blocker)
 ;;
 
@@ -177,9 +176,9 @@ let[@inline never] [@specialise never] [@local never] with_blocker0 t ~new_block
 let with_blocker t (local_ f) =
   t.num_using_blocker <- t.num_using_blocker + 1;
   let blocker =
-    match%optional.Uopt t.blocker with
-    | Some blocker -> blocker
-    | None ->
+    match t.blocker with
+    | This blocker -> blocker
+    | Null ->
       (* We allocate [new_blocker] here because one cannot allocate inside an atomic
          region. *)
       let new_blocker = Blocker.create () in
@@ -201,7 +200,7 @@ let with_blocker t (local_ f) =
       t.num_using_blocker <- t.num_using_blocker - 1;
       if t.num_using_blocker = 0
       then (
-        t.blocker <- Uopt.none;
+        t.blocker <- Null;
         (* END ATOMIC *)
         Blocker.save_unused blocker)) [@nontail]
 ;;
@@ -283,7 +282,7 @@ let unlock t =
     then (
       t.id_of_thread_holding_lock <- Thread_id_option.none;
       (* END ATOMIC *)
-      if Uopt.is_some t.blocker then with_blocker t Blocker.signal;
+      if Or_null.is_this t.blocker then with_blocker t Blocker.signal;
       Ok ())
     else error_attempt_to_unlock_mutex_held_by_another_thread t
   else error_attempt_to_unlock_an_unlocked_mutex t

@@ -26,13 +26,19 @@ open! Core
 
     Specific known bugs:
 
-    - Safety bug: if a stale lock file is present, two instances on the same machine
+    - Safety bug: If a stale lock file is present, two instances on the same machine
       racing to clean up that lock can both "succeed" so the lock ends up taken twice.
 
-    - Liveness bug (fixed with create_v2): a process can write its hostname*pid
+    - Safety bug: By default, two processes running on the same host in different pid
+      namespaces will both be able to take the lock. Setting the
+      [NFS_LOCK_ENABLE_PID_NAMESPACE_CHECK] environment variable enables a check which
+      prevents this, but could cause automatic cleanup of stale lockfiles to not work in
+      some cases.
+
+    - Liveness bug (fixed with create_v2): A process can write its hostname*pid
       information to the void upon taking the lock, so you may end up with a broken
-      (empty) lock file, which needs manual clean-up afterwards. (it seems that for this
-      to happen another process needs to take and release the lock in quick succession) *)
+      (empty) lock file, which needs manual clean-up afterwards (it seems that for this to
+      happen another process needs to take and release the lock in quick succession). *)
 
 (** [create ?message path] tries to create and lock the file at [path] by creating a hard
     link to [path].nfs_lock. The contents of [path] will be replaced with a sexp

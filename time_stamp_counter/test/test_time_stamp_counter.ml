@@ -1,13 +1,9 @@
-[%%import "config.h"]
-
 open! Core
 open! Import
 open! Time_stamp_counter
 open! Time_stamp_counter.Private
 
 module%test _ = struct
-  [%%ifdef JSC_ARCH_SIXTYFOUR]
-
   let%expect_test "time moves backwards" =
     (* even if the system time goes backwards, we don't acknowledge this change. *)
     let y2000 =
@@ -278,6 +274,4 @@ module%test _ = struct
     ignore (Expect_test_helpers_core.require_no_allocation (fun () -> now ()) : t);
     [%expect {| |}]
   ;;
-
-  [%%endif]
 end

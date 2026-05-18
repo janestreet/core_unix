@@ -194,10 +194,27 @@ external unsafe_really_write
   @@ portable
   = "bigstring_really_write_stub"
 
+external unsafe_write
+  :  min_len:int
+  -> Unix.File_descr.t
+  -> pos:int
+  -> len:int
+  -> t @ local shared
+  -> int
+  @@ portable
+  = "bigstring_write_stub"
+
+let write ?min_len fd ?(pos = 0) ?len bstr =
+  let len = get_opt_len bstr ~pos len in
+  let loc = "write" in
+  check_args ~loc ~pos ~len bstr;
+  let min_len = check_min_len ~loc ~len min_len in
+  unsafe_write ~min_len fd ~pos ~len bstr
+;;
+
 let really_write fd ?(pos = 0) ?len bstr =
   let len = get_opt_len bstr ~pos len in
-  check_args ~loc:"really_write" ~pos ~len bstr;
-  unsafe_really_write fd ~pos ~len bstr
+  ignore (write ~min_len:len fd ~pos ~len bstr : int)
 ;;
 
 external unsafe_pwrite_assume_fd_is_nonblocking
@@ -215,6 +232,30 @@ let pwrite_assume_fd_is_nonblocking fd ~offset ?(pos = 0) ?len bstr =
   let loc = "pwrite" in
   check_args ~loc ~pos ~len bstr;
   unsafe_pwrite_assume_fd_is_nonblocking fd ~offset ~pos ~len bstr
+;;
+
+external unsafe_pwrite
+  :  min_len:int
+  -> Unix.File_descr.t
+  -> offset:int
+  -> pos:int
+  -> len:int
+  -> t @ local shared
+  -> int
+  @@ portable
+  = "bigstring_pwrite_bytecode" "bigstring_pwrite_stub"
+
+let pwrite ?min_len fd ~offset ?(pos = 0) ?len bstr =
+  let len = get_opt_len bstr ~pos len in
+  let loc = "pwrite" in
+  check_args ~loc ~pos ~len bstr;
+  let min_len = check_min_len ~loc ~len min_len in
+  unsafe_pwrite ~min_len fd ~offset ~pos ~len bstr
+;;
+
+let really_pwrite fd ~offset ?(pos = 0) ?len bstr =
+  let len = get_opt_len bstr ~pos len in
+  ignore (pwrite ~min_len:len fd ~offset ~pos ~len bstr : int)
 ;;
 
 [%%ifdef JSC_MSG_NOSIGNAL]
@@ -288,21 +329,6 @@ let unsafe_really_send_no_sigpipe = u "Bigstring.unsafe_really_send_no_sigpipe"
 let unsafe_send_nonblocking_no_sigpipe = u "Bigstring.unsafe_send_nonblocking_no_sigpipe"
 
 [%%endif]
-
-external unsafe_write
-  :  Unix.File_descr.t
-  -> pos:int
-  -> len:int
-  -> t @ local shared
-  -> int
-  @@ portable
-  = "bigstring_write_stub"
-
-let write fd ?(pos = 0) ?len bstr =
-  let len = get_opt_len bstr ~pos len in
-  check_args ~loc:"write" ~pos ~len bstr;
-  unsafe_write fd ~pos ~len bstr
-;;
 
 external unsafe_write_assume_fd_is_nonblocking
   :  Unix.File_descr.t

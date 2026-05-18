@@ -21,8 +21,8 @@ open! Core
     If you pass [unlink_on_exit:true], an [at_exit] handler will be set up to remove the
     lock file on program termination.
 
-    The lock file is created with mode 664, so will not be world-writable even with
-    umask 0. *)
+    The lock file is created with mode 664, so will not be world-writable even with umask
+    0. *)
 val create
   :  ?message:string
   -> ?close_on_exec:bool (** defaults to true *)
