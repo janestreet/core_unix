@@ -39,6 +39,7 @@ type tcp_int_option =
 [@@deriving sexp, bin_io]
 
 type tcp_string_option = TCP_CONGESTION [@@deriving sexp, bin_io]
+type ip_int_option = IP_TOS
 
 module Bound_to_interface = struct
   type t =
@@ -48,7 +49,7 @@ module Bound_to_interface = struct
 end
 
 module Priority : sig @@ portable
-  type t [@@deriving sexp]
+  type t : immediate [@@deriving sexp]
 
   val equal : t -> t -> bool
   val of_int : int -> t
@@ -246,6 +247,7 @@ module Null_toplevel = struct
   let settcpopt_bool = u "Linux_ext.settcpopt_bool"
   let settcpopt_int = u "Linux_ext.settcpopt_int"
   let settcpopt_string = u "Linux_ext.settcpopt_string"
+  let setipopt_int = u "Linux_ext.setipopt_int"
   let peer_credentials = u "Linux_ext.peer_credentials"
   let setfsuid = u "Linux_ext.setfsuid"
   let setfsgid = u "Linux_ext.setfsgid"
@@ -282,6 +284,8 @@ module Null : Linux_ext_intf.S = struct
 
   type nonrec tcp_string_option = tcp_string_option = TCP_CONGESTION
   [@@deriving sexp, bin_io]
+
+  type nonrec ip_int_option = ip_int_option = IP_TOS
 
   module Bound_to_interface = struct
     type t = Bound_to_interface.t =
@@ -1058,6 +1062,14 @@ external settcpopt_string
   @@ portable
   = "core_linux_settcpopt_string_stub"
 
+external setipopt_int
+  :  file_descr
+  -> ip_int_option
+  -> int
+  -> unit
+  @@ portable
+  = "core_linux_setipopt_int_stub"
+
 external peer_credentials
   :  file_descr
   -> Peer_credentials.t
@@ -1343,6 +1355,7 @@ let sendmsg_nonblocking_no_sigpipe = Ok sendmsg_nonblocking_no_sigpipe
 let settcpopt_bool = Ok settcpopt_bool
 let settcpopt_int = Ok settcpopt_int
 let settcpopt_string = Ok settcpopt_string
+let setipopt_int = Ok setipopt_int
 let peer_credentials = Ok peer_credentials
 let setfsuid = Ok setfsuid
 let setfsgid = Ok setfsgid

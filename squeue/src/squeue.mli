@@ -1,3 +1,5 @@
+@@ portable
+
 (** Thread-safe queue module, using locks. *)
 
 open! Core

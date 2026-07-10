@@ -116,6 +116,10 @@ module type S = sig @@ portable
   val fold_ready : t -> init:'a -> f:('a -> File_descr.t -> Flags.t -> 'a) -> 'a
 
   module Expert : sig
+    (** [file_descr t] returns the file descriptor backing the epoll set. This is useful
+        for registering the epoll set with another event loop. *)
+    val file_descr : t -> File_descr.t
+
     (** [clear_ready t] sets the number of ready events in [t] to [0]. This should be
         called after all the events in [t] have been processed, following a call to
         {!wait}. *)

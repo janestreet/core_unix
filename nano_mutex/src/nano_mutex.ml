@@ -290,7 +290,8 @@ let unlock t =
 
 let unlock_exn t = ok_exn (unlock t)
 
-let critical_section t ~f =
-  lock_exn t;
-  protect ~f ~finally:(fun () -> unlock_exn t)
+let%template[@mode l = (global, local)] critical_section t ~f =
+  (lock_exn t;
+   (Exn.protect [@mode l]) ~f ~finally:(fun () -> unlock_exn t))
+  [@exclave_if_local l ~reasons:[ May_return_local ]]
 ;;

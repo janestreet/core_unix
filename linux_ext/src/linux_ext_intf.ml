@@ -177,6 +177,25 @@ module type S = sig @@ portable
       [opt] for socket [sock] to value [v]. *)
   val settcpopt_string : (File_descr.t -> tcp_string_option -> string -> unit) Or_error.t
 
+  type ip_int_option =
+    | IP_TOS
+    (** (since Linux 1.0) Set or receive the Type-Of-Service (TOS) field that is sent with
+        every IP packet originating from this socket. It is used to prioritize packets on
+        the network. TOS is a byte. There are some standard TOS flags defined:
+        IPTOS_LOWDELAY to minimize delays for interactive traffic, IPTOS_THROUGHPUT to
+        optimize throughput, IPTOS_RELIABILITY to optimize for reliability, IPTOS_MINCOST
+        should be used for "filler data" where slow transmission doesn't matter. At most
+        one of these TOS values can be specified. Other bits are invalid and shall be
+        cleared. Linux sends IPTOS_LOWDELAY datagrams first by default, but the exact
+        behavior depends on the configured queueing discipline. Some high priority levels
+        may require superuser privileges (the CAP_NET_ADMIN capability). The priority can
+        also be set in a protocol independent way by the (SOL_SOCKET, SO_PRIORITY) socket
+        option (see socket(7)). *)
+
+  (** [setipopt_int sock opt v] sets the current value of the integer IP socket option
+      [opt] for sock [sock]. *)
+  val setipopt_int : (File_descr.t -> ip_int_option -> int -> unit) Or_error.t
+
   (** [send_nonblocking_no_sigpipe sock ?pos ?len buf] tries to do a nonblocking send on
       socket [sock] given buffer [buf], offset [pos] and length [len]. Prevents [SIGPIPE],
       i.e., raises a Unix-error in that case immediately. Returns [Some bytes_written] or
@@ -577,7 +596,7 @@ module type S = sig @@ portable
       real-time) processes that have static priority zero. See [Unix.Scheduler.set] for
       setting the static priority. *)
   module Priority : sig
-    type t [@@deriving sexp]
+    type t : immediate [@@deriving sexp]
 
     val equal : t -> t -> bool
     val of_int : int -> t

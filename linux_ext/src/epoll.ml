@@ -68,6 +68,7 @@ module Null_impl : S = struct
   let fold_ready _ ~init:_ ~f:_ = assert false
 
   module Expert = struct
+    let file_descr _ = assert false
     let clear_ready _ = assert false
   end
 
@@ -381,6 +382,11 @@ module Impl = struct
   ;;
 
   module Expert = struct
+    let file_descr t =
+      let t = in_use_exn t in
+      t.epollfd
+    ;;
+
     let clear_ready t =
       let t = in_use_exn t in
       t.num_ready_events <- 0

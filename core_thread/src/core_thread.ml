@@ -9,10 +9,20 @@ let wait_timed_read = wait_timed_read [@@ocaml.alert "-deprecated"]
 let wait_timed_write = wait_timed_write [@@ocaml.alert "-deprecated"]
 let exit = exit [@@ocaml.alert "-deprecated"]
 let sexp_of_t t = [%message "thread" ~id:(id t : int)]
-let create_should_raise = ref false
+let create_should_raise = Atomic.make false
+let portable_create = Portable.create
+
+let create_portable ~on_uncaught_exn:`Print_to_stderr f arg =
+  if Atomic.get create_should_raise
+  then raise_s [%message "Core_thread.create requested to raise"];
+  Atomic.set threads_have_been_created true;
+  let f arg : unit = Exn.handle_uncaught_and_ignore (fun () -> f arg) in
+  portable_create f arg
+;;
 
 let create ~on_uncaught_exn f arg =
-  if !create_should_raise then raise_s [%message "Core_thread.create requested to raise"];
+  if Atomic.get create_should_raise
+  then raise_s [%message "Core_thread.create requested to raise"];
   Atomic.set threads_have_been_created true;
   let f arg : unit =
     let exit =
