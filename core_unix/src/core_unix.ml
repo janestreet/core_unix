@@ -1061,11 +1061,7 @@ let wait4 ?(restart = true) ~mode wait_on =
   if x = 0 then None else Some ((Pid.of_int x, Exit_or_signal_or_stop.of_unix ps), rusage)
 ;;
 
-let wait_with_resource_usage ?restart wait_on =
-  let (pid, ps), rusage =
-    wait4 ?restart ~mode:[] wait_on
-    |> Option.value_exn ~message:"unexpected None with wait4 without WNOHANG"
-  in
+let wait_with_resource_usage_gen ((pid, ps), rusage) =
   match ps with
   | (Ok _ | Error #Exit_or_signal.error) as x -> (pid, x), rusage
   | Error (`Stop _) ->
@@ -1075,6 +1071,16 @@ let wait_with_resource_usage ?restart wait_on =
           , ~~(pid : Pid.t)
           , ~~(ps : Exit_or_signal_or_stop.t) )
         ]]
+;;
+
+let wait_with_resource_usage ?restart wait_on =
+  wait4 ?restart ~mode:[] wait_on
+  |> Option.value_exn ~message:"unexpected None with wait4 without WNOHANG"
+  |> wait_with_resource_usage_gen
+;;
+
+let wait_nohang_with_resource_usage wait_on =
+  wait4 ~mode:[ WNOHANG ] wait_on |> Option.map ~f:wait_with_resource_usage_gen
 ;;
 
 let system s =

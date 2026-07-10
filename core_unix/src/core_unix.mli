@@ -2415,6 +2415,13 @@ val wait_with_resource_usage
   -> wait_on
   -> (Pid.t * Exit_or_signal.t) * Resource_usage.t
 
+(** Like {!wait_nohang}, but also returns resource usage information. Returns [None] if no
+    matching child has exited yet. Raises [Unix_error] with [ECHILD] when there are no
+    matching children at all. *)
+val wait_nohang_with_resource_usage
+  :  wait_on
+  -> ((Pid.t * Exit_or_signal.t) * Resource_usage.t) option
+
 (** {2 System configuration}
     See 'man sysconf' for documentation. *)
 type sysconf =

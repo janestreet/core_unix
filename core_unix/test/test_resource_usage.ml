@@ -31,3 +31,25 @@ let%expect_test "wait_with_resource_usage" =
    sanity_check_rusage rusage);
   ()
 ;;
+
+let rec poll_until_exited pid =
+  match Unix.wait_nohang_with_resource_usage (`Pid pid) with
+  | Some result -> result
+  | None ->
+    let (_ : float) = Unix.nanosleep 0.01 in
+    poll_until_exited pid
+;;
+
+let%expect_test "wait_nohang_with_resource_usage" =
+  (let%tydi { pid; _ } = Unix.create_process ~prog:"true" ~args:[] in
+   let (pid', exit_or_signal), rusage = poll_until_exited pid in
+   [%test_eq: Pid.t] pid pid';
+   [%test_eq: Unix.Exit_or_signal.t] exit_or_signal (Ok ());
+   sanity_check_rusage rusage);
+  (let%tydi { pid; _ } = Unix.create_process ~prog:"false" ~args:[] in
+   let (pid', exit_or_signal), rusage = poll_until_exited pid in
+   [%test_eq: Pid.t] pid pid';
+   [%test_eq: Unix.Exit_or_signal.t] exit_or_signal (Error (`Exit_non_zero 1));
+   sanity_check_rusage rusage);
+  ()
+;;

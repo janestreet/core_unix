@@ -26,10 +26,14 @@ let%expect_test "contains_set" =
   let s1 = S.create_exn [ 1, 2; 3, 4; 5, 6 ] in
   let s2 = S.create_exn [ 3, 5; 10, 11 ] in
   let s3 = S.create_exn [ 3, 4 ] in
+  let s4 = S.create_exn [ Float.nan, 1. ] in
   "contains 1" @? S.contains s2 3;
   "contains 2" @? S.contains s2 4;
   "contains 3" @? not (S.contains s2 9);
   "contains 4" @? not (S.contains s2 12);
+  "contains 5" @? S.contains s4 (-1.0e9);
+  "contains 6" @? S.contains s4 Float.neg_infinity;
+  "contains 7" @? not (S.contains s4 1.5);
   "contains_set 1" @? not (S.contains_set ~container:s2 ~contained:s1);
   "contains_set 2" @? not (S.contains_set ~container:s1 ~contained:s2);
   "contains_set 3" @? S.contains_set ~container:s1 ~contained:s3;

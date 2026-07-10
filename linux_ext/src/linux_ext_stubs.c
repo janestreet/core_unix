@@ -96,6 +96,7 @@ CAMLprim value core_linux_sysinfo(value __unused v_unit) {
 static const int linux_tcpopt_bool[] = {TCP_CORK, TCP_QUICKACK};
 static const int linux_tcpopt_int[] = {TCP_KEEPIDLE, TCP_KEEPINTVL, TCP_KEEPCNT};
 static const int linux_tcpopt_string[] = {TCP_CONGESTION};
+static const int linux_ipopt_int[] = {IP_TOS};
 
 enum option_type {
   TYPE_BOOL = 0,
@@ -215,6 +216,13 @@ CAMLprim value core_linux_settcpopt_string_stub(value v_socket, value v_optname,
   default:
     caml_failwith("core_linux_settcpopt_string_stub: unimplemented option");
   }
+}
+
+CAMLprim value core_linux_setipopt_int_stub(value v_socket, value v_option,
+                                            value v_optval) {
+  int option = linux_ipopt_int[Int_val(v_option)];
+  return caml_unix_setsockopt_aux("setsockopt", TYPE_INT, SOL_IP, option, v_socket,
+                                  v_optval);
 }
 
 /**/
