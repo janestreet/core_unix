@@ -2,4 +2,4 @@
  (name sys_unix_test)
  (libraries core sys_unix)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

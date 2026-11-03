@@ -295,7 +295,7 @@ module type S = sig
       val semaphore : t
     end
 
-    type t = private File_descr.t [@@deriving compare ~localize, sexp_of]
+    type t = private File_descr.t [@@deriving compare, sexp_of]
 
     (** [create ?flags init] creates a new event file descriptor with [init] as the
         counter's initial value. With Linux 2.6.26 or earlier, [flags] must be [empty]. *)
@@ -367,7 +367,7 @@ module type S = sig
   module Timerfd : sig
     (** Clock used to mark the progress of a timer. *)
     module Clock : sig
-      type t [@@deriving bin_io, compare ~localize, sexp]
+      type t [@@deriving bin_io, compare, sexp]
 
       (** Settable system-wide clock. *)
       val realtime : t
@@ -388,7 +388,7 @@ module type S = sig
       val cloexec : t
     end
 
-    type t = private File_descr.t [@@deriving compare ~localize, sexp_of]
+    type t = private File_descr.t [@@deriving compare, sexp_of]
 
     val to_file_descr : t -> File_descr.t
 
@@ -822,6 +822,116 @@ module type S = sig
 
     val removexattr
       : (follow_symlinks:bool -> path:string -> name:string -> Remove_attr_result.t)
+          Or_error.t
+  end
+
+  module Statx : sig
+    module Attributes : sig
+      type t [@@deriving sexp_of]
+
+      include Flags.S with type t := t
+
+      val compressed : t
+      val immutable : t
+      val append : t
+      val nodump : t
+      val encrypted : t
+      val automount : t
+      val mount_root : t
+      val verity : t
+      val dax : t
+    end
+
+    module Mask : sig
+      type t [@@deriving sexp_of]
+
+      include Flags.S with type t := t
+
+      val type' : t
+      val mode : t
+      val nlink : t
+      val uid : t
+      val gid : t
+      val atime : t
+      val mtime : t
+      val ctime : t
+      val ino : t
+      val size : t
+      val blocks : t
+      val basic_stats : t
+      val btime : t
+      val all : t
+      val mnt_id : t
+      val dioalign : t
+    end
+
+    module Flags : sig
+      type t [@@deriving sexp_of]
+
+      include Flags.S with type t := t
+
+      val empty_path : t
+      val no_automount : t
+      val symlink_nofollow : t
+      val statx_sync_as_stat : t
+      val statx_force_sync : t
+      val statx_dont_sync : t
+    end
+
+    module Timestamp : sig
+      type t =
+        { tv_sec : int64
+        ; tv_nsec : int
+        }
+      [@@deriving sexp]
+    end
+
+    type t =
+      { stx_mask : Mask.t
+      ; stx_blksize : int
+      ; stx_attributes : Attributes.t
+      ; stx_nlink : int
+      ; stx_uid : int
+      ; stx_gid : int
+      ; stx_mode : int
+      ; stx_ino : int64
+      ; stx_size : int64
+      ; stx_blocks : int64
+      ; stx_attributes_mask : Attributes.t
+      ; stx_atime : Timestamp.t
+      ; stx_btime : Timestamp.t
+      ; stx_ctime : Timestamp.t
+      ; stx_mtime : Timestamp.t
+      ; stx_rdev_major : int
+      ; stx_rdev_minor : int
+      ; stx_dev_major : int
+      ; stx_dev_minor : int
+      ; stx_mnt_id : int64
+      ; stx_dio_mem_align : int
+      ; stx_dio_offset_align : int
+      }
+    [@@deriving sexp]
+
+    module Result : sig
+      type nonrec t =
+        | Ok of t
+        | EACCES
+        | EBADF
+        | EFAULT
+        | EINVAL
+        | ELOOP
+        | ENAMETOOLONG
+        | ENOENT
+        | ENOMEM
+        | ENOTDIR
+      [@@deriving sexp]
+    end
+
+    (** See the statx man page for details on this call. This is a light wrapper for the
+        direct system call. Users should check the mask bits on the return value to check
+        that the field has been correctly filled. *)
+    val statx
+      : (?dir_fd:File_descr.t -> ?mask:Mask.t -> string -> flags:Flags.t -> Result.t)
           Or_error.t
   end
 end

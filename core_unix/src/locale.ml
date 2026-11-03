@@ -40,7 +40,7 @@ module Category = struct
     | Monetary
     | Numeric
     | Time
-  [@@deriving compare ~localize, enumerate, equal ~localize, hash, sexp, string]
+  [@@deriving compare, enumerate, equal, hash, sexp, string]
 
   let to_native = function
     | Ctype -> ctype
@@ -130,7 +130,7 @@ module Category_set = struct
     ]
   ;;
 
-  include%template Flags.Make (struct
+  include Flags.Make (struct
       let known = known
       let remove_zero_flags = false
       let allow_intersecting = false
@@ -189,13 +189,12 @@ module Name = struct
 end
 
 module T = struct
-  type t = nativeint [@@deriving compare ~localize, equal ~localize, hash, sexp]
+  type t = nativeint [@@deriving compare, equal, hash, sexp]
 end
 
 include T
-
-include%template Comparable.Make [@mode portable] (T)
-include%template Hashable.Make [@mode portable] (T)
+include Comparable.Make (T)
+include Hashable.Make (T)
 
 external global_value
   :  unit

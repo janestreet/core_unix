@@ -163,7 +163,7 @@ module Error : sig
     | ELOOP (** Too many levels of symbolic links *)
     | EOVERFLOW (** File size or position not representable *)
     | EUNKNOWNERR of int (** Unknown error *)
-  [@@deriving compare ~localize, sexp]
+  [@@deriving compare, sexp]
 
   val of_system_int : errno:int -> t
 
@@ -238,8 +238,8 @@ val unsetenv : string -> unit
 
 (** The termination status of a process. *)
 module Exit : sig
-  type error = [ `Exit_non_zero of int ] [@@deriving bin_io, compare ~localize, sexp]
-  type t = (unit, error) Result.t [@@deriving bin_io, compare ~localize, sexp]
+  type error = [ `Exit_non_zero of int ] [@@deriving bin_io, compare, sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, compare, sexp]
 
   val to_string_hum : t -> string
   val code : t -> int
@@ -252,9 +252,9 @@ module Exit_or_signal : sig
     [ Exit.error
     | `Signal of Signal.t
     ]
-  [@@deriving bin_io, compare ~localize, sexp]
+  [@@deriving bin_io, compare, sexp]
 
-  type t = (unit, error) Result.t [@@deriving bin_io, compare ~localize, sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, compare, sexp]
 
   (** [of_unix] assumes that any signal numbers in the incoming value are OCaml internal
       signal numbers. *)
@@ -574,6 +574,7 @@ module Open_flags : sig
   val sync : t
   val rsync : t
   val direct : t
+  val noatime : t
 
   (** [can_read t] iff [t] has [rdonly] or [rdwr] *)
   val can_read : t -> bool
@@ -1467,7 +1468,7 @@ module Passwd : sig
     ; dir : string
     ; shell : string
     }
-  [@@deriving compare ~localize, fields ~getters, sexp]
+  [@@deriving compare, fields ~getters, sexp]
 
   val getbyname : string -> t option
   val getbyname_exn : string -> t
@@ -1526,8 +1527,7 @@ end
 (** {6 Internet addresses} *)
 
 module Inet_addr : sig
-  type t = Unix.inet_addr
-  [@@deriving bin_io, compare ~localize, hash, sexp_of, sexp_grammar]
+  type t = Unix.inet_addr [@@deriving bin_io, compare, hash, sexp_of, sexp_grammar]
 
   val arg_type : t Core.Command.Arg_type.t
 
@@ -1539,12 +1539,10 @@ module Inet_addr : sig
 
   (** [Blocking_sexp] performs DNS lookup to resolve hostnames to IP addresses. *)
   module Blocking_sexp : sig
-    type t = Unix.inet_addr
-    [@@deriving bin_io, compare ~localize, hash, sexp, sexp_grammar]
+    type t = Unix.inet_addr [@@deriving bin_io, compare, hash, sexp, sexp_grammar]
   end
 
-  include%template Comparable.S [@mode local] with type t := t
-
+  include Comparable.S with type t := t
   module Table : Hashtbl.S with type key = t
 
   (** Conversion from the printable representation of an Internet address to its internal
@@ -1587,7 +1585,7 @@ module Inet_addr : sig
 
   module Stable : sig
     module V1 : sig
-      type nonrec t = t [@@deriving compare ~localize, hash]
+      type nonrec t = t [@@deriving compare, hash]
 
       include
         Stable_with_witness
@@ -1610,7 +1608,7 @@ module Cidr : sig
 
   (** [of_string] Generates a Cidr.t based on a string like ["10.0.0.0/8"]. Addresses are
       not expanded, i.e. ["10/8"] is invalid. *)
-  include%template Identifiable.S [@mode local] with type t := t
+  include Identifiable.S with type t := t
 
   include Invariant.S with type t := t
 
@@ -1653,10 +1651,9 @@ module Cidr : sig
   val is_subset : t -> of_:t -> bool
 
   module Stable : sig
-    module%template V1 : sig
+    module V1 : sig
       include
         Stable_comparable.With_stable_witness.V1
-        [@mode local]
         with type t = t
         with type comparator_witness = comparator_witness
 
@@ -1689,7 +1686,7 @@ type socket_type = Unix.socket_type =
 type sockaddr = Unix.sockaddr =
   | ADDR_UNIX of string
   | ADDR_INET of Inet_addr.t * int
-[@@deriving bin_io, compare ~localize, sexp_of]
+[@@deriving bin_io, compare, sexp_of]
 
 val sockaddr_of_sexp : Sexp.t -> sockaddr
 [@@deprecated "[since 2015-10] Replace [sockaddr] by [sockaddr_blocking_sexp]"]
@@ -2331,7 +2328,11 @@ val writev_assume_fd_is_nonblocking
 val writev : File_descr.t -> ?count:int -> string IOVec.t array -> int
 
 (** [pselect rfds wfds efds timeout sigmask] like {!Core_unix.select} but also allows one
-    to wait for the arrival of signals. *)
+    to wait for the arrival of signals.
+
+    @raise Unix_error
+      on Unix-errors, including [EINVAL] if any fd is negative or [>= FD_SETSIZE] (1024 on
+      Linux), matching the behavior of [select]. *)
 val pselect
   :  File_descr.t list
   -> File_descr.t list
@@ -2503,7 +2504,7 @@ val wordexp
 (** {2 System information} *)
 
 module Utsname : sig
-  type t [@@deriving sexp_of, compare ~localize]
+  type t [@@deriving sexp_of, compare]
 
   val sysname : t -> string
   val nodename : t -> string

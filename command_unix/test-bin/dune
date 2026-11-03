@@ -4,4 +4,4 @@
    command_validate_parsing)
  (libraries command_unix core core_unix)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

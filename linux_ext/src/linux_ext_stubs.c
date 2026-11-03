@@ -21,6 +21,7 @@
 #include <termios.h>
 #include <sys/fsuid.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/sendfile.h>
 #include <sys/epoll.h>
@@ -33,6 +34,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <linux/limits.h> /* needed to build with musl */
+#include <linux/version.h>
 
 #include <sys/sysinfo.h>
 #include <sys/mman.h>
@@ -106,14 +108,8 @@ enum option_type {
   TYPE_UNIX_ERROR = 4
 };
 
-#include <caml/version.h>
-#if OCAML_VERSION_MAJOR < 5
-#define caml_unix_getsockopt_aux unix_getsockopt_aux
-#define caml_unix_setsockopt_aux unix_setsockopt_aux
-#endif
-
-/* unix_getsockopt_aux and unix_setsockopt_aux come from C stubs distributed
-   with the OCaml compiler.  At the time of writing they live in
+/* caml_unix_getsockopt_aux and caml_unix_setsockopt_aux come from C stubs
+   distributed with the OCaml compiler.  At the time of writing they live in
    otherlibs/unix/sockopt.c. */
 extern value caml_unix_getsockopt_aux(char *name, enum option_type ty, int level,
                                       int option, value v_socket);
@@ -830,36 +826,43 @@ CAMLprim value core_linux_eventfd(value v_initval, value v_flags) {
   CAMLreturn(Val_int(retval));
 }
 
-CAMLprim value core_linux_eventfd_read(value v_fd) {
+CAMLprim int64_t core_linux_eventfd_read_unboxed(value v_fd) {
   CAMLparam1(v_fd);
 
   int fd = Int_val(v_fd);
-  uint64_t val;
+  int64_t val;
   int retval;
 
   caml_enter_blocking_section();
-  retval = read(fd, &val, sizeof(uint64_t));
+  retval = read(fd, &val, sizeof(val));
   caml_leave_blocking_section();
   if (retval < 0)
     uerror("eventfd_read", Nothing);
 
-  CAMLreturn(caml_copy_int64(val));
+  CAMLreturnT(int64_t, val);
 }
 
-CAMLprim value core_linux_eventfd_write(value v_fd, value v_val) {
-  CAMLparam2(v_fd, v_val);
+CAMLprim value core_linux_eventfd_read(value v_fd) {
+  return caml_copy_int64(core_linux_eventfd_read_unboxed(v_fd));
+}
+
+CAMLprim value core_linux_eventfd_write_unboxed(value v_fd, int64_t val) {
+  CAMLparam1(v_fd);
 
   int fd = Int_val(v_fd);
-  uint64_t val = Int64_val(v_val);
   int retval;
 
   caml_enter_blocking_section();
-  retval = write(fd, &val, sizeof(uint64_t));
+  retval = write(fd, &val, sizeof(val));
   caml_leave_blocking_section();
   if (retval < 0)
     uerror("eventfd_write", Nothing);
 
   CAMLreturn(Val_unit);
+}
+
+CAMLprim value core_linux_eventfd_write(value v_fd, value v_val) {
+  return core_linux_eventfd_write_unboxed(v_fd, Int64_val(v_val));
 }
 
 #define XATTR_FLAG(FLAG) DEFINE_INT63_CONSTANT(core_linux_xattr_##FLAG##_flag, FLAG)
@@ -888,7 +891,14 @@ CAMLprim value core_linux_getxattr(value v_follow_symlinks, value v_path, value 
 
   caml_unix_check_path(v_path, loc);
   c_path = strdup(String_val(v_path));
+  if (!c_path) {
+    uerror("strdup", Nothing);
+  }
   c_name = strdup(String_val(v_name));
+  if (!c_name) {
+    free(c_path);
+    uerror("strdup", Nothing);
+  }
   caml_enter_blocking_section();
   retval = getxattr_f(c_path, c_name, buf, XATTR_SIZE_MAX);
   free(c_path);
@@ -1012,12 +1022,22 @@ CAMLprim value core_linux_setxattr(value v_follow_symlinks, value v_path, value 
   caml_unix_check_path(v_path, loc);
 
   c_path = strdup(String_val(v_path));
+  if (!c_path) {
+    uerror("strdup", Nothing);
+  }
   c_name = strdup(String_val(v_name));
+  if (!c_name) {
+    free(c_path);
+    uerror("strdup", Nothing);
+  }
   c_value_size = caml_string_length(v_value);
 
   c_value = malloc(c_value_size);
-  if (c_value == NULL)
+  if (!c_value) {
+    free(c_path);
+    free(c_name);
     uerror("malloc", Nothing);
+  }
 
   memcpy(c_value, String_val(v_value), c_value_size);
   c_flags = Int63_val(v_flags);
@@ -1154,6 +1174,239 @@ CAMLprim value core_linux_copy_file_range_stub(value v_fd_in, value v_off_in,
     uerror("copy_file_range", Nothing);
 
   return Val_long(ret);
+}
+
+#define STATX_BITS(BITS) DEFINE_INT63_CONSTANT(core_linux_statx_##BITS##_bits, (BITS))
+/*
+   Not all bits are defined for all kernel versions, but the ABI is architecture
+   independent and stable, so we can define them in a forward compatible way where needed.
+ */
+/* Flags. */
+STATX_BITS(AT_EMPTY_PATH)
+STATX_BITS(AT_NO_AUTOMOUNT)
+STATX_BITS(AT_SYMLINK_NOFOLLOW)
+STATX_BITS(AT_STATX_SYNC_AS_STAT)
+STATX_BITS(AT_STATX_FORCE_SYNC)
+STATX_BITS(AT_STATX_DONT_SYNC)
+/* Attributes. */
+STATX_BITS(STATX_ATTR_COMPRESSED)
+STATX_BITS(STATX_ATTR_IMMUTABLE)
+STATX_BITS(STATX_ATTR_APPEND)
+STATX_BITS(STATX_ATTR_NODUMP)
+STATX_BITS(STATX_ATTR_ENCRYPTED)
+STATX_BITS(STATX_ATTR_AUTOMOUNT)
+#ifndef STATX_ATTR_MOUNT_ROOT
+#define STATX_ATTR_MOUNT_ROOT 0x00002000U
+#endif
+STATX_BITS(STATX_ATTR_MOUNT_ROOT)
+#ifndef STATX_ATTR_VERITY
+#define STATX_ATTR_VERITY 0x00100000U
+#endif
+STATX_BITS(STATX_ATTR_VERITY)
+#ifndef STATX_ATTR_DAX
+#define STATX_ATTR_DAX 0x00200000U
+#endif
+STATX_BITS(STATX_ATTR_DAX)
+/* Mask bits. */
+STATX_BITS(STATX_TYPE)
+STATX_BITS(STATX_MODE)
+STATX_BITS(STATX_NLINK)
+STATX_BITS(STATX_UID)
+STATX_BITS(STATX_GID)
+STATX_BITS(STATX_ATIME)
+STATX_BITS(STATX_MTIME)
+STATX_BITS(STATX_CTIME)
+STATX_BITS(STATX_INO)
+STATX_BITS(STATX_SIZE)
+STATX_BITS(STATX_BLOCKS)
+STATX_BITS(STATX_BASIC_STATS)
+STATX_BITS(STATX_BTIME)
+STATX_BITS(STATX_ALL)
+#ifndef STATX_MNT_ID
+#define STATX_MNT_ID 0x00001000U
+#endif
+STATX_BITS(STATX_MNT_ID)
+#ifndef STATX_DIOALIGN
+#define STATX_DIOALIGN 0x00002000U
+#endif
+STATX_BITS(STATX_DIOALIGN)
+
+static value ocaml_statx_timestamp(struct statx_timestamp ts) {
+  CAMLparam0();
+  CAMLlocal1(v_time);
+  v_time = caml_alloc(2, 0);
+  Store_field(v_time, 0, caml_copy_int64(ts.tv_sec));
+  Store_field(v_time, 1, Val_long(ts.tv_nsec));
+  CAMLreturn(v_time);
+}
+
+CAMLprim value core_linux_statx(value v_dir_fd, value v_path, value v_flags,
+                                value v_mask) {
+  CAMLparam4(v_dir_fd, v_path, v_flags, v_mask);
+  CAMLlocal2(v_statx, v_ok_of);
+  int dir_fd = AT_FDCWD;
+
+  unsigned int mask = Int_val(v_mask);
+  int flags = Int_val(v_flags);
+  int ret;
+  struct statx s;
+
+  if (Is_some(v_dir_fd)) {
+    dir_fd = Int_val(Some_val(v_dir_fd));
+  }
+
+  /* NOTE [struct statx] is oversized (256 bytes) to allow new fields to be added for new
+     kernel versions. As such, it should be safe to use [s] across different kernel
+     versions, as new fields are added, without the system call scribbling the stack.
+  */
+
+  caml_unix_check_path(v_path, "statx");
+  char *path = strdup(String_val(v_path));
+  if (!path) {
+    uerror("strdup", Nothing);
+  }
+
+  int errno_save;
+  caml_enter_blocking_section();
+  ret = statx(dir_fd, path, flags, mask, &s);
+  errno_save = errno;
+  caml_leave_blocking_section();
+  free(path);
+
+  /* Constant and non-constant tags for the result */
+  enum { TAG_NC_OK };
+
+  enum {
+    TAG_C_EACCES,
+    TAG_C_EBADF,
+    TAG_C_EFAULT,
+    TAG_C_EINVAL,
+    TAG_C_ELOOP,
+    TAG_C_ENAMETOOLONG,
+    TAG_C_ENOENT,
+    TAG_C_ENOMEM,
+    TAG_C_ENOTDIR
+  };
+
+  if (ret == -1) {
+    switch (errno_save) {
+    case EACCES:
+      v_statx = Val_int(TAG_C_EACCES);
+      break;
+    case EBADF:
+      v_statx = Val_int(TAG_C_EBADF);
+      break;
+    case EFAULT:
+      v_statx = Val_int(TAG_C_EFAULT);
+      break;
+    case EINVAL:
+      v_statx = Val_int(TAG_C_EINVAL);
+      break;
+    case ELOOP:
+      v_statx = Val_int(TAG_C_ELOOP);
+      break;
+    case ENAMETOOLONG:
+      v_statx = Val_int(TAG_C_ENAMETOOLONG);
+      break;
+    case ENOENT:
+      v_statx = Val_int(TAG_C_ENOENT);
+      break;
+    case ENOMEM:
+      v_statx = Val_int(TAG_C_ENOMEM);
+      break;
+    case ENOTDIR:
+      v_statx = Val_int(TAG_C_ENOTDIR);
+      break;
+    default:
+      caml_unix_error(errno_save, "statx", v_path);
+    }
+
+    CAMLreturn(v_statx);
+  }
+
+  /* statx adds fields across kernel versions - use an enum to help put fields in the
+   * right slots.
+   */
+  enum {
+    FIELD_STX_MASK,
+    FIELD_STX_BLKSIZE,
+    FIELD_STX_ATTRIBUTES,
+    FIELD_STX_NLINK,
+    FIELD_STX_UID,
+    FIELD_STX_GID,
+    FIELD_STX_MODE,
+    FIELD_STX_INO,
+    FIELD_STX_SIZE,
+    FIELD_STX_BLOCKS,
+    FIELD_STX_ATTRIBUTES_MASK,
+    FIELD_STX_ATIME,
+    FIELD_STX_BTIME,
+    FIELD_STX_CTIME,
+    FIELD_STX_MTIME,
+    FIELD_STX_RDEV_MAJOR,
+    FIELD_STX_RDEV_MINOR,
+    FIELD_STX_DEV_MAJOR,
+    FIELD_STX_DEV_MINOR,
+    FIELD_STX_MNT_ID,
+    FIELD_STX_DIO_MEM_ALIGN,
+    FIELD_STX_DIO_OFFSET_ALIGN,
+    /* count */
+    FIELD_STX_FIELD_COUNT
+  };
+
+  _Static_assert(FIELD_STX_FIELD_COUNT == 22, "expected number of fields");
+
+  v_statx = caml_alloc(FIELD_STX_FIELD_COUNT, 0);
+  Store_field(v_statx, FIELD_STX_MASK, caml_alloc_int63(s.stx_mask));
+  Store_field(v_statx, FIELD_STX_BLKSIZE, Val_long(s.stx_blksize));
+  Store_field(v_statx, FIELD_STX_ATTRIBUTES, caml_alloc_int63(s.stx_attributes));
+  Store_field(v_statx, FIELD_STX_NLINK, Val_long(s.stx_nlink));
+  Store_field(v_statx, FIELD_STX_UID, Val_long(s.stx_uid));
+  Store_field(v_statx, FIELD_STX_GID, Val_long(s.stx_gid));
+  Store_field(v_statx, FIELD_STX_MODE, Val_long(s.stx_mode));
+  Store_field(v_statx, FIELD_STX_INO, caml_copy_int64(s.stx_ino));
+  Store_field(v_statx, FIELD_STX_SIZE, caml_copy_int64(s.stx_size));
+  Store_field(v_statx, FIELD_STX_BLOCKS, caml_copy_int64(s.stx_blocks));
+  Store_field(v_statx, FIELD_STX_ATTRIBUTES_MASK,
+              caml_alloc_int63(s.stx_attributes_mask));
+  Store_field(v_statx, FIELD_STX_ATIME, ocaml_statx_timestamp(s.stx_atime));
+  Store_field(v_statx, FIELD_STX_BTIME, ocaml_statx_timestamp(s.stx_btime));
+  Store_field(v_statx, FIELD_STX_CTIME, ocaml_statx_timestamp(s.stx_ctime));
+  Store_field(v_statx, FIELD_STX_MTIME, ocaml_statx_timestamp(s.stx_mtime));
+  Store_field(v_statx, FIELD_STX_RDEV_MAJOR, Val_long(s.stx_rdev_major));
+  Store_field(v_statx, FIELD_STX_RDEV_MINOR, Val_long(s.stx_rdev_minor));
+  Store_field(v_statx, FIELD_STX_DEV_MAJOR, Val_long(s.stx_dev_major));
+  Store_field(v_statx, FIELD_STX_DEV_MINOR, Val_long(s.stx_dev_minor));
+
+  /* The statx structure has grown over different kernel versions, and we need to guard
+     compilation against kernel version because newer struct members aren't defined in
+     older kernels. For older kernels, caml_alloc already zeros the fields (which is a
+     good default for these (Caml) integer fields), but we make this initialization
+     explicit.
+
+     Note that stx.mask gates whether there is valid data in these fields, so should be
+     checked first, and no guarantee is made that these results are returned unless the
+     appropriate mask input bit is set.
+  */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+  Store_field(v_statx, FIELD_STX_MNT_ID, caml_copy_int64(s.stx_mnt_id));
+#else
+  Store_field(v_statx, FIELD_STX_MNT_ID, caml_copy_int64(0));
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+  Store_field(v_statx, FIELD_STX_DIO_MEM_ALIGN, Val_long(s.stx_dio_mem_align));
+  Store_field(v_statx, FIELD_STX_DIO_OFFSET_ALIGN, Val_long(s.stx_dio_offset_align));
+#else
+  Store_field(v_statx, FIELD_STX_DIO_MEM_ALIGN, Val_int(0));
+  Store_field(v_statx, FIELD_STX_DIO_OFFSET_ALIGN, Val_int(0));
+#endif
+
+  v_ok_of = caml_alloc(1, TAG_NC_OK);
+  Store_field(v_ok_of, 0, v_statx);
+
+  CAMLreturn(v_ok_of);
 }
 
 #else

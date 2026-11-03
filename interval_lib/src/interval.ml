@@ -10,11 +10,11 @@ module Stable = struct
         | Interval of 'a * 'a
         | Empty
       [@@deriving
-        bin_io ~localize
+        bin_io
         , of_sexp
-        , variants
-        , compare ~localize
-        , equal ~localize
+        , variants ~fold
+        , compare
+        , equal
         , globalize
         , hash
         , sexp_grammar
@@ -22,14 +22,7 @@ module Stable = struct
 
       type 'a interval = 'a t
       [@@deriving
-        bin_io ~localize
-        , of_sexp
-        , compare ~localize
-        , equal ~localize
-        , globalize
-        , hash
-        , sexp_grammar
-        , stable_witness]
+        bin_io, of_sexp, compare, equal, globalize, hash, sexp_grammar, stable_witness]
 
       let interval_of_sexp a_of_sexp sexp =
         try interval_of_sexp a_of_sexp sexp (* for backwards compatibility *) with
@@ -41,11 +34,10 @@ module Stable = struct
              of_sexp_error "Interval.t_of_sexp: expected pair or empty list" sexp)
       ;;
 
-      let%template[@alloc a = (heap, stack)] sexp_of_interval sexp_of_a t =
+      let sexp_of_interval sexp_of_a t =
         match t with
         | Empty -> Sexp.List []
-        | Interval (lb, ub) ->
-          Sexp.List [ sexp_of_a lb; sexp_of_a ub ] [@exclave_if_stack a]
+        | Interval (lb, ub) -> Sexp.List [ sexp_of_a lb; sexp_of_a ub ]
       ;;
 
       let interval_sexp_grammar a_sexp_grammar =
@@ -65,49 +57,26 @@ module Stable = struct
 
     type 'a t = 'a interval
     [@@deriving
-      sexp ~stackify
-      , bin_io ~localize
-      , compare ~localize
-      , equal ~localize
-      , globalize
-      , hash
-      , sexp_grammar
-      , stable_witness]
+      sexp, bin_io, compare, equal, globalize, hash, sexp_grammar, stable_witness]
 
     module Float = struct
       module T = struct
         type t = float interval
-        [@@deriving
-          sexp ~stackify
-          , bin_io ~localize
-          , compare ~localize
-          , equal ~localize
-          , hash
-          , sexp_grammar
-          , stable_witness]
+        [@@deriving sexp, bin_io, compare, equal, hash, sexp_grammar, stable_witness]
       end
 
       include T
-
-      include%template Comparator.Stable.V1.Make [@modality portable] (T)
+      include Comparator.Stable.V1.Make (T)
     end
 
     module Int = struct
       module T = struct
         type t = int interval
-        [@@deriving
-          sexp ~stackify
-          , bin_io ~localize
-          , compare ~localize
-          , equal ~localize
-          , hash
-          , sexp_grammar
-          , stable_witness]
+        [@@deriving sexp, bin_io, compare, equal, hash, sexp_grammar, stable_witness]
       end
 
       include T
-
-      include%template Comparator.Stable.V1.Make [@modality portable] (T)
+      include Comparator.Stable.V1.Make (T)
     end
 
     module Time = struct end
@@ -116,37 +85,21 @@ module Stable = struct
     module Ofday = struct
       module T = struct
         type t = Core.Time_float.Stable.Ofday.V1.t interval
-        [@@deriving
-          sexp ~stackify
-          , bin_io ~localize
-          , compare ~localize
-          , equal ~localize
-          , hash
-          , sexp_grammar
-          , stable_witness]
+        [@@deriving sexp, bin_io, compare, equal, hash, sexp_grammar, stable_witness]
       end
 
       include T
-
-      include%template Comparator.Stable.V1.Make [@modality portable] (T)
+      include Comparator.Stable.V1.Make (T)
     end
 
     module Ofday_ns = struct
       module T = struct
         type t = Core.Time_ns.Stable.Ofday.V1.t interval
-        [@@deriving
-          sexp ~stackify
-          , bin_io ~localize
-          , compare ~localize
-          , equal ~localize
-          , hash
-          , sexp_grammar
-          , stable_witness]
+        [@@deriving sexp, bin_io, compare, equal, hash, sexp_grammar, stable_witness]
       end
 
       include T
-
-      include%template Comparator.Stable.V1.Make [@modality portable] (T)
+      include Comparator.Stable.V1.Make (T)
     end
 
     module Private = struct
@@ -174,7 +127,7 @@ module type Bound = sig
   val ( <> ) : 'a bound -> 'a bound -> bool
 end
 
-module%template.portable [@modality p] Raw_make (T : Bound) = struct
+module Raw_make (T : Bound) = struct
   module T = struct
     include T
 
@@ -238,13 +191,13 @@ module%template.portable [@modality p] Raw_make (T : Bound) = struct
       | Interval (l, u) -> l, u
     ;;
 
-    let%template[@mode m = (global, local)] lbound_exn = function
+    let lbound_exn = function
       | Empty -> invalid_arg "Interval.lbound_exn: empty interval"
       | Interval (l, _) -> l
     ;;
 
     (* Avoid unused value warning for the local, nonportable version of this function. *)
-    let _ = lbound_exn [@mode local]
+    let _ = lbound_exn
 
     let ubound_exn = function
       | Empty -> invalid_arg "Interval.ubound_exn: empty interval"
@@ -430,10 +383,9 @@ module%template.portable [@modality p] Raw_make (T : Bound) = struct
   end
 end
 
-type 'a t = 'a interval
-[@@deriving bin_io ~localize, sexp ~stackify, compare ~localize, equal ~localize, hash]
+type 'a t = 'a interval [@@deriving bin_io, sexp, compare, equal, hash]
 
-module%template C = Raw_make [@modality portable] (struct
+module C = Raw_make (struct
     type 'a bound = 'a
 
     include Poly
@@ -448,42 +400,24 @@ let t_of_sexp a_of_sexp s =
 ;;
 
 module Set = struct
-  type 'a t = 'a interval list
-  [@@deriving bin_io ~localize, sexp, compare ~localize, equal ~localize, hash]
+  type 'a t = 'a interval list [@@deriving bin_io, sexp, compare, equal, hash]
 
   include C.Set
 
   let to_list (t : 'a t) : 'a interval list = t
 end
 
-[%%template
-[@@@mode.default m = (global, local)]
+module Make (Bound : sig
+    type t [@@deriving bin_io, compare, equal, hash, sexp]
 
-module%template.portable
-  [@modality p] Make (Bound : sig
-    type t
-    [@@deriving
-      (bin_io [@mode m])
-      , (compare [@mode.explicit m])
-      , (equal [@mode.explicit m])
-      , hash
-      , sexp]
-
-    include Comparable.S [@mode m] with type t := t
+    include Comparable.S with type t := t
   end) =
 struct
-  type t = Bound.t interval
-  [@@deriving
-    (bin_io [@mode m])
-    , sexp
-    , (compare [@mode.explicit m])
-    , (equal [@mode.explicit m])
-    , hash]
-
-  type interval = t [@@deriving (bin_io [@mode m]), sexp]
+  type t = Bound.t interval [@@deriving bin_io, sexp, compare, equal, hash]
+  type interval = t [@@deriving bin_io, sexp]
   type bound = Bound.t
 
-  module C = Raw_make [@modality p] (struct
+  module C = Raw_make (struct
       type 'a bound = Bound.t
 
       let compare = Bound.compare
@@ -504,7 +438,7 @@ struct
   ;;
 
   module Set = struct
-    type t = interval list [@@deriving sexp, (bin_io [@mode m])]
+    type t = interval list [@@deriving sexp, bin_io]
 
     include C.Set
 
@@ -513,19 +447,19 @@ struct
   end
 end
 
-module type S1 = Interval_intf.S1 [@mode m]
+module type S1 = Interval_intf.S1
 
 module type S =
-  Interval_intf.S [@mode m] with type 'a poly_t := 'a t with type 'a poly_set := 'a Set.t]
+  Interval_intf.S with type 'a poly_t := 'a t with type 'a poly_set := 'a Set.t
 
 module type S_time = sig end
 
-module%template Float = Make [@mode local] [@modality portable] (Float)
-module%template Ofday = Make [@mode local] [@modality portable] (Core.Time_float.Ofday)
-module%template Ofday_ns = Make [@mode local] [@modality portable] (Core.Time_ns.Ofday)
+module Float = Make (Float)
+module Ofday = Make (Core.Time_float.Ofday)
+module Ofday_ns = Make (Core.Time_ns.Ofday)
 
 module Int = struct
-  include%template Make [@mode local] [@modality portable] (Int)
+  include Make (Int)
 
   let length t =
     match t with
@@ -578,7 +512,7 @@ module Int = struct
       | Interval (lo, hi) -> fold_interval ~lo ~hi ~acc:init ~f
   ;;
 
-  module%template For_container = Container.Make0 [@modality portable] (struct
+  module For_container = Container.Make0 (struct
       type nonrec t = t
 
       module Elt = Int
@@ -619,49 +553,34 @@ module Int = struct
   (* Note that we use zero-based indexing here, because that's what Binary_searchable
      requires, even though at the end we want to export functions that use the natural
      bounds of the interval. *)
-  module%template For_binary_search =
-  Binary_searchable.Make [@mode local] [@modality portable] (struct
+  module For_binary_search = Binary_searchable.Make (struct
       type nonrec t = t
       type nonrec elt = bound
 
-      [%%template
-      [@@@mode.default m = (local, global)]
-
       let length = length
-      let[@inline] get t i = get t i]
+      let[@inline] get t i = get t i
     end)
 
-  [%%template
-  [@@@mode.default m = (global, local)]
-
   let binary_search ?pos ?len t ~compare which elt =
-    let zero_based_pos = Option.map pos ~f:(fun x -> x - (lbound_exn [@mode m]) t) in
+    let zero_based_pos = Option.map pos ~f:(fun x -> x - lbound_exn t) in
     let zero_based_result =
-      (For_binary_search.binary_search [@mode m])
-        ?pos:zero_based_pos
-        ?len
-        t
-        ~compare
-        which
-        elt
+      For_binary_search.binary_search ?pos:zero_based_pos ?len t ~compare which elt
     in
-    (Option.map [@mode local]) zero_based_result ~f:(fun x ->
-      x + (lbound_exn [@mode m]) t)
+    Option.map zero_based_result ~f:(fun x -> x + lbound_exn t)
   ;;
 
   let binary_search_segmented ?pos ?len t ~segment_of which =
-    let zero_based_pos = Option.map pos ~f:(fun x -> x - (lbound_exn [@mode m]) t) in
+    let zero_based_pos = Option.map pos ~f:(fun x -> x - lbound_exn t) in
     let zero_based_result =
-      (For_binary_search.binary_search_segmented [@mode m])
+      For_binary_search.binary_search_segmented
         ?pos:zero_based_pos
         ?len
         t
         ~segment_of
         which
     in
-    (Option.map [@mode local]) zero_based_result ~f:(fun x ->
-      x + (lbound_exn [@mode m]) t)
-  ;;]
+    Option.map zero_based_result ~f:(fun x -> x + lbound_exn t)
+  ;;
 
   module Private = struct
     let[@inline] get t i = get t i
@@ -669,10 +588,7 @@ module Int = struct
 end
 
 module Private = struct
-  module%template [@mode m = (global, local), p = (nonportable, portable)] Make =
-    Make
-    [@mode m]
-    [@modality p]
+  module Make = Make
 end
 
 module Time = struct end

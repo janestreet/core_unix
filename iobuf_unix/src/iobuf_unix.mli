@@ -4,7 +4,7 @@ module Unix := Core_unix
 type ok_or_eof =
   | Ok
   | Eof
-[@@deriving compare ~localize, sexp_of, variants]
+[@@deriving compare, sexp_of, variants]
 
 (** [Iobuf] has analogs of various [Bigstring] functions. These analogs advance by the
     amount written/read. *)

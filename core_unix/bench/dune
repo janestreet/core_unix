@@ -2,4 +2,4 @@
  (name core_unix_bench)
  (libraries core core_unix)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

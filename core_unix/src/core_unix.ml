@@ -550,7 +550,7 @@ module Utsname = struct
         ; version : string
         ; machine : string
         }
-      [@@deriving fields ~getters, bin_io, sexp, compare ~localize, stable_witness]
+      [@@deriving fields ~getters, bin_io, sexp, compare, stable_witness]
     end
   end
 
@@ -698,7 +698,7 @@ module Error = struct
     | ELOOP (** Too many levels of symbolic links *)
     | EOVERFLOW (** File size or position not representable *)
     | EUNKNOWNERR of int (** Unknown error *)
-  [@@deriving compare ~localize, sexp]
+  [@@deriving compare, sexp]
 
   let of_system_int ~errno = Unix_error.of_errno errno
   let message = Unix.error_message
@@ -729,8 +729,8 @@ type process_status = Unix.process_status =
 [@@deriving sexp]
 
 module Exit = struct
-  type error = [ `Exit_non_zero of int ] [@@deriving bin_io, compare ~localize, sexp]
-  type t = (unit, error) Result.t [@@deriving bin_io, compare ~localize, sexp]
+  type error = [ `Exit_non_zero of int ] [@@deriving bin_io, compare, sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, compare, sexp]
 
   let to_string_hum = function
     | Ok () -> "exited normally"
@@ -763,9 +763,9 @@ module Exit_or_signal = struct
     [ Exit.error
     | `Signal of Signal.t
     ]
-  [@@deriving bin_io, compare ~localize, sexp]
+  [@@deriving bin_io, compare, sexp]
 
-  type t = (unit, error) Result.t [@@deriving bin_io, compare ~localize, sexp]
+  type t = (unit, error) Result.t [@@deriving bin_io, compare, sexp]
 
   let to_string_hum = function
     | (Ok () | Error #Exit.error) as e -> Exit.to_string_hum e
@@ -1177,7 +1177,7 @@ let with_file ?perm file ~mode ~f =
   Exn.protectx (openfile file ~mode ?perm) ~f ~finally:close [@nontail]
 ;;
 
-let%template read_write f ?restart ?pos ?len fd ~buf =
+let read_write f ?restart ?pos ?len fd ~buf =
   let (pos : int), (len : int) =
     Ordered_collection_common.get_pos_len_exn
       ()
@@ -1189,7 +1189,6 @@ let%template read_write f ?restart ?pos ?len fd ~buf =
     ?restart
     (fun () -> f fd ~buf ~pos ~len)
     (fun () -> [ fd_r fd; "pos", Int.sexp_of_t pos; len_r len ]) [@nontail]
-[@@mode v = (read_write, read)]
 ;;
 
 let read_write_string f ?restart ?pos ?len fd ~buf =
@@ -1207,9 +1206,9 @@ let read_write_string f ?restart ?pos ?len fd ~buf =
 ;;
 
 let read = read_write Unix.read
-let write = [%template read_write [@mode read]] Unix.write ?restart:None
+let write = read_write Unix.write ?restart:None
 let write_substring = read_write_string Unix.write_substring ?restart:None
-let single_write = [%template read_write [@mode read]] Unix.single_write
+let single_write = read_write Unix.single_write
 let single_write_substring = read_write_string Unix.single_write_substring
 let in_channel_of_descr = Unix.in_channel_of_descr
 let out_channel_of_descr = Unix.out_channel_of_descr
@@ -1595,7 +1594,7 @@ module Open_flags = struct
 
   let access_modes = [ rdonly, "rdonly"; rdwr, "rdwr"; wronly, "wronly" ]
 
-  include%template Flags.Make (struct
+  include Flags.Make (struct
       let allow_intersecting = true
       let should_print_error = true
       let known = known
@@ -2413,7 +2412,7 @@ let with_buffer_increased_on_ERANGE f x =
   go 10000
 ;;
 
-let%template make_by f make_exn =
+let make_by f make_exn =
   let normal arg =
     try Some (f arg) with
     | Not_found_s _ | Stdlib.Not_found -> None
@@ -2423,7 +2422,6 @@ let%template make_by f make_exn =
     | Not_found_s _ | Stdlib.Not_found -> raise (make_exn arg)
   in
   normal, exn
-[@@mode m = (nonportable, portable)]
 ;;
 
 let string_to_zero_terminated_bigstring s =
@@ -2436,9 +2434,7 @@ let string_to_zero_terminated_bigstring s =
   Core.Bigstring.of_string (s ^ "\000")
 ;;
 
-let make_by' f make_exn =
-  [%template make_by [@mode portable]] (with_buffer_increased_on_ERANGE f) make_exn
-;;
+let make_by' f make_exn = make_by (with_buffer_increased_on_ERANGE f) make_exn
 
 module Passwd = struct
   type t =
@@ -2450,7 +2446,7 @@ module Passwd = struct
     ; dir : string
     ; shell : string
     }
-  [@@deriving compare ~localize, fields ~getters, sexp]
+  [@@deriving compare, fields ~getters, sexp]
 
   let of_unix u =
     let module U = Unix in
@@ -2605,25 +2601,20 @@ module Inet_addr0 = struct
 
         (* Unix.inet_addr is represented as either a "struct in_addr" or a "struct
            in6_addr" stuffed into an O'Caml string, so polymorphic compare will work. *)
-        let%template[@mode m = (global, local)] compare = (Poly.compare [@mode m])
+        let compare = Poly.compare
         let hash_fold_t hash (t : t) = hash_fold_int hash (Hashtbl.hash t)
         let hash t = Ppx_hash_lib.Std.Hash.of_fold hash_fold_t t
       end
 
       module T1 = struct
         include T0
-
-        include%template Sexpable.Of_stringable [@mode portable] (T0)
-
-        include%template
-          Binable.Of_stringable_without_uuid [@alert "-legacy"] [@mode portable] (T0)
+        include Sexpable.Of_stringable (T0)
+        include Binable.Of_stringable_without_uuid [@alert "-legacy"] (T0)
       end
 
       include T1
-
-      include%template Comparable.Make [@mode local portable] (T1)
-
-      module%template Table = Hashtbl.Make [@mode portable] (T1)
+      include Comparable.Make (T1)
+      module Table = Hashtbl.Make (T1)
     end
   end
 
@@ -2700,17 +2691,13 @@ module Host = struct
   exception Getbyname of string [@@deriving sexp]
 
   let getbyname, getbyname_exn =
-    [%template make_by [@mode portable]]
-      (fun name -> of_unix (Unix.gethostbyname name))
-      (fun s -> Getbyname s)
+    make_by (fun name -> of_unix (Unix.gethostbyname name)) (fun s -> Getbyname s)
   ;;
 
   exception Getbyaddr of Inet_addr0.t [@@deriving sexp]
 
   let getbyaddr, getbyaddr_exn =
-    [%template make_by [@mode portable]]
-      (fun addr -> of_unix (Unix.gethostbyaddr addr))
-      (fun a -> Getbyaddr a)
+    make_by (fun addr -> of_unix (Unix.gethostbyaddr addr)) (fun a -> Getbyaddr a)
   ;;
 
   let have_address_in_common h1 h2 =
@@ -2748,8 +2735,7 @@ module Inet_addr = struct
     end
 
     include T
-
-    include%template Sexpable.Of_stringable [@mode portable] (T)
+    include Sexpable.Of_stringable (T)
   end
 
   let t_of_sexp = Blocking_sexp.t_of_sexp
@@ -2784,8 +2770,7 @@ module Cidr = struct
           { address : int32 (* IPv4 only *)
           ; bits : int
           }
-        [@@deriving
-          fields ~getters, bin_io ~localize, compare ~localize, hash, stable_witness]
+        [@@deriving fields ~getters, bin_io, compare, hash, stable_witness]
 
         let normalized_address ~base ~bits =
           if bits = 0
@@ -2818,15 +2803,14 @@ module Cidr = struct
         ;;
       end
 
-      module%template T1 = Sexpable.Stable.Of_stringable.V1 [@mode portable] (T0)
+      module T1 = Sexpable.Stable.Of_stringable.V1 (T0)
 
-      module%template T2 = Comparator.Stable.V1.Make [@mode portable] (struct
+      module T2 = Comparator.Stable.V1.Make (struct
           include T0
           include T1
         end)
 
-      module%template T3 =
-      Comparable.Stable.V1.With_stable_witness.Make [@mode portable] (struct
+      module T3 = Comparable.Stable.V1.With_stable_witness.Make (struct
           include T0
           include T1
           include T2
@@ -2879,7 +2863,7 @@ module Cidr = struct
       else None)
   ;;
 
-  include%template Identifiable.Make_using_comparator [@mode local portable] (struct
+  include Identifiable.Make_using_comparator (struct
       let module_name = "Core_unix.Cidr"
 
       include Stable.V1.T0
@@ -2973,7 +2957,7 @@ type socket_type = Unix.socket_type =
 type sockaddr = Unix.sockaddr =
   | ADDR_UNIX of string
   | ADDR_INET of Inet_addr.t * int
-[@@deriving compare ~localize, sexp_of, bin_io]
+[@@deriving compare, sexp_of, bin_io]
 
 type sockaddr_blocking_sexp = Unix.sockaddr =
   | ADDR_UNIX of string
@@ -3224,9 +3208,7 @@ let getsockopt_optint, setsockopt_optint =
     Unix.getsockopt_optint
     Unix.setsockopt_optint
     sexp_of_socket_optint_option
-    (fun t ->
-       Sexp.globalize
-         ([%template sexp_of_option [@mode stack]] (sexp_of_int :> int -> _) t) [@nontail])
+    (fun t -> Sexp.globalize (sexp_of_option (sexp_of_int :> int -> _) t) [@nontail])
 ;;
 
 let getsockopt_float, setsockopt_float =
@@ -3234,7 +3216,7 @@ let getsockopt_float, setsockopt_float =
     Unix.getsockopt_float
     Unix.setsockopt_float
     sexp_of_socket_float_option
-    (fun t -> Sexp.globalize ([%template sexp_of_float [@mode stack]] t) [@nontail])
+    (fun t -> Sexp.globalize (sexp_of_float t) [@nontail])
 ;;
 
 (* Additional IP functionality *)
@@ -3669,12 +3651,11 @@ module Ifaddr = struct
         | Running
         | Slave
         | Up
-      [@@deriving sexp, compare ~localize, enumerate]
+      [@@deriving sexp, compare, enumerate]
     end
 
     include T
-
-    include%template Comparable.Make [@mode portable] (T)
+    include Comparable.Make (T)
 
     external core_unix_iff_to_int : t -> int = "core_unix_iff_to_int"
 

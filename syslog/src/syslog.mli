@@ -58,7 +58,7 @@ module Level : sig
     | NOTICE (** Normal, but significant, condition *)
     | INFO (** Informational message *)
     | DEBUG (** Debug-level message *)
-  [@@deriving compare ~localize, enumerate, sexp]
+  [@@deriving compare, enumerate, sexp]
 
   include Stringable.S with type t := t
 end

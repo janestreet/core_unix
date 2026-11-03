@@ -53,7 +53,7 @@
 open! Core
 open! Import
 
-type t = private Int63.t [@@deriving bin_io, compare ~localize, sexp, typerep]
+type t = private Int63.t [@@deriving bin_io, compare, sexp, typerep]
 
 include Comparisons.S with type t := t
 

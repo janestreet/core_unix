@@ -5,7 +5,7 @@ type t =
   | Foo
   | Bar
   | Baz
-[@@deriving sexp_of, variants, enumerate]
+[@@deriving sexp_of, variants ~fold, enumerate]
 
 let arg_type ~case_sensitive =
   let f acc (variant : t Variant.t) = (variant.name, variant.constructor) :: acc in
@@ -68,6 +68,50 @@ let%expect_test "case insensitive completion" =
   [%expect {| (fOo) |}];
   complete ~arg_type "Fo";
   [%expect {| (Foo) |}]
+;;
+
+let%expect_test "[comma_separated] optionally propagates additional documentation" =
+  let base_arg_type =
+    Command.Arg_type.create_with_additional_documentation
+      Int.of_string
+      ~additional_documentation:(lazy "(additional documentation)")
+  in
+  let command =
+    Command.basic
+      ~summary:"test comma-separated additional documentation"
+      (let%map_open.Command (_ : int list) =
+         flag
+           "without-propagation"
+           (required (Command.Arg_type.comma_separated base_arg_type))
+           ~doc:"INTS without propagation"
+       and (_ : int list) =
+         flag
+           "with-propagation"
+           (required
+              (Command.Arg_type.comma_separated
+                 ~propagate_additional_documentation:true
+                 base_arg_type))
+           ~doc:"INTS with propagation"
+       in
+       fun () -> ())
+  in
+  Command_unix.run ~argv:[ "prog"; "-help" ] command;
+  [%expect
+    {|
+    test comma-separated additional documentation
+
+      prog
+
+    === flags ===
+
+      -with-propagation INTS     . with propagation (additional documentation)
+      -without-propagation INTS  . without propagation
+      [-build-info]              . print info about this build and exit
+      [-version]                 . print the version of this build and exit
+      [-help], -?                . print this help text and exit
+
+    (command.ml.Exit_called (status 0))
+    |}]
 ;;
 
 let%expect_test "[of_map] duplicate keys" =

@@ -47,7 +47,7 @@ module Facility = struct
   end
 
   include T
-  include Sexpable.To_stringable [@mode portable] (T)
+  include Sexpable.To_stringable (T)
 
   let%test_unit _ = [%test_result: string] ~expect:"KERN" (to_string KERN)
   let%test_unit _ = [%test_result: t] ~expect:LOCAL7 (of_string "LOCAL7")
@@ -65,7 +65,7 @@ module Level = struct
       | NOTICE
       | INFO
       | DEBUG
-    [@@deriving sexp, enumerate, compare ~localize]
+    [@@deriving sexp, enumerate, compare]
 
     let compare a b = compare b a (* listed in descending order *)
     let%test_unit _ = [%test_result: int] ~expect:1 (compare EMERG DEBUG)
@@ -77,7 +77,7 @@ module Level = struct
   end
 
   include T
-  include Sexpable.To_stringable [@mode portable] (T)
+  include Sexpable.To_stringable (T)
 
   let%test_unit _ = [%test_result: string] ~expect:"EMERG" (to_string EMERG)
   let%test_unit _ = [%test_result: t] ~expect:DEBUG (of_string "DEBUG")

@@ -231,8 +231,9 @@ val sendto_nonblocking_no_sigpipe
     most [len] (must be [>= min_len]) bytes from bigstring [bstr] starting at position
     [pos] to file descriptor [fd]. Returns the number of bytes actually written.
 
-    [NOTE] [write] does not automatically retry on [EINTR] when [min_len = 0]; in that
-    case it behaves like a single [write()] system call.
+    [NOTE] [write] returns after [min_len] bytes have been written successfully. In
+    particular, when [min_len = 0], [write] returns after the first successful [write()]
+    system call.
 
     Raises [Invalid_argument] if the designated ranges are out of bounds. Raises [IOError]
     in the case of output errors, if the minimum length could not be written. *)

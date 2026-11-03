@@ -1,5 +1,6 @@
 open! Core
 open! Import
+open! Basement.Primitives
 
 module M = struct
   type t = Unix.file_descr
@@ -11,11 +12,7 @@ module M = struct
   let of_string string = of_int (Int.of_string string)
   let to_string t = Int.to_string (to_int t)
   let hash t = Int.hash (to_int t)
-
-  let%template compare t1 t2 = (Int.compare [@mode m]) (to_int t1) (to_int t2)
-  [@@mode m = (global, local)]
-  ;;
-
+  let compare t1 t2 = Int.compare (to_int t1) (to_int t2)
   let t_of_sexp sexp = of_int (Int.t_of_sexp sexp)
 
   let sexp_of_t t =
@@ -28,15 +25,12 @@ module M = struct
 end
 
 include M
-
-include%template Hashable.Make_plain_and_derive_hash_fold_t [@mode portable] (M)
+include Hashable.Make_plain_and_derive_hash_fold_t (M)
 
 (* Given that [to_int] and [of_int] are set to "%identity", this is considerably more
    direct. It's unfortunate, but despite [Caml_unix] using [type t = int] in the
    implementation, [Unix.file_descr] is abstract and cannot be tagged [@@immediate]. *)
-let%template equal t1 t2 = (Int.equal [@mode m]) (to_int t1) (to_int t2)
-[@@mode m = (global, local)]
-;;
+let equal t1 t2 = Int.equal (to_int t1) (to_int t2)
 
 external unbox_int32 : int32 -> int32 = "%identity"
 external box_int32 : int32 -> int32 = "%identity"

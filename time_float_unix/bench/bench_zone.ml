@@ -34,19 +34,32 @@ let%bench "prev_clock_shift nyc summer" = prev_clock_shift nyc summer
 let%bench "prev_clock_shift utc epoch" = prev_clock_shift utc epoch
 let%bench "prev_clock_shift utc winter" = prev_clock_shift utc winter
 let%bench "prev_clock_shift utc summer" = prev_clock_shift utc summer
-let to_date_ofday zone time = Time.to_date_ofday ~zone time
-let%bench "to_date_ofday hkg epoch" = to_date_ofday hkg epoch
-let%bench "to_date_ofday hkg winter" = to_date_ofday hkg winter
-let%bench "to_date_ofday hkg summer" = to_date_ofday hkg summer
-let%bench "to_date_ofday ldn epoch" = to_date_ofday ldn epoch
-let%bench "to_date_ofday ldn winter" = to_date_ofday ldn winter
-let%bench "to_date_ofday ldn summer" = to_date_ofday ldn summer
-let%bench "to_date_ofday nyc epoch" = to_date_ofday nyc epoch
-let%bench "to_date_ofday nyc winter" = to_date_ofday nyc winter
-let%bench "to_date_ofday nyc summer" = to_date_ofday nyc summer
-let%bench "to_date_ofday utc epoch" = to_date_ofday utc epoch
-let%bench "to_date_ofday utc winter" = to_date_ofday utc winter
-let%bench "to_date_ofday utc summer" = to_date_ofday utc summer
+let to_date zone time = Time.to_date ~zone time
+let%bench "to_date hkg epoch" = to_date hkg epoch
+let%bench "to_date hkg winter" = to_date hkg winter
+let%bench "to_date hkg summer" = to_date hkg summer
+let%bench "to_date ldn epoch" = to_date ldn epoch
+let%bench "to_date ldn winter" = to_date ldn winter
+let%bench "to_date ldn summer" = to_date ldn summer
+let%bench "to_date nyc epoch" = to_date nyc epoch
+let%bench "to_date nyc winter" = to_date nyc winter
+let%bench "to_date nyc summer" = to_date nyc summer
+let%bench "to_date utc epoch" = to_date utc epoch
+let%bench "to_date utc winter" = to_date utc winter
+let%bench "to_date utc summer" = to_date utc summer
+let to_ofday zone time = Time.to_ofday ~zone time
+let%bench "to_ofday hkg epoch" = to_ofday hkg epoch
+let%bench "to_ofday hkg winter" = to_ofday hkg winter
+let%bench "to_ofday hkg summer" = to_ofday hkg summer
+let%bench "to_ofday ldn epoch" = to_ofday ldn epoch
+let%bench "to_ofday ldn winter" = to_ofday ldn winter
+let%bench "to_ofday ldn summer" = to_ofday ldn summer
+let%bench "to_ofday nyc epoch" = to_ofday nyc epoch
+let%bench "to_ofday nyc winter" = to_ofday nyc winter
+let%bench "to_ofday nyc summer" = to_ofday nyc summer
+let%bench "to_ofday utc epoch" = to_ofday utc epoch
+let%bench "to_ofday utc winter" = to_ofday utc winter
+let%bench "to_ofday utc summer" = to_ofday utc summer
 
 let of_date_ofday zone time =
   let date = Time.to_date ~zone time in
@@ -71,6 +84,11 @@ let reset_caches zone =
   Time.reset_date_cache ();
   Time.Zone.reset_transition_cache zone
 ;;
+
+let%bench "reset hkg" = reset_caches hkg
+let%bench "reset ldn" = reset_caches ldn
+let%bench "reset nyc" = reset_caches nyc
+let%bench "reset utc" = reset_caches utc
 
 let reset_and_next_clock_shift zone time =
   reset_caches zone;
@@ -108,23 +126,41 @@ let%bench "reset + prev_clock_shift utc epoch" = reset_and_prev_clock_shift utc 
 let%bench "reset + prev_clock_shift utc winter" = reset_and_prev_clock_shift utc winter
 let%bench "reset + prev_clock_shift utc summer" = reset_and_prev_clock_shift utc summer
 
-let reset_and_to_date_ofday zone time =
+let reset_and_to_date zone time =
   reset_caches zone;
-  Time.to_date_ofday ~zone time
+  Time.to_date ~zone time
 ;;
 
-let%bench "reset + to_date_ofday hkg epoch" = reset_and_to_date_ofday hkg epoch
-let%bench "reset + to_date_ofday hkg winter" = reset_and_to_date_ofday hkg winter
-let%bench "reset + to_date_ofday hkg summer" = reset_and_to_date_ofday hkg summer
-let%bench "reset + to_date_ofday ldn epoch" = reset_and_to_date_ofday ldn epoch
-let%bench "reset + to_date_ofday ldn winter" = reset_and_to_date_ofday ldn winter
-let%bench "reset + to_date_ofday ldn summer" = reset_and_to_date_ofday ldn summer
-let%bench "reset + to_date_ofday nyc epoch" = reset_and_to_date_ofday nyc epoch
-let%bench "reset + to_date_ofday nyc winter" = reset_and_to_date_ofday nyc winter
-let%bench "reset + to_date_ofday nyc summer" = reset_and_to_date_ofday nyc summer
-let%bench "reset + to_date_ofday utc epoch" = reset_and_to_date_ofday utc epoch
-let%bench "reset + to_date_ofday utc winter" = reset_and_to_date_ofday utc winter
-let%bench "reset + to_date_ofday utc summer" = reset_and_to_date_ofday utc summer
+let%bench "reset + to_date hkg epoch" = reset_and_to_date hkg epoch
+let%bench "reset + to_date hkg winter" = reset_and_to_date hkg winter
+let%bench "reset + to_date hkg summer" = reset_and_to_date hkg summer
+let%bench "reset + to_date ldn epoch" = reset_and_to_date ldn epoch
+let%bench "reset + to_date ldn winter" = reset_and_to_date ldn winter
+let%bench "reset + to_date ldn summer" = reset_and_to_date ldn summer
+let%bench "reset + to_date nyc epoch" = reset_and_to_date nyc epoch
+let%bench "reset + to_date nyc winter" = reset_and_to_date nyc winter
+let%bench "reset + to_date nyc summer" = reset_and_to_date nyc summer
+let%bench "reset + to_date utc epoch" = reset_and_to_date utc epoch
+let%bench "reset + to_date utc winter" = reset_and_to_date utc winter
+let%bench "reset + to_date utc summer" = reset_and_to_date utc summer
+
+let reset_and_to_ofday zone time =
+  reset_caches zone;
+  Time.to_ofday ~zone time
+;;
+
+let%bench "reset + to_ofday hkg epoch" = reset_and_to_ofday hkg epoch
+let%bench "reset + to_ofday hkg winter" = reset_and_to_ofday hkg winter
+let%bench "reset + to_ofday hkg summer" = reset_and_to_ofday hkg summer
+let%bench "reset + to_ofday ldn epoch" = reset_and_to_ofday ldn epoch
+let%bench "reset + to_ofday ldn winter" = reset_and_to_ofday ldn winter
+let%bench "reset + to_ofday ldn summer" = reset_and_to_ofday ldn summer
+let%bench "reset + to_ofday nyc epoch" = reset_and_to_ofday nyc epoch
+let%bench "reset + to_ofday nyc winter" = reset_and_to_ofday nyc winter
+let%bench "reset + to_ofday nyc summer" = reset_and_to_ofday nyc summer
+let%bench "reset + to_ofday utc epoch" = reset_and_to_ofday utc epoch
+let%bench "reset + to_ofday utc winter" = reset_and_to_ofday utc winter
+let%bench "reset + to_ofday utc summer" = reset_and_to_ofday utc summer
 
 let reset_and_of_date_ofday zone time =
   let date = Time.to_date ~zone time in

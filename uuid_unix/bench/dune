@@ -2,4 +2,4 @@
  (name uuid_unix_bench)
  (libraries core core_kernel.uuid uuid_unix)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

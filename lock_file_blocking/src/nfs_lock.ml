@@ -47,7 +47,7 @@ module Info = struct
       ; start_time : Time_float.Stable.With_utc_sexp.V2.t option [@sexp.option]
       ; pid_namespace : string option [@sexp.option]
       }
-    [@@sexp.allow_extra_fields] [@@deriving compare ~localize, sexp, fields ~getters]
+    [@@sexp.allow_extra_fields] [@@deriving compare, sexp, fields ~getters]
   end
 
   include T

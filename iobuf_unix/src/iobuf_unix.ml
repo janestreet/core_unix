@@ -8,7 +8,7 @@ module Syscall_result = Unix.Syscall_result
 type ok_or_eof =
   | Ok
   | Eof
-[@@deriving compare ~localize, sexp_of, variants]
+[@@deriving compare, sexp_of, variants]
 
 let input t ch =
   match

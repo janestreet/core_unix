@@ -3,4 +3,4 @@
  (public_name core_unix.daemon)
  (libraries core core_thread core_unix)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

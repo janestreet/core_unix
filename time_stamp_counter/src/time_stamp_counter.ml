@@ -80,8 +80,8 @@ let () =
 
 let ewma ~alpha ~old ~add = ((1. -. alpha) *. old) +. (alpha *. add)
 
-type t = Int63.t [@@deriving bin_io, compare ~localize, sexp, typerep]
-type tsc = t [@@deriving bin_io, compare ~localize, sexp]
+type t = Int63.t [@@deriving bin_io, compare, sexp, typerep]
+type tsc = t [@@deriving bin_io, compare, sexp]
 
 include (Int63 : Comparisons.S with type t := t)
 

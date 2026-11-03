@@ -3,11 +3,8 @@ open! Import
 
 type 'a t = int
 
-[%%template
-[@@@mode.default m = (global, local)]
-
-module type S = Syscall_result_intf.S [@mode m] with type 'a syscall_result := 'a t
-module type Arg = Syscall_result_intf.Arg [@mode m]]
+module type S = Syscall_result_intf.S with type 'a syscall_result := 'a t
+module type Arg = Syscall_result_intf.Arg
 
 let create_error err = -Unix_error.to_errno err
 let is_ok t = Int.O.(t >= 0)
@@ -34,11 +31,11 @@ let%test "no 0 errno" =
 
 let num_preallocated_errnos = Iarray.length preallocated_errnos
 
-module%template [@mode m = (global, local)] Make (M : Arg [@mode m]) () = struct
+module Make (M : Arg) () = struct
   type nonrec t = M.t t
 
-  let[@mode m = (global, m)] compare = (Int.compare [@mode m])
-  let[@mode m = (global, m)] equal = (Int.equal [@mode m])
+  let compare = Int.compare
+  let equal = Int.equal
 
   let preallocated_ms =
     let rec loop i rev_acc =
@@ -138,20 +135,19 @@ module%template [@mode m = (global, local)] Make (M : Arg [@mode m]) () = struct
   end
 end
 
-[%%template
-module Int = Make [@mode local] (Int) ()
+module Int = Make (Int) ()
 
 module Unit =
-  Make [@mode local]
+  Make
     (struct
-      type t = unit [@@deriving sexp_of, compare ~localize]
+      type t = unit [@@deriving sexp_of, compare]
 
       let of_int_exn n = assert (n = 0)
       let to_int () = 0
     end)
     ()
 
-module File_descr = Make [@mode local] (File_descr) ()]
+module File_descr = Make (File_descr) ()
 
 let unit = Unit.create_ok ()
 let ignore_ok_value t = Core.Int.min t 0

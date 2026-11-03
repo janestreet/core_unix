@@ -3,4 +3,4 @@
  (public_name core_unix.uuid)
  (libraries core core_unix core_kernel.uuid)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

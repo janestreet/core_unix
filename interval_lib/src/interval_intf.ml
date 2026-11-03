@@ -150,18 +150,8 @@ module type Gen_set = sig
   val union_list : 'a t list -> 'a t
 end
 
-[%%template
-[@@@mode.default m = (global, local)]
-
 module type S = sig
-  type t
-  [@@deriving
-    (bin_io [@mode m])
-    , sexp
-    , (compare [@mode.explicit m])
-    , (equal [@mode.explicit m])
-    , hash]
-
+  type t [@@deriving bin_io, sexp, compare, equal, hash]
   type bound
 
   include Gen with type 'a t := t with type 'a bound := bound (** @inline *)
@@ -194,13 +184,7 @@ module type S1 = sig
   (** This type [t] supports bin-io and sexp conversion by way of the
       [[@@deriving bin_io, sexp]] extensions, which inline the relevant function
       signatures (like [bin_read_t] and [t_of_sexp]). *)
-  type 'a t
-  [@@deriving
-    (bin_io [@mode m])
-    , sexp ~stackify
-    , (compare [@mode.explicit m])
-    , (equal [@mode.explicit m])
-    , hash]
+  type 'a t [@@deriving bin_io, sexp, compare, equal, hash]
 
   include Gen with type 'a t := 'a t with type 'a bound := 'a (** @inline *)
 
@@ -217,10 +201,10 @@ module type S1 = sig
 end
 
 module type S_stable = sig
-  type t [@@deriving (equal [@mode.explicit m]), hash, sexp_grammar]
+  type t [@@deriving equal, hash, sexp_grammar]
 
-  include Stable_with_witness [@mode m] with type t := t
-end]
+  include Stable_with_witness with type t := t
+end
 
 (** Module for simple closed intervals over arbitrary types. Used by calling the
     {{!module:Core.Interval.Make} [Make]} functor with a type that satisfies
@@ -235,13 +219,13 @@ end]
 
     See the documentation of {{!module:Core.Interval.Make} [Interval.Make]} for a more
     detailed usage example. *)
-module type%template Interval = sig
+module type Interval = sig
   (** {2 Intervals using polymorphic compare}
 
       This part of the interface is for polymorphic intervals, which are well ordered by
       polymorphic compare. Using this with types that are not (like sets) will lead to
       crazy results. *)
-  include S1 [@mode local]
+  include S1
   (** @inline *)
 
   (** {2 Type-specialized intervals}
@@ -259,30 +243,23 @@ module type%template Interval = sig
       The following signatures are used for specifying the types of the type-specialized
       intervals. *)
 
-  module type [@mode m = (global, local)] S1 = S1 [@mode m]
-
-  module type [@mode m = (global, local)] S =
-    S [@mode m] with type 'a poly_t := 'a t with type 'a poly_set := 'a Set.t
-
+  module type S1 = S1
+  module type S = S with type 'a poly_t := 'a t with type 'a poly_set := 'a Set.t
   module type S_time = sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
 
   (** {3 Specialized interval types} *)
 
-  module Ofday :
-    S [@mode local] with type bound = Time_float.Ofday.t and type t = Time_float.Ofday.t t
-
-  module Ofday_ns :
-    S [@mode local] with type bound = Time_ns.Ofday.t and type t = Time_ns.Ofday.t t
-
+  module Ofday : S with type bound = Time_float.Ofday.t and type t = Time_float.Ofday.t t
+  module Ofday_ns : S with type bound = Time_ns.Ofday.t and type t = Time_ns.Ofday.t t
   module Time : sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
   module Time_ns : sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
-  module Float : S [@mode local] with type bound = Float.t and type t = Float.t t
+  module Float : S with type bound = Float.t and type t = Float.t t
 
   module Int : sig
-    include S [@mode local] with type bound = Int.t (** @open *)
+    include S with type bound = Int.t (** @open *)
 
     include Container.S0 with type t := t with type elt := bound
-    include Binary_searchable.S [@mode local] with type t := t with type elt := bound
+    include Binary_searchable.S with type t := t with type elt := bound
 
     (**/**)
 
@@ -330,18 +307,11 @@ module type%template Interval = sig
           include Comparable.Make_binable (T)
         end
       ]} *)
-  module%template.portable
-    [@mode m = (global, local)] Make (Bound : sig
-      type t
-      [@@deriving
-        (bin_io [@mode m])
-        , (compare [@mode.explicit m])
-        , (equal [@mode.explicit m])
-        , hash
-        , sexp]
+  module Make (Bound : sig
+      type t [@@deriving bin_io, compare, equal, hash, sexp]
 
-      include Comparable.S [@mode m] with type t := t
-    end) : S [@mode m] with type bound = Bound.t and type t = Bound.t t
+      include Comparable.S with type t := t
+    end) : S with type bound = Bound.t and type t = Bound.t t
 
   (** [Stable] is used to build stable protocols. It ensures backwards compatibility by
       checking the sexp and bin-io representations of a given module. Here it's also
@@ -349,21 +319,14 @@ module type%template Interval = sig
   module Stable : sig
     module V1 : sig
       type nonrec 'a t = 'a t
-      [@@deriving
-        bin_io ~localize
-        , compare ~localize
-        , equal ~localize
-        , hash
-        , sexp ~stackify
-        , sexp_grammar
-        , stable_witness]
+      [@@deriving bin_io, compare, equal, hash, sexp, sexp_grammar, stable_witness]
 
-      module Float : S_stable [@mode local] with type t = Float.t
-      module Int : S_stable [@mode local] with type t = Int.t
+      module Float : S_stable with type t = Float.t
+      module Int : S_stable with type t = Int.t
       module Time : sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
       module Time_ns : sig end [@@deprecated "[since 2021-08] Use [Interval_unix]"]
-      module Ofday : S_stable [@mode local] with type t = Ofday.t
-      module Ofday_ns : S_stable [@mode local] with type t = Ofday_ns.t
+      module Ofday : S_stable with type t = Ofday.t
+      module Ofday_ns : S_stable with type t = Ofday_ns.t
 
       (**/**)
 
@@ -376,7 +339,7 @@ module type%template Interval = sig
         type 'a t =
           | Interval of 'a * 'a
           | Empty
-        [@@deriving compare ~localize, equal ~localize, hash, variants]
+        [@@deriving compare, equal, hash, variants ~fold]
 
         val to_float : float t -> Float.t
         val to_int : int t -> Int.t
@@ -395,11 +358,10 @@ module type%template Interval = sig
 
       https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
-    module%template.portable
-      [@mode m = (global, local)] Make (Bound : sig
-        type t [@@deriving (bin_io [@mode m]), sexp, hash]
+    module Make (Bound : sig
+        type t [@@deriving bin_io, sexp, hash]
 
-        include Comparable.S [@mode m] with type t := t
-      end) : S [@mode m] with type bound = Bound.t and type t = Bound.t t
+        include Comparable.S with type t := t
+      end) : S with type bound = Bound.t and type t = Bound.t t
   end
 end

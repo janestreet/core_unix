@@ -646,15 +646,18 @@ CAMLprim value core_unix_writev_stub(value v_fd, value v_iovecs, value v_count) 
 
 typedef fd_set file_descr_set;
 
-static inline void fdlist_to_fdset(value fdlist, fd_set *fdset, int *maxfd) {
+static inline int fdlist_to_fdset(value fdlist, fd_set *fdset, int *maxfd) {
   value l;
   FD_ZERO(fdset);
   for (l = fdlist; l != Val_int(0); l = Field(l, 1)) {
-    int fd = Int_val(Field(l, 0));
-    FD_SET(fd, fdset);
+    long fd = Long_val(Field(l, 0));
+    if (fd < 0 || fd >= FD_SETSIZE)
+      return -1;
+    FD_SET((int)fd, fdset);
     if (fd > *maxfd)
-      *maxfd = fd;
+      *maxfd = (int)fd;
   }
+  return 0;
 }
 
 static inline value fdset_to_fdlist(value fdlist, fd_set *fdset) {
@@ -697,9 +700,10 @@ CAMLprim value core_unix_pselect_stub(value v_rfds, value v_wfds, value v_efds,
   decode_sigset(v_sigmask, &sigmask);
 
   Begin_roots3(v_rfds, v_wfds, v_efds);
-  fdlist_to_fdset(v_rfds, &rfds, &maxfd);
-  fdlist_to_fdset(v_wfds, &wfds, &maxfd);
-  fdlist_to_fdset(v_efds, &efds, &maxfd);
+  if (fdlist_to_fdset(v_rfds, &rfds, &maxfd) != 0 ||
+      fdlist_to_fdset(v_wfds, &wfds, &maxfd) != 0 ||
+      fdlist_to_fdset(v_efds, &efds, &maxfd) != 0)
+    unix_error(EINVAL, "pselect", Nothing);
 
   if (tm < 0.0)
     tsp = (struct timespec *)NULL;
@@ -1439,12 +1443,6 @@ enum option_type {
   TYPE_TIMEVAL = 3,
   TYPE_UNIX_ERROR = 4
 };
-
-#include <caml/version.h>
-#if OCAML_VERSION_MAJOR < 5
-#define caml_unix_getsockopt_aux unix_getsockopt_aux
-#define caml_unix_setsockopt_aux unix_setsockopt_aux
-#endif
 
 extern value caml_unix_getsockopt_aux(char *name, enum option_type ty, int level,
                                       int option, value v_socket);

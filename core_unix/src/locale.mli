@@ -25,7 +25,7 @@ module Category : sig
     | Monetary (** Monetary formatting. Corresponds to POSIX [LC_MONETARY]. *)
     | Numeric (** Numeric, non-monetary formatting. Corresponds to POSIX [LC_NUMERIC]. *)
     | Time (** Date and time formats. Corresponds to POSIX [LC_TIME]. *)
-  [@@deriving compare ~localize, enumerate, equal ~localize, hash, sexp, string]
+  [@@deriving compare, enumerate, equal, hash, sexp, string]
 
   val to_native : t -> int32
   val of_native : int32 -> t option
@@ -105,7 +105,7 @@ module Name : sig
 end
 
 include sig
-  type t [@@deriving compare ~localize, equal ~localize, hash, sexp]
+  type t [@@deriving compare, equal, hash, sexp]
 
   val ( = ) : t -> t -> bool
   val ( <> ) : t -> t -> bool
@@ -171,7 +171,10 @@ val get_current : unit -> t option
 (** Sets the current locale using {!Expert.set_current}, calls the provided function, and
     restores the current locale to its previous value afterwards. Be careful when using it
     with a [Deferred.t]-returning function, as it would not wait on the [Deferred.t]
-    before cleaning up. *)
+    before cleaning up.
+
+    [f] is [unyielding]: it may not suspend to the Async scheduler. There is one locale
+    slot per OS thread; suspending would run other jobs under this locale. *)
 val with_current : t option -> (unit -> 'a) -> 'a
 
 module Expert : sig

@@ -1034,3 +1034,93 @@ let%expect_test "fallocate" =
     print_size ();
     [%expect {| 4096 |}])
 ;;
+
+let%expect_test "statx" =
+  let open Linux_ext.Statx in
+  let statx = Or_error.ok_exn statx in
+  protectx (Filename_unix.temp_file "linux_ext" "") ~finally:Unix.unlink ~f:(fun path ->
+    Out_channel.write_all path ~data:"Some test data in a test file";
+    let result = statx ~mask:Mask.basic_stats path ~flags:Flags.empty in
+    let result =
+      match result with
+      | Ok result -> result
+      | err -> raise_s [%message "statx failed" (err : Result.t)]
+    in
+    (* print out a few stable fields. *)
+    print_s
+      [%message
+        "statx"
+          (result.stx_size : Int64.t)
+          (result.stx_attributes : Attributes.t)
+          (result.stx_nlink : int)]);
+  [%expect
+    {| (statx (result.stx_size 29) (result.stx_attributes ()) (result.stx_nlink 1)) |}]
+;;
+
+let%expect_test "statx in specific directory" =
+  let open Linux_ext.Statx in
+  let statx = Or_error.ok_exn statx in
+  protectx (Filename_unix.temp_dir "linux_ext" "") ~finally:Unix.rmdir ~f:(fun dirpath ->
+    protectx
+      (Filename_unix.temp_file ~in_dir:dirpath "linux_ext" "")
+      ~finally:Unix.unlink
+      ~f:(fun path ->
+        Out_channel.write_all path ~data:"Hello from a directory";
+        let dir_fd = Unix.openfile dirpath ~mode:[ O_RDONLY ] in
+        protectx dir_fd ~finally:Unix.close ~f:(fun dir_fd ->
+          let result =
+            statx
+              ~dir_fd
+              ~mask:Mask.basic_stats
+              (Filename.basename path)
+              ~flags:Flags.empty
+          in
+          let result =
+            match result with
+            | Ok result -> result
+            | err -> raise_s [%message "statx failed" (err : Result.t)]
+          in
+          (* print out a few stable fields. *)
+          print_s
+            [%message
+              "statx"
+                (result.stx_size : Int64.t)
+                (result.stx_attributes : Attributes.t)
+                (result.stx_nlink : int)];
+          [%expect
+            {| (statx (result.stx_size 22) (result.stx_attributes ()) (result.stx_nlink 1)) |}])))
+;;
+
+let%expect_test "statx with no dir_fd resolves relative to cwd" =
+  let open Linux_ext.Statx in
+  let statx = Or_error.ok_exn statx in
+  protectx (Filename_unix.temp_dir "linux_ext" "") ~finally:Unix.rmdir ~f:(fun dirpath ->
+    protectx
+      (Filename_unix.temp_file ~in_dir:dirpath "linux_ext" "")
+      ~finally:Unix.unlink
+      ~f:(fun path ->
+        Out_channel.write_all path ~data:"Hello, relatively";
+        let basename = Filename.basename path in
+        protectx (Unix.getcwd ()) ~finally:Unix.chdir ~f:(fun (_ : string) ->
+          Unix.chdir dirpath;
+          let result = statx ~mask:Mask.basic_stats basename ~flags:Flags.empty in
+          let result =
+            match result with
+            | Ok result -> result
+            | err -> raise_s [%message "statx failed" (err : Result.t)]
+          in
+          print_s [%sexp (result.stx_size : int64)])));
+  [%expect {| 17 |}]
+;;
+
+let%expect_test "statx a file which doesn't exist" =
+  let open Linux_ext.Statx in
+  let statx = Or_error.ok_exn statx in
+  protectx (Filename_unix.temp_dir "linux_ext" "") ~finally:Unix.rmdir ~f:(fun dirpath ->
+    let path = String.append dirpath "/does_not_exist" in
+    let result =
+      statx ~mask:Mask.basic_stats (Filename.basename path) ~flags:Flags.empty
+    in
+    print_s [%sexp (result : Result.t)];
+    [%expect {| ENOENT |}])
+;;

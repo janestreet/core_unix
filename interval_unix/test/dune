@@ -3,4 +3,4 @@
  (libraries core expect_test_helpers_core interval_lib interval_lib_test
    interval_unix time_float_unix)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

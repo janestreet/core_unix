@@ -20,25 +20,50 @@ end = struct
   module Condition = Condition
   module Mutex = Error_checking_mutex
 
-  type t =
-    { mutex : (Mutex.t[@sexp.opaque])
-    ; condition : (Condition.t[@sexp.opaque])
-    }
-  [@@deriving sexp_of]
+  module T = struct
+    type t =
+      { mutex : Mutex.t
+      ; condition : Condition.t
+      ; mutable next : t or_null [@atomic]
+      (** The next blocker in the stack (see [Portable_stack], below) *)
+      ; mutable pop_refcount : int [@atomic]
+      }
+
+    let[@inline] make ~mutex ~condition =
+      { mutex; condition; next = Null; pop_refcount = 0 }
+    ;;
+
+    let[@inline] get_next t = Atomic.Loc.get [%atomic.loc t.next]
+    let[@inline] set_next t x = Atomic.Loc.set [%atomic.loc t.next] x
+    let[@inline] incr_pop_refcount t = Atomic.Loc.add [%atomic.loc t.pop_refcount] 1
+    let[@inline] decr_pop_refcount t = Atomic.Loc.sub [%atomic.loc t.pop_refcount] 1
+    let[@inline] has_pop_refcount t = Atomic.Loc.get [%atomic.loc t.pop_refcount] > 0
+  end
+
+  include T
+
+  let rec sexp_of_t t =
+    [%sexp
+      { mutex = "<opaque>"; condition = "<opaque>"; next = (get_next t : t or_null) }]
+  ;;
+
+  (** Intrusive linked-list stack of blockers, used to cache allocated-but-unused
+      blockers. *)
+  module Portable_stack = Portable_intrusive_stack.Make [@inlined hint] (T)
 
   (* We keep a cache of unused blockers, since they are relatively costly to create, and
      we should never need very many simultaneously. We should never need more blockers
      than the number of nano mutexes being simultaneously blocked on, which of course is
      no more than the total number of simultaneous threads. *)
-  let unused : t Thread_safe_queue.t = Thread_safe_queue.create ()
+  let unused = Portable_stack.create ()
 
   (* [save_unused t] should be called when [t] is no longer in use, so it can be returned
      by a future call of [create]. *)
-  let save_unused t = Thread_safe_queue.enqueue unused t
+  let save_unused t = Portable_stack.push unused t
 
   let create () =
-    match Thread_safe_queue.dequeue unused with
-    | Null -> { mutex = Mutex.create (); condition = Condition.create () }
+    match Portable_stack.pop unused with
+    | Null -> make ~mutex:(Mutex.create ()) ~condition:(Condition.create ())
     | This elt -> elt
   ;;
 
@@ -48,7 +73,7 @@ end = struct
 end
 
 module Thread_id_option : sig
-  type t [@@deriving equal ~localize, sexp_of] [@@immediate]
+  type t [@@deriving equal, sexp_of] [@@immediate]
 
   val none : t
   val some : int -> t
@@ -66,7 +91,7 @@ end = struct
   (* The atomicity of some sections marked "BEGIN/END ATOMIC" later in this file require
      [equal] to be implemented such that the OCaml compiler will not insert safepoints in
      its prelude. We write out the definition rather than deriving it for this reason. *)
-  let%template[@inline] equal (t1 : int) t2 = t1 = t2 [@@mode m = (global, local)]
+  let[@inline] equal (t1 : int) t2 = t1 = t2
 end
 
 (* We represent a nano mutex using an OCaml record. The [id_of_thread_holding_lock] field
@@ -290,8 +315,7 @@ let unlock t =
 
 let unlock_exn t = ok_exn (unlock t)
 
-let%template[@mode l = (global, local)] critical_section t ~f =
-  (lock_exn t;
-   (Exn.protect [@mode l]) ~f ~finally:(fun () -> unlock_exn t))
-  [@exclave_if_local l ~reasons:[ May_return_local ]]
+let critical_section t ~f =
+  lock_exn t;
+  Exn.protect ~f ~finally:(fun () -> unlock_exn t)
 ;;
