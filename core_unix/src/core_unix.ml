@@ -849,30 +849,30 @@ let env_r env = "env", sexp_of_array atom env
 module Raw_exec = struct
   external execv
     :  prog:string
-    -> args:local_ string array
+    -> args:string array @ local
     -> never_returns
     @@ portable
     = "core_unix_execv"
 
   external execve
     :  prog:string
-    -> args:local_ string array
-    -> env:local_ string array
+    -> args:string array @ local
+    -> env:string array @ local
     -> never_returns
     @@ portable
     = "core_unix_execve"
 
   external execvp
     :  prog:string
-    -> args:local_ string array
+    -> args:string array @ local
     -> never_returns
     @@ portable
     = "core_unix_execvp"
 
   external execvpe
     :  prog:string
-    -> args:local_ string array
-    -> env:local_ string array
+    -> args:string array @ local
+    -> env:string array @ local
     -> never_returns
     @@ portable
     = "core_unix_execvpe"
@@ -1352,7 +1352,7 @@ let lockf fd ~mode ~len =
 ;;
 
 module Flock_command : sig @@ portable
-  type t
+  type t : immutable_data
 
   val lock_shared : t
   val lock_exclusive : t

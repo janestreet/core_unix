@@ -2,4 +2,4 @@
  (name process_env_test)
  (libraries core core_unix process_env)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

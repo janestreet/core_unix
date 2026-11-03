@@ -15,7 +15,7 @@ type t =
   | Write_stderr
   | Close_stdout
   | Close_stderr
-[@@deriving compare, enumerate, sexp]
+[@@deriving compare ~localize, enumerate, sexp]
 
 let instructions_variable = "THE_INSTRUCTIONS"
 

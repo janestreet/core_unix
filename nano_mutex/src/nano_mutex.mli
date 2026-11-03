@@ -1,3 +1,5 @@
+@@ portable
+
 (** A nano-mutex is a lightweight mutex that can be used only within a single OCaml
     runtime.
 
@@ -88,5 +90,5 @@ val unlock : t -> unit Or_error.t
 
 val unlock_exn : t -> unit
 
-val%template critical_section : t -> f:(unit -> 'a @ l) @ local -> 'a @ l
+val%template critical_section : t -> f:(unit -> 'a @ l) @ local unyielding -> 'a @ l
 [@@mode l = (global, local)]

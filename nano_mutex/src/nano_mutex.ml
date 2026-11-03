@@ -5,11 +5,11 @@ let ok_exn = Or_error.ok_exn
 
 (* A [Blocker.t] is an ordinary mutex and conditional variable used to implement blocking
    when there is lock contention. *)
-module Blocker : sig
+module Blocker : sig @@ portable
   type t [@@deriving sexp_of]
 
   val create : unit -> t
-  val critical_section : t -> f:local_ (unit -> 'a) -> 'a
+  val critical_section : t -> f:(unit -> 'a) @ local unyielding -> 'a
   val wait : t -> unit
   val signal : t -> unit
   val save_unused : t -> unit
@@ -20,25 +20,50 @@ end = struct
   module Condition = Condition
   module Mutex = Error_checking_mutex
 
-  type t =
-    { mutex : (Mutex.t[@sexp.opaque])
-    ; condition : (Condition.t[@sexp.opaque])
-    }
-  [@@deriving sexp_of]
+  module T = struct
+    type t =
+      { mutex : Mutex.t
+      ; condition : Condition.t
+      ; mutable next : t or_null [@atomic]
+      (** The next blocker in the stack (see [Portable_stack], below) *)
+      ; mutable pop_refcount : int [@atomic]
+      }
+
+    let[@inline] make ~mutex ~condition =
+      { mutex; condition; next = Null; pop_refcount = 0 }
+    ;;
+
+    let[@inline] get_next t = Atomic.Loc.get [%atomic.loc t.next]
+    let[@inline] set_next t x = Atomic.Loc.set [%atomic.loc t.next] x
+    let[@inline] incr_pop_refcount t = Atomic.Loc.add [%atomic.loc t.pop_refcount] 1
+    let[@inline] decr_pop_refcount t = Atomic.Loc.sub [%atomic.loc t.pop_refcount] 1
+    let[@inline] has_pop_refcount t = Atomic.Loc.get [%atomic.loc t.pop_refcount] > 0
+  end
+
+  include T
+
+  let rec sexp_of_t t =
+    [%sexp
+      { mutex = "<opaque>"; condition = "<opaque>"; next = (get_next t : t or_null) }]
+  ;;
+
+  (** Intrusive linked-list stack of blockers, used to cache allocated-but-unused
+      blockers. *)
+  module Portable_stack = Portable_intrusive_stack.Make [@inlined hint] (T)
 
   (* We keep a cache of unused blockers, since they are relatively costly to create, and
      we should never need very many simultaneously. We should never need more blockers
      than the number of nano mutexes being simultaneously blocked on, which of course is
      no more than the total number of simultaneous threads. *)
-  let unused : t Thread_safe_queue.t = Thread_safe_queue.create ()
+  let unused = Portable_stack.create ()
 
   (* [save_unused t] should be called when [t] is no longer in use, so it can be returned
      by a future call of [create]. *)
-  let save_unused t = Thread_safe_queue.enqueue unused t
+  let save_unused t = Portable_stack.push unused t
 
   let create () =
-    match Thread_safe_queue.dequeue unused with
-    | Null -> { mutex = Mutex.create (); condition = Condition.create () }
+    match Portable_stack.pop unused with
+    | Null -> make ~mutex:(Mutex.create ()) ~condition:(Condition.create ())
     | This elt -> elt
   ;;
 
@@ -47,7 +72,7 @@ end = struct
   let signal t = Condition.signal t.condition
 end
 
-module Thread_id_option : sig
+module Thread_id_option : sig @@ portable
   type t : immediate [@@deriving equal ~localize, sexp_of]
 
   val none : t
@@ -173,7 +198,7 @@ let[@inline never] [@specialise never] [@local never] with_blocker0 t ~new_block
 
 (* [with_blocker t f] runs [f blocker] in a critical section. It allocates a blocker for
    [t] if [t] doesn't already have one. *)
-let with_blocker t (local_ f) =
+let with_blocker t (f @ local) =
   t.num_using_blocker <- t.num_using_blocker + 1;
   let blocker =
     match t.blocker with

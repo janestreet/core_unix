@@ -83,7 +83,7 @@ val ( = ) : t -> t -> bool [@@zero_alloc]
     the internal instance is used when no calibrator is explicitly specified. *)
 module Calibrator : sig
     type tsc
-    type t [@@deriving bin_io, sexp]
+    type t : value mod stateless [@@deriving bin_io, sexp]
 
     (** [create ()] creates an uninitialized calibrator instance. Creating a calibrator
         takes about 3ms. One needs a recently calibrated [Calibrator.t] and the TSC value
@@ -121,7 +121,7 @@ module Calibrator : sig
 module Span : sig
   type t = private Int63.t [@@deriving bin_io, sexp]
 
-  include Comparable with type t := t
+  include Comparable [@mode local] with type t := t
   include Intable with type t := t
 
   val ( + ) : t -> t -> t [@@zero_alloc]
@@ -144,7 +144,7 @@ module Span : sig
   end
 end
 
-val now : unit -> t @@ portable
+val now : unit -> t
 val diff : t -> t -> Span.t [@@zero_alloc]
 val add : t -> Span.t -> t [@@zero_alloc]
 val to_int63 : t -> Int63.t [@@zero_alloc]

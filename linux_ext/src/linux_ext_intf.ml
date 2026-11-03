@@ -175,7 +175,8 @@ module type S = sig @@ portable
 
   (** [settcpopt_string sock opt v] sets the current value of the string TCP socket option
       [opt] for socket [sock] to value [v]. *)
-  val settcpopt_string : (File_descr.t -> tcp_string_option -> string -> unit) Or_error.t
+  val settcpopt_string
+    : (File_descr.t -> tcp_string_option -> string @ local -> unit) Or_error.t
 
   type ip_int_option =
     | IP_TOS
@@ -207,7 +208,7 @@ module type S = sig @@ portable
     : (File_descr.t
        -> ?pos:int (** default = 0 *)
        -> ?len:int (** default = [Bytes.length buf - pos] *)
-       -> Bytes.t
+       -> Bytes.t @ local
        -> int option)
         Or_error.t
 
@@ -221,7 +222,7 @@ module type S = sig @@ portable
     : (File_descr.t
        -> ?pos:int (** default = 0 *)
        -> ?len:int (** default = [Bytes.length buf - pos] *)
-       -> Bytes.t
+       -> Bytes.t @ local
        -> int)
         Or_error.t
 
@@ -233,7 +234,8 @@ module type S = sig @@ portable
       Raises [Invalid_argument] if the designated ranges are invalid. Raises [Unix_error]
       on Unix-errors. *)
   val sendmsg_nonblocking_no_sigpipe
-    : (File_descr.t -> ?count:int -> string IOVec.t array -> int option) Or_error.t
+    : (File_descr.t -> ?count:int -> string IOVec.t array @ local -> int option)
+        Or_error.t
 
   (** {2 Non-portable socket functionality} *)
 
@@ -319,7 +321,7 @@ module type S = sig @@ portable
         In the case that [t] was created with the {!Flags.nonblock} flag set, this
         function will raise a Unix error with the error code [EAGAIN] or [EWOULDBLOCK],
         instead of blocking. *)
-    val write : t -> Int64.t -> unit
+    val write : t -> Int64.t @ local -> unit
 
     val to_file_descr : t -> File_descr.t
   end
@@ -506,7 +508,7 @@ module type S = sig @@ portable
 
   (** [pr_set_name_first16 name] sets the name of the executing thread to [name]. Only the
       first 16 bytes in [name] will be used; the rest is ignored. *)
-  val pr_set_name_first16 : (string -> unit) Or_error.t
+  val pr_set_name_first16 : (string @ local -> unit) Or_error.t
 
   (** [pr_get_name ()] gets the name of the executing thread. The name is at most 16 bytes
       long. *)
@@ -548,7 +550,8 @@ module type S = sig @@ portable
       "passing the value returned from a call to getpid will set the attribute for the
       main thread of the thread group". (A thread group is what you might think of as a
       process.) *)
-  val sched_setaffinity : (?pid:Pid.t -> cpuset:int list -> unit -> unit) Or_error.t
+  val sched_setaffinity
+    : (?pid:Pid.t -> cpuset:int list @ local -> unit -> unit) Or_error.t
 
   val sched_getaffinity : (?pid:Pid.t -> unit -> int list) Or_error.t
 
@@ -556,7 +559,7 @@ module type S = sig @@ portable
       though happens to be implemented by using [gettid] rather than passing [pid=0] to
       [sched_setaffinity]. It exists for historical reasons, and may be removed in the
       future. *)
-  val sched_setaffinity_this_thread : (cpuset:int list -> unit) Or_error.t
+  val sched_setaffinity_this_thread : (cpuset:int list @ local -> unit) Or_error.t
 
   (** [cores ()] returns the number of cores on the machine. This may be different than
       the number of cores available to the calling process. *)
@@ -589,7 +592,8 @@ module type S = sig @@ portable
       the controlling terminal (raises if no controlling terminal), or of the specified
       file descriptor (useful when writing to stdout, because stdout doesn't have to be
       the controlling terminal). *)
-  val get_terminal_size : ([ `Controlling | `Fd of File_descr.t ] -> int * int) Or_error.t
+  val get_terminal_size
+    : ([ `Controlling | `Fd of File_descr.t ] @ local -> int * int) Or_error.t
 
   (** [Priority.t] is what is usually referred to as the "nice" value of a process. It is
       also known as the "dynamic" priority. It is used with normal (as opposed to
@@ -626,11 +630,11 @@ module type S = sig @@ portable
 
   (** [get_ipv4_address_for_interface "eth0"] returns the IP address assigned to eth0, or
       throws an exception if no IP address is configured. *)
-  val get_ipv4_address_for_interface : (string -> string) Or_error.t
+  val get_ipv4_address_for_interface : (string @ local -> string) Or_error.t
 
   (** [get_mac_address] returns the mac address of [ifname] in the canonical form, e.g.
       "aa:bb:cc:12:34:56". *)
-  val get_mac_address : (ifname:string -> string) Or_error.t
+  val get_mac_address : (ifname:string @ local -> string) Or_error.t
 
   (** [bind_to_interface fd (Only "eth0")] restricts packets from being received/sent on
       the given file descriptor [fd] on any interface other than "eth0". Use
@@ -641,7 +645,8 @@ module type S = sig @@ portable
       Linux-specific socket option ([SO_BINDTODEVICE]) is used for applications on
       multi-homed machines with specific security concerns. For similar functionality when
       using multicast, see {!Core_unix.mcast_set_ifname}. *)
-  val bind_to_interface : (File_descr.t -> Bound_to_interface.t -> unit) Or_error.t
+  val bind_to_interface
+    : (File_descr.t -> Bound_to_interface.t @ local -> unit) Or_error.t
 
   (** [get_bind_to_interface fd] returns the current interface the socket is bound to. It
       uses getsockopt() with Linux-specific [SO_BINDTODEVICE] option. Empty string means
@@ -694,7 +699,7 @@ module type S = sig @@ portable
         successfully; the pages are guaranteed to stay in RAM until later unlocked.
 
         Raises [Unix_error] on error. See [man 2 mlockall] for details. *)
-    val mlockall : (Mcl_flags.t list -> unit) Or_error.t
+    val mlockall : (Mcl_flags.t list @ local -> unit) Or_error.t
 
     (** [munlockall ()] unlocks all pages mapped into the address space of the calling
         process.
@@ -739,7 +744,7 @@ module type S = sig @@ portable
     end
 
     val getxattr
-      : (follow_symlinks:bool -> path:string -> name:string -> Get_attr_result.t)
+      : (follow_symlinks:bool -> path:string -> name:string @ local -> Get_attr_result.t)
           Or_error.t
 
     (** [setxattr] sets the value of the extended attribute identified by name and
@@ -768,8 +773,8 @@ module type S = sig @@ portable
       : (?how:[ `Set | `Create | `Replace ]
          -> follow_symlinks:bool
          -> path:string
-         -> name:string
-         -> value:string
+         -> name:string @ local
+         -> value:string @ local
          -> unit
          -> Set_attr_result.t)
           Or_error.t
@@ -821,7 +826,120 @@ module type S = sig @@ portable
     end
 
     val removexattr
-      : (follow_symlinks:bool -> path:string -> name:string -> Remove_attr_result.t)
+      : (follow_symlinks:bool
+         -> path:string
+         -> name:string @ local
+         -> Remove_attr_result.t)
+          Or_error.t
+  end
+
+  module Statx : sig
+    module Attributes : sig
+      type t : immutable_data [@@deriving sexp_of]
+
+      include Flags.S with type t := t
+
+      val compressed : t
+      val immutable : t
+      val append : t
+      val nodump : t
+      val encrypted : t
+      val automount : t
+      val mount_root : t
+      val verity : t
+      val dax : t
+    end
+
+    module Mask : sig
+      type t : immutable_data [@@deriving sexp_of]
+
+      include Flags.S with type t := t
+
+      val type' : t
+      val mode : t
+      val nlink : t
+      val uid : t
+      val gid : t
+      val atime : t
+      val mtime : t
+      val ctime : t
+      val ino : t
+      val size : t
+      val blocks : t
+      val basic_stats : t
+      val btime : t
+      val all : t
+      val mnt_id : t
+      val dioalign : t
+    end
+
+    module Flags : sig
+      type t : immutable_data [@@deriving sexp_of]
+
+      include Flags.S with type t := t
+
+      val empty_path : t
+      val no_automount : t
+      val symlink_nofollow : t
+      val statx_sync_as_stat : t
+      val statx_force_sync : t
+      val statx_dont_sync : t
+    end
+
+    module Timestamp : sig
+      type t =
+        { tv_sec : int64
+        ; tv_nsec : int
+        }
+      [@@deriving sexp]
+    end
+
+    type t =
+      { stx_mask : Mask.t
+      ; stx_blksize : int
+      ; stx_attributes : Attributes.t
+      ; stx_nlink : int
+      ; stx_uid : int
+      ; stx_gid : int
+      ; stx_mode : int
+      ; stx_ino : int64
+      ; stx_size : int64
+      ; stx_blocks : int64
+      ; stx_attributes_mask : Attributes.t
+      ; stx_atime : Timestamp.t
+      ; stx_btime : Timestamp.t
+      ; stx_ctime : Timestamp.t
+      ; stx_mtime : Timestamp.t
+      ; stx_rdev_major : int
+      ; stx_rdev_minor : int
+      ; stx_dev_major : int
+      ; stx_dev_minor : int
+      ; stx_mnt_id : int64
+      ; stx_dio_mem_align : int
+      ; stx_dio_offset_align : int
+      }
+    [@@deriving sexp]
+
+    module Result : sig
+      type nonrec t =
+        | Ok of t
+        | EACCES
+        | EBADF
+        | EFAULT
+        | EINVAL
+        | ELOOP
+        | ENAMETOOLONG
+        | ENOENT
+        | ENOMEM
+        | ENOTDIR
+      [@@deriving sexp]
+    end
+
+    (** See the statx man page for details on this call. This is a light wrapper for the
+        direct system call. Users should check the mask bits on the return value to check
+        that the field has been correctly filled. *)
+    val statx
+      : (?dir_fd:File_descr.t -> ?mask:Mask.t -> string -> flags:Flags.t -> Result.t)
           Or_error.t
   end
 end

@@ -203,7 +203,9 @@ let prepare_to_lock_exn path =
              locking_hostname)
       else (
         let lock_file_still_there () =
-          [%compare.equal: Info.t option] (Info.of_file lock_path) (Some info)
+          ([%compare.equal: Info.t option] [@mode local])
+            (Info.of_file lock_path)
+            (Some info)
         in
         match lock_file_still_there () with
         | false ->
@@ -372,7 +374,7 @@ let unlink_old_attempts path =
       let mtime = Time_float.of_span_since_epoch (Time_float.Span.of_sec stat.st_mtime) in
       Some (Time_float.diff now mtime, file))
   |> Array.to_list
-  |> List.sort ~compare:[%compare: Time_float.Span.t * string]
+  |> List.sort ~compare:([%compare: Time_float.Span.t * string] [@mode local])
   |> (fun l ->
        (* keep 3 last attempts unconditionally in case it helps investigate something *)
        List.drop l 3)

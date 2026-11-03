@@ -534,8 +534,9 @@ let%expect_test "end-of-day constants" =
   [%expect {| |}]
 ;;
 
-module Specialize_to_int (Poly : Stable1) = struct
-  type t = int Poly.t [@@deriving bin_io, compare, sexp]
+module%template [@mode m = (global, local)] Specialize_to_int (Poly : Stable1 [@mode m]) =
+struct
+  type t = int Poly.t [@@deriving bin_io, (compare [@mode.explicit m]), sexp]
 end
 
 module%test [@name "Time.Stable"] _ = struct
@@ -596,8 +597,8 @@ module%test [@name "Time.Stable"] _ = struct
     @ [ Map.of_alist_exn (List.mapi examples ~f:(fun i example -> example, i)) ]
   ;;
 
-  module type S = sig
-    type t [@@deriving bin_io, compare, sexp]
+  module type%template [@mode m = (global, local)] S = sig
+    type t [@@deriving bin_io, (compare [@mode.explicit m]), sexp]
 
     val examples : t list
     val quickcheck_generator : t Quickcheck.Generator.t

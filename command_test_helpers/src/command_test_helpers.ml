@@ -210,7 +210,7 @@ module Validate_command = struct
          let%bind.List arg = [ "help"; "build-info"; "version" ] in
          one_or_two_dashes_allowed arg
        in
-       "-?" :: multi_dash_allowed |> String.Set.of_list)
+       "-?" :: "-help-cat" :: "-help-category" :: multi_dash_allowed |> String.Set.of_list)
   ;;
 
   let raise_built_in_args_out_of_sync () =

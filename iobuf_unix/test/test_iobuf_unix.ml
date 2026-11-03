@@ -44,7 +44,7 @@ let%expect_test "fillf_float.Truncated" =
 type nonrec ok_or_eof = ok_or_eof =
   | Ok
   | Eof
-[@@deriving compare, sexp_of]
+[@@deriving compare ~localize, sexp_of]
 
 let iter_examples = Iobuf_test.Test_iobuf.iter_examples
 
@@ -53,14 +53,14 @@ module Io_test (Ch : sig
 
     val create_in : string -> in_
     val close_in : in_ -> unit
-    val read : local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t -> in_ -> ok_or_eof
+    val read : ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t @ local -> in_ -> ok_or_eof
 
     type out_
 
     val create_out : Unix.File_descr.t -> out_
     val close_out : out_ -> unit
-    val write : local_ ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t -> out_ -> unit
-    val peek_write : local_ ([> read ], _, Iobuf.global) Iobuf.t -> out_ -> int
+    val write : ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t @ local -> out_ -> unit
+    val peek_write : ([> read ], _, Iobuf.global) Iobuf.t @ local -> out_ -> int
   end) =
 struct
   let%test_unit "write + read" =

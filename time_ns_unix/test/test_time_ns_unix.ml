@@ -63,7 +63,7 @@ module%test [@name "Core.Time_ns.Utc.to_date_and_span_since_start_of_day"] _ = s
         let core_date, core_ofday = Time_ns.to_date_ofday time_ns ~zone:Time.Zone.utc in
         require_compare_equal
           (module struct
-            type t = Date.t * Time_ns.Ofday.t [@@deriving compare, sexp_of]
+            type t = Date.t * Time_ns.Ofday.t [@@deriving compare ~localize, sexp_of]
           end)
           (kernel_date, kernel_ofday)
           (core_date, core_ofday)

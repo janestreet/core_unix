@@ -1152,3 +1152,24 @@ let%expect_test "extend_group_exn works with lazy_group" =
   run ~argv:[ "exe"; "bar" ] extended;
   [%expect {| bar |}]
 ;;
+
+let%expect_test "help text with no flags" =
+  (* Doesn't come up in real uses because [-help] is always added, but does come up in
+     some tests written using [help_text]. This test makes sure we don't unintentionally
+     change this behavior. *)
+  Command_unix.Shape.help_text
+    (Basic { summary = "summary"; readme = None; anons = Grammar Zero; flags = [] })
+    (Command_unix.Path.create ~path_to_exe:"__exe_name__")
+    ~expand_dots:false
+    ~flags:false
+    ~recursive:false
+  |> print_string;
+  [%expect
+    {|
+    summary
+
+      __exe_name__
+
+    === flags ===
+    |}]
+;;

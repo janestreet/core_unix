@@ -1,5 +1,6 @@
 open! Core
 open! Import
+open! Basement.Primitives
 
 module M = struct
   type t = Unix.file_descr
@@ -40,11 +41,15 @@ let%template equal t1 t2 = (Int.equal [@mode m]) (to_int t1) (to_int t2)
 
 external unbox_int32
   :  (int32[@local_opt])
-  -> (int32#[@unboxed])
+  -> (Int32_u.t[@unboxed])
   @@ portable
   = "%unbox_int32"
 
-external box_int32 : (int32#[@unboxed]) -> (int32[@local_opt]) @@ portable = "%box_int32"
+external box_int32
+  :  (Int32_u.t[@unboxed])
+  -> (int32[@local_opt])
+  @@ portable
+  = "%box_int32"
 
 let to_i32 t = unbox_int32 (Int.to_int32_trunc (to_int t))
 let of_i32 t = of_int (Int.of_int32_trunc (box_int32 t))

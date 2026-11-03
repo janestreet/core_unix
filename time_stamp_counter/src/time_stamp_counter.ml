@@ -126,7 +126,7 @@ module Calibrator = struct
     }
   [@@deriving bin_io, sexp]
 
-  type t =
+  type t : value mod stateless =
     { (* the most recent observations and regression results *)
       mutable tsc : tsc (* this time value is monotonically increasing *)
     ; mutable monotonic_until_tsc : tsc (* for computing time in nanos *)

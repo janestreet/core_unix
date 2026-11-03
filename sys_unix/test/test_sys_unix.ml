@@ -4,7 +4,7 @@ open! Sys
 
 let%test _ =
   let argv = get_argv () in
-  [%equal: [ `Native | `Bytecode ]]
+  ([%equal: [ `Native | `Bytecode ]] [@mode local])
     (Sys_unix.execution_mode ())
     (if String.is_suffix argv.(0) ~suffix:".exe"
         || String.is_suffix argv.(0) ~suffix:".native"
@@ -22,7 +22,8 @@ let%expect_test _ =
   Sys_unix.override_argv [| "THIS"; "IS"; "A"; "TEST" |];
   print_s [%sexp (Sys.get_argv () : string array)];
   Sys_unix.override_argv old_sys_argv;
-  print_s [%sexp ([%equal: string array] (Sys.get_argv ()) old_sys_argv : bool)];
+  print_s
+    [%sexp (([%equal: string array] [@mode local]) (Sys.get_argv ()) old_sys_argv : bool)];
   [%expect
     {|
     (THIS IS A TEST)

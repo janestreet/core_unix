@@ -76,7 +76,7 @@ module Tm = struct
     ; tm_yday : int
     ; tm_isdst : bool
     }
-  [@@deriving equal, sexp_of]
+  [@@deriving equal ~localize, sexp_of]
 
   let quickcheck_generator =
     let%map.Quickcheck.Generator { year; month; day; hour; min; sec; ms = _; us = _ } =

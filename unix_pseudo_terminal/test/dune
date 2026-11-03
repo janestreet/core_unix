@@ -3,4 +3,4 @@
  (names testpty)
  (libraries core core_unix unix_pseudo_terminal)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

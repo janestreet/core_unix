@@ -491,6 +491,159 @@ module Null : Linux_ext_intf.S = struct
     ;;
   end
 
+  module Statx = struct
+    (* As per uapi/linux/stat.h *)
+
+    module Attributes = struct
+      let compressed = Int63.of_int 0x00000004
+      let immutable = Int63.of_int 0x00000010
+      let append = Int63.of_int 0x00000020
+      let nodump = Int63.of_int 0x00000040
+      let encrypted = Int63.of_int 0x00000800
+      let automount = Int63.of_int 0x00001000
+      let mount_root = Int63.of_int 0x00002000
+      let verity = Int63.of_int 0x00100000
+      let dax = Int63.of_int 0x00200000
+
+      include Flags.Make (struct
+          let allow_intersecting = false
+          let should_print_error = true
+          let remove_zero_flags = false
+
+          let known =
+            [ compressed, "compressed"
+            ; immutable, "immutable"
+            ; append, "append"
+            ; nodump, "nodump"
+            ; encrypted, "encrypted"
+            ; automount, "automount"
+            ; mount_root, "mount_root"
+            ; verity, "verity"
+            ; dax, "dax"
+            ]
+          ;;
+        end)
+    end
+
+    module Mask = struct
+      let type' = Int63.of_int 0x000000001
+      let mode = Int63.of_int 0x00000002
+      let nlink = Int63.of_int 0x00000004
+      let uid = Int63.of_int 0x00000008
+      let gid = Int63.of_int 0x00000010
+      let atime = Int63.of_int 0x00000020
+      let mtime = Int63.of_int 0x00000040
+      let ctime = Int63.of_int 0x00000080
+      let ino = Int63.of_int 0x00000100
+      let size = Int63.of_int 0x00000200
+      let blocks = Int63.of_int 0x00000400
+      let basic_stats = Int63.of_int 0x000007ff
+      let btime = Int63.of_int 0x00000800
+      let all = Int63.of_int 0x00000fff
+      let mnt_id = Int63.of_int 0x00001000
+      let dioalign = Int63.of_int 0x00002000
+
+      include Flags.Make (struct
+          let allow_intersecting = false
+          let should_print_error = true
+          let remove_zero_flags = false
+
+          let known =
+            [ type', "type"
+            ; mode, "mode"
+            ; nlink, "nlink"
+            ; uid, "uid"
+            ; gid, "gid"
+            ; atime, "atime"
+            ; mtime, "mtime"
+            ; ctime, "ctime"
+            ; ino, "ino"
+            ; size, "size"
+            ; blocks, "blocks"
+            ; btime, "btime"
+            ; mnt_id, "mnt_id"
+            ; dioalign, "dioalign"
+            ]
+          ;;
+        end)
+    end
+
+    module Timestamp = struct
+      type t =
+        { tv_sec : int64
+        ; tv_nsec : int
+        }
+      [@@deriving sexp]
+    end
+
+    type t =
+      { stx_mask : Mask.t
+      ; stx_blksize : int
+      ; stx_attributes : Attributes.t
+      ; stx_nlink : int
+      ; stx_uid : int
+      ; stx_gid : int
+      ; stx_mode : int
+      ; stx_ino : int64
+      ; stx_size : int64
+      ; stx_blocks : int64
+      ; stx_attributes_mask : Attributes.t
+      ; stx_atime : Timestamp.t
+      ; stx_btime : Timestamp.t
+      ; stx_ctime : Timestamp.t
+      ; stx_mtime : Timestamp.t
+      ; stx_rdev_major : int
+      ; stx_rdev_minor : int
+      ; stx_dev_major : int
+      ; stx_dev_minor : int
+      ; stx_mnt_id : int64
+      ; stx_dio_mem_align : int
+      ; stx_dio_offset_align : int
+      }
+    [@@deriving sexp]
+
+    module Result = struct
+      type nonrec t =
+        | Ok of t
+        | EACCES
+        | EBADF
+        | EFAULT
+        | EINVAL
+        | ELOOP
+        | ENAMETOOLONG
+        | ENOENT
+        | ENOMEM
+        | ENOTDIR
+      [@@deriving sexp]
+    end
+
+    module Flags = struct
+      let empty_path = Int63.of_int 0x1000
+      let no_automount = Int63.of_int 0x800
+      let symlink_nofollow = Int63.of_int 0x100
+      let statx_sync_as_stat = Int63.of_int 0x0000
+      let statx_force_sync = Int63.of_int 0x2000
+      let statx_dont_sync = Int63.of_int 0x4000
+
+      include Flags.Make (struct
+          let allow_intersecting = false
+          let should_print_error = true
+          let remove_zero_flags = false
+
+          let known =
+            [ empty_path, "empty_path"
+            ; no_automount, "no_automount"
+            ; symlink_nofollow, "symlink_nofollow"
+            ; statx_force_sync, "statx_force_sync"
+            ; statx_dont_sync, "statx_dont_sync"
+            ]
+          ;;
+        end)
+    end
+
+    let statx = Or_error.unimplemented "Linux_ext.Statx.statx"
+  end
+
   include Null_toplevel
 end
 
@@ -889,8 +1042,19 @@ module Eventfd = struct
   type t = File_descr.t [@@deriving compare ~localize, sexp_of]
 
   external create : Int32.t -> Flags.t -> t @@ portable = "core_linux_eventfd"
-  external read : t -> Int64.t @@ portable = "core_linux_eventfd_read"
-  external write : t -> Int64.t -> unit @@ portable = "core_linux_eventfd_write"
+
+  external read
+    :  t
+    -> (Int64.t[@unboxed])
+    @@ portable
+    = "core_linux_eventfd_read" "core_linux_eventfd_read_unboxed"
+
+  external write
+    :  t
+    -> (Int64.t[@unboxed]) @ local
+    -> unit
+    @@ portable
+    = "core_linux_eventfd_write" "core_linux_eventfd_write_unboxed"
 
   let create =
     let create ?(flags = Flags.empty) init = create init flags in
@@ -1057,7 +1221,7 @@ external gettcpopt_string
 external settcpopt_string
   :  file_descr
   -> tcp_string_option
-  -> string
+  -> string @ local
   -> unit
   @@ portable
   = "core_linux_settcpopt_string_stub"
@@ -1080,7 +1244,7 @@ external unsafe_send_nonblocking_no_sigpipe
   :  file_descr
   -> pos:int
   -> len:int
-  -> Bytes.t
+  -> Bytes.t @ local
   -> int
   @@ portable
   = "core_linux_send_nonblocking_no_sigpipe_stub"
@@ -1094,7 +1258,7 @@ external unsafe_send_no_sigpipe
   :  file_descr
   -> pos:int
   -> len:int
-  -> Bytes.t
+  -> Bytes.t @ local
   -> int
   @@ portable
   = "core_linux_send_no_sigpipe_stub"
@@ -1133,7 +1297,7 @@ let send_no_sigpipe sock ?pos ?len buf =
 
 external unsafe_sendmsg_nonblocking_no_sigpipe
   :  file_descr
-  -> string Unix.IOVec.t array
+  -> string Unix.IOVec.t array @ local
   -> int
   -> int
   @@ portable
@@ -1170,7 +1334,12 @@ external pr_get_pdeathsig
   @@ portable
   = "core_linux_pr_get_pdeathsig_stub"
 
-external pr_set_name_first16 : string -> unit @@ portable = "core_linux_pr_set_name"
+external pr_set_name_first16
+  :  string @ local
+  -> unit
+  @@ portable
+  = "core_linux_pr_set_name"
+
 external pr_get_name : unit -> string @@ portable = "core_linux_pr_get_name"
 
 let file_descr_realpath fd =
@@ -1182,7 +1351,7 @@ let in_channel_realpath ic = file_descr_realpath (Unix.descr_of_in_channel ic)
 
 external raw_sched_setaffinity
   :  pid:int
-  -> cpuset:int list
+  -> cpuset:int list @ local
   -> unit
   @@ portable
   = "core_linux_sched_setaffinity"
@@ -1252,13 +1421,13 @@ let get_terminal_size = function
 ;;
 
 external get_ipv4_address_for_interface
-  :  string
+  :  string @ local
   -> string
   @@ portable
   = "core_linux_get_ipv4_address_for_interface"
 
 external get_mac_address
-  :  ifname:string
+  :  ifname:string @ local
   -> string
   @@ portable
   = "core_linux_get_mac_address"
@@ -1267,7 +1436,7 @@ external get_mac_address
    empty string removes any binding *)
 external bind_to_interface'
   :  File_descr.t
-  -> string
+  -> string @ local
   -> unit
   @@ portable
   = "core_linux_bind_to_interface"
@@ -1309,10 +1478,15 @@ module Mman = struct
     [@@deriving sexp]
   end
 
-  external unix_mlockall : Mcl_flags.t array -> unit @@ portable = "core_unix_mlockall"
+  external unix_mlockall
+    :  Mcl_flags.t iarray @ local
+    -> unit
+    @@ portable
+    = "core_unix_mlockall"
+
   external unix_munlockall : unit -> unit @@ portable = "core_unix_munlockall"
 
-  let mlockall_raw flags = unix_mlockall (List.to_array flags)
+  let mlockall_raw flags = unix_mlockall ((Iarray.of_list [@alloc stack]) flags)
   let munlockall_raw = unix_munlockall
   let mlockall = Ok mlockall_raw
   let munlockall = Ok munlockall_raw
@@ -1400,7 +1574,7 @@ module Extended_file_attributes = struct
   external getxattr
     :  bool
     -> string
-    -> string
+    -> string @ local
     -> Get_attr_result.t
     @@ portable
     = "core_linux_getxattr"
@@ -1408,8 +1582,8 @@ module Extended_file_attributes = struct
   external setxattr
     :  bool
     -> string
-    -> string
-    -> string
+    -> string @ local
+    -> string @ local
     -> Int63.t
     -> Set_attr_result.t
     @@ portable
@@ -1456,7 +1630,7 @@ module Extended_file_attributes = struct
   external removexattr
     :  bool
     -> string
-    -> string
+    -> string @ local
     -> Remove_attr_result.t
     @@ portable
     = "core_linux_removexattr"
@@ -1466,6 +1640,252 @@ module Extended_file_attributes = struct
   let setxattr = Ok setxattr
   let listxattr = Ok listxattr
   let removexattr = Ok removexattr
+end
+
+module Statx = struct
+  module Attributes = struct
+    external flag_compressed
+      :  unit
+      -> Int63.t
+      = "core_linux_statx_STATX_ATTR_COMPRESSED_bits"
+
+    external flag_immutable
+      :  unit
+      -> Int63.t
+      = "core_linux_statx_STATX_ATTR_IMMUTABLE_bits"
+
+    external flag_append : unit -> Int63.t = "core_linux_statx_STATX_ATTR_APPEND_bits"
+    external flag_nodump : unit -> Int63.t = "core_linux_statx_STATX_ATTR_NODUMP_bits"
+
+    external flag_encrypted
+      :  unit
+      -> Int63.t
+      = "core_linux_statx_STATX_ATTR_ENCRYPTED_bits"
+
+    external flag_automount
+      :  unit
+      -> Int63.t
+      = "core_linux_statx_STATX_ATTR_AUTOMOUNT_bits"
+
+    external flag_mount_root
+      :  unit
+      -> Int63.t
+      = "core_linux_statx_STATX_ATTR_MOUNT_ROOT_bits"
+
+    external flag_verity : unit -> Int63.t = "core_linux_statx_STATX_ATTR_VERITY_bits"
+    external flag_dax : unit -> Int63.t = "core_linux_statx_STATX_ATTR_DAX_bits"
+
+    let compressed = flag_compressed ()
+    let immutable = flag_immutable ()
+    let append = flag_append ()
+    let nodump = flag_nodump ()
+    let encrypted = flag_encrypted ()
+    let automount = flag_automount ()
+    let mount_root = flag_mount_root ()
+    let verity = flag_verity ()
+    let dax = flag_dax ()
+
+    include Flags.Make (struct
+        let allow_intersecting = false
+        let should_print_error = true
+        let remove_zero_flags = false
+
+        let known =
+          [ compressed, "compressed"
+          ; immutable, "immutable"
+          ; append, "append"
+          ; nodump, "nodump"
+          ; encrypted, "encrypted"
+          ; automount, "automount"
+          ; mount_root, "mount_root"
+          ; verity, "verity"
+          ; dax, "dax"
+          ]
+        ;;
+      end)
+  end
+
+  module Mask = struct
+    external flag_type : unit -> Int63.t = "core_linux_statx_STATX_TYPE_bits"
+    external flag_mode : unit -> Int63.t = "core_linux_statx_STATX_MODE_bits"
+    external flag_nlink : unit -> Int63.t = "core_linux_statx_STATX_NLINK_bits"
+    external flag_uid : unit -> Int63.t = "core_linux_statx_STATX_UID_bits"
+    external flag_gid : unit -> Int63.t = "core_linux_statx_STATX_GID_bits"
+    external flag_atime : unit -> Int63.t = "core_linux_statx_STATX_ATIME_bits"
+    external flag_mtime : unit -> Int63.t = "core_linux_statx_STATX_MTIME_bits"
+    external flag_ctime : unit -> Int63.t = "core_linux_statx_STATX_CTIME_bits"
+    external flag_ino : unit -> Int63.t = "core_linux_statx_STATX_INO_bits"
+    external flag_size : unit -> Int63.t = "core_linux_statx_STATX_SIZE_bits"
+    external flag_blocks : unit -> Int63.t = "core_linux_statx_STATX_BLOCKS_bits"
+
+    external flag_basic_stats
+      :  unit
+      -> Int63.t
+      = "core_linux_statx_STATX_BASIC_STATS_bits"
+
+    external flag_btime : unit -> Int63.t = "core_linux_statx_STATX_BTIME_bits"
+    external flag_all : unit -> Int63.t = "core_linux_statx_STATX_ALL_bits"
+    external flag_mnt_id : unit -> Int63.t = "core_linux_statx_STATX_MNT_ID_bits"
+    external flag_dioalign : unit -> Int63.t = "core_linux_statx_STATX_DIOALIGN_bits"
+
+    let type' = flag_type ()
+    let mode = flag_mode ()
+    let nlink = flag_nlink ()
+    let uid = flag_uid ()
+    let gid = flag_gid ()
+    let atime = flag_atime ()
+    let mtime = flag_mtime ()
+    let ctime = flag_ctime ()
+    let ino = flag_ino ()
+    let size = flag_size ()
+    let blocks = flag_blocks ()
+    let basic_stats = flag_basic_stats ()
+    let btime = flag_btime ()
+    let all = flag_all ()
+    let mnt_id = flag_mnt_id ()
+    let dioalign = flag_dioalign ()
+
+    include Flags.Make (struct
+        let allow_intersecting = false
+        let should_print_error = true
+        let remove_zero_flags = false
+
+        let known =
+          [ type', "type"
+          ; mode, "mode"
+          ; nlink, "nlink"
+          ; uid, "uid"
+          ; gid, "gid"
+          ; atime, "atime"
+          ; mtime, "mtime"
+          ; ctime, "ctime"
+          ; ino, "ino"
+          ; size, "size"
+          ; blocks, "blocks"
+          ; btime, "btime"
+          ; mnt_id, "mnt_id"
+          ; dioalign, "dioalign"
+          ]
+        ;;
+      end)
+  end
+
+  module Timestamp = struct
+    type t =
+      { tv_sec : int64
+      ; tv_nsec : int
+      }
+    [@@deriving sexp]
+  end
+
+  type t =
+    { stx_mask : Mask.t
+    ; stx_blksize : int
+    ; stx_attributes : Attributes.t
+    ; stx_nlink : int
+    ; stx_uid : int
+    ; stx_gid : int
+    ; stx_mode : int
+    ; stx_ino : int64
+    ; stx_size : int64
+    ; stx_blocks : int64
+    ; stx_attributes_mask : Attributes.t
+    ; stx_atime : Timestamp.t
+    ; stx_btime : Timestamp.t
+    ; stx_ctime : Timestamp.t
+    ; stx_mtime : Timestamp.t
+    ; stx_rdev_major : int
+    ; stx_rdev_minor : int
+    ; stx_dev_major : int
+    ; stx_dev_minor : int
+    ; stx_mnt_id : int64
+    ; stx_dio_mem_align : int
+    ; stx_dio_offset_align : int
+    }
+  [@@deriving sexp]
+
+  module Result = struct
+    type nonrec t =
+      | Ok of t
+      | EACCES
+      | EBADF
+      | EFAULT
+      | EINVAL
+      | ELOOP
+      | ENAMETOOLONG
+      | ENOENT
+      | ENOMEM
+      | ENOTDIR
+    [@@deriving sexp]
+  end
+
+  module Flags = struct
+    external flag_empty_path : unit -> Int63.t = "core_linux_statx_AT_EMPTY_PATH_bits"
+    external flag_no_automount : unit -> Int63.t = "core_linux_statx_AT_NO_AUTOMOUNT_bits"
+
+    external flag_symlink_nofollow
+      :  unit
+      -> Int63.t
+      = "core_linux_statx_AT_SYMLINK_NOFOLLOW_bits"
+
+    external flag_statx_sync_as_stat
+      :  unit
+      -> Int63.t
+      = "core_linux_statx_AT_STATX_SYNC_AS_STAT_bits"
+
+    external flag_statx_force_sync
+      :  unit
+      -> Int63.t
+      = "core_linux_statx_AT_STATX_FORCE_SYNC_bits"
+
+    external flag_statx_dont_sync
+      :  unit
+      -> Int63.t
+      = "core_linux_statx_AT_STATX_DONT_SYNC_bits"
+
+    let empty_path = flag_empty_path ()
+    let no_automount = flag_no_automount ()
+    let symlink_nofollow = flag_symlink_nofollow ()
+
+    (* [statx_sync_as_stat] is zero, i.e. the same as [empty], so it cannot appear in
+       [known] unless [remove_zero_flags] is enabled. *)
+    let statx_sync_as_stat = flag_statx_sync_as_stat ()
+    let statx_force_sync = flag_statx_force_sync ()
+    let statx_dont_sync = flag_statx_dont_sync ()
+
+    include Flags.Make (struct
+        let allow_intersecting = true
+        let should_print_error = true
+        let remove_zero_flags = false
+
+        let known =
+          [ empty_path, "empty_path"
+          ; no_automount, "no_automount"
+          ; symlink_nofollow, "symlink_nofollow"
+          ; statx_force_sync, "statx_force_sync"
+          ; statx_dont_sync, "statx_dont_sync"
+          ]
+        ;;
+      end)
+  end
+
+  external statx
+    :  dir_fd:int option
+    -> path:string
+    -> flags:int
+    -> mask:int
+    -> Result.t
+    @@ portable
+    = "core_linux_statx"
+
+  let statx ?dir_fd ?(mask = Mask.basic_stats) path ~flags =
+    let dir_fd = Option.map ~f:File_descr.to_int dir_fd in
+    let flags = Flags.to_int_exn flags in
+    let mask = Mask.to_int_exn mask in
+    statx ~dir_fd ~path ~flags ~mask
+  ;;
+
+  let statx = Ok statx
 end
 
 [%%else]
@@ -1483,5 +1903,6 @@ let _ = online_cpus
 include Null_toplevel
 module Eventfd = Null.Eventfd
 module Extended_file_attributes = Null.Extended_file_attributes
+module Statx = Null.Statx
 
 [%%endif]

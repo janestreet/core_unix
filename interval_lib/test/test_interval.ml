@@ -37,7 +37,7 @@ module%test _ = struct
   module%test [@name "Interval.V1.Float"] _ = Stable_unit_test.Make (struct
       include V1.Float
 
-      let equal = [%compare.equal: t]
+      let equal = ([%compare.equal: t] [@mode local])
 
       let tests =
         make_stable_unit_tests_v1
@@ -58,7 +58,7 @@ module%test _ = struct
   module%test [@name "Interval.V1.Int"] _ = Stable_unit_test.Make (struct
       include V1.Int
 
-      let equal = [%compare.equal: t]
+      let equal = ([%compare.equal: t] [@mode local])
 
       let tests =
         make_stable_unit_tests_v1
@@ -75,7 +75,7 @@ module%test _ = struct
   module%test [@name "Interval.V1.Ofday"] _ = Stable_unit_test.Make (struct
       include V1.Ofday
 
-      let equal = [%compare.equal: t]
+      let equal = ([%compare.equal: t] [@mode local])
 
       let tests =
         let t1 = Time_float.Ofday.create ~hr:7 ~min:30 ~sec:7 ~ms:12 ~us:5 () in

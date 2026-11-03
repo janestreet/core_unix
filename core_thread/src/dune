@@ -14,4 +14,4 @@
    threads unix)
  (preprocessor_deps config.h)
  (preprocess
-  (pps ppx_jane ppx_optcomp)))
+  (pps ppx_jane ppx_optcomp -compare-require-explicit-locality)))

@@ -10,7 +10,7 @@ open! Import
 module File_descr = File_descr
 
 (** Locale. *)
-module Locale = Locale
+module (Locale @@ nonportable) = Locale
 
 (** {6 Error report} *)
 
@@ -576,6 +576,7 @@ module Open_flags : sig
   val sync : t
   val rsync : t
   val direct : t
+  val noatime : t
 
   (** [can_read t] iff [t] has [rdonly] or [rdwr] *)
   val can_read : t -> bool
@@ -838,7 +839,7 @@ type lock_command = Unix.lock_command =
 val lockf : File_descr.t -> mode:lock_command -> len:Int64.t -> unit
 
 module Flock_command : sig
-  type t
+  type t : immutable_data
 
   val lock_shared : t
   val lock_exclusive : t
@@ -2355,7 +2356,11 @@ val writev_assume_fd_is_nonblocking
 val writev : File_descr.t -> ?count:int -> string IOVec.t array @ local read -> int
 
 (** [pselect rfds wfds efds timeout sigmask] like {!Core_unix.select} but also allows one
-    to wait for the arrival of signals. *)
+    to wait for the arrival of signals.
+
+    @raise Unix_error
+      on Unix-errors, including [EINVAL] if any fd is negative or [>= FD_SETSIZE] (1024 on
+      Linux), matching the behavior of [select]. *)
 val pselect
   :  File_descr.t list
   -> File_descr.t list
@@ -2529,7 +2534,7 @@ val wordexp
 (** {2 System information} *)
 
 module Utsname : sig
-  type t [@@deriving sexp_of, compare ~localize]
+  type t : immutable_data [@@deriving sexp_of, compare ~localize]
 
   val sysname : t -> string
   val nodename : t -> string
@@ -2677,7 +2682,7 @@ module (Expert @@ nonportable) : sig @@ portable
     @@ nonportable
 end
 
-module Stable : sig
+module (Stable @@ nonportable) : sig
   module Inet_addr = Inet_addr.Stable
   module Cidr = Cidr.Stable
   module Signal = Signal.Stable

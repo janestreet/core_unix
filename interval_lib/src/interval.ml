@@ -12,7 +12,7 @@ module Stable = struct
       [@@deriving
         bin_io ~localize
         , of_sexp
-        , variants
+        , variants ~fold
         , compare ~localize
         , equal ~localize
         , globalize
@@ -460,7 +460,8 @@ end
 [@@@mode.default m = (global, local)]
 
 module%template.portable
-  [@modality p] Make (Bound : sig
+  [@modality p]
+  Make (Bound : sig
     type t
     [@@deriving
       (bin_io [@mode m])

@@ -194,7 +194,7 @@ module type S1 = sig
   (** This type [t] supports bin-io and sexp conversion by way of the
       [[@@deriving bin_io, sexp]] extensions, which inline the relevant function
       signatures (like [bin_read_t] and [t_of_sexp]). *)
-  type 'a t
+  type 'a t : immutable_data with 'a
   [@@deriving
     (bin_io [@mode m])
     , sexp ~stackify
@@ -331,7 +331,8 @@ module type%template Interval = sig @@ portable
         end
       ]} *)
   module%template.portable
-    [@mode m = (global, local)] Make (Bound : sig
+    [@mode m = (global, local)]
+    Make (Bound : sig
       type t
       [@@deriving
         (bin_io [@mode m])
@@ -376,7 +377,7 @@ module type%template Interval = sig @@ portable
         type 'a t =
           | Interval of 'a * 'a
           | Empty
-        [@@deriving compare ~localize, equal ~localize, hash, variants]
+        [@@deriving compare ~localize, equal ~localize, hash, variants ~fold]
 
         val to_float : float t -> Float.t
         val to_int : int t -> Int.t
@@ -396,7 +397,8 @@ module type%template Interval = sig @@ portable
       https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     module%template.portable
-      [@mode m = (global, local)] Make (Bound : sig
+      [@mode m = (global, local)]
+      Make (Bound : sig
         type t [@@deriving (bin_io [@mode m]), sexp, hash]
 
         include Comparable.S [@mode m] with type t := t

@@ -177,8 +177,11 @@ val get_current : unit -> t option
 (** Sets the current locale using {!Expert.set_current}, calls the provided function, and
     restores the current locale to its previous value afterwards. Be careful when using it
     with a [Deferred.t]-returning function, as it would not wait on the [Deferred.t]
-    before cleaning up. *)
-val with_current : t option -> (unit -> 'a) @ local once -> 'a
+    before cleaning up.
+
+    [f] is [unyielding]: it may not suspend to the Async scheduler. There is one locale
+    slot per OS thread; suspending would run other jobs under this locale. *)
+val with_current : t option -> (unit -> 'a) @ local once unyielding -> 'a
 
 module Expert : sig
   (** Creates a {!t} using the "POSIX" locale (see {!Name.posix}) for all categories. The

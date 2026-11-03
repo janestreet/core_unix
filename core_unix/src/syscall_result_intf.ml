@@ -9,7 +9,7 @@ module type S = sig @@ portable
   type 'a syscall_result
 
   type t = ok_value syscall_result
-  [@@deriving (compare [@mode m]), (equal [@mode m]), sexp_of]
+  [@@deriving (compare [@mode.explicit m]), (equal [@mode.explicit m]), sexp_of]
 
   val create_ok : ok_value -> t
   val create_error : Unix_error.t -> t
@@ -51,7 +51,7 @@ module type S = sig @@ portable
 end
 
 module type Arg = sig @@ portable
-  type t : immutable_data [@@deriving sexp_of, (compare [@mode m])]
+  type t : immutable_data [@@deriving sexp_of, (compare [@mode.explicit m])]
 
   (** [to_int t] must be >= 0, otherwise [create_ok] will raise. *)
   val to_int : t -> int

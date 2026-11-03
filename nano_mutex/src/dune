@@ -1,7 +1,6 @@
 (library
  (name nano_mutex)
  (public_name core_unix.nano_mutex)
- (libraries core core_thread error_checking_mutex
-   core_kernel.thread_safe_queue)
+ (libraries core core_thread error_checking_mutex portable_intrusive_stack)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

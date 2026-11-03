@@ -9,39 +9,41 @@ type ok_or_eof =
 (** [Iobuf] has analogs of various [Bigstring] functions. These analogs advance by the
     amount written/read. *)
 val input
-  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> In_channel.t
   -> ok_or_eof
 
 val read
-  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> ok_or_eof
+  @@ portable
 
 val really_read
-  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> ok_or_eof
+  @@ portable
 
 val really_pread
-  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> offset:int
   -> ok_or_eof
 
 val read_assume_fd_is_nonblocking
-  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> Unix.Syscall_result.Unit.t
 
 val pread_assume_fd_is_nonblocking
-  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> offset:int
   -> unit
 
 val recvfrom_assume_fd_is_nonblocking
-  :  local_ ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> write ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> Unix.sockaddr
 
@@ -89,46 +91,50 @@ val sendto_nonblocking_no_sigpipe
 (** Write from the iobuf to the specified channel without changing the iobuf window.
     Returns the number of bytes written. *)
 module Peek : sig
-  val output : local_ ([> read ], _, Iobuf.global) Iobuf.t -> Out_channel.t -> int
-  val write : local_ ([> read ], _, Iobuf.global) Iobuf.t -> Unix.File_descr.t -> int
+  val output : ([> read ], _, Iobuf.global) Iobuf.t @ local -> Out_channel.t -> int
+  val write : ([> read ], _, Iobuf.global) Iobuf.t @ local -> Unix.File_descr.t -> int
 
   val really_write
-    :  local_ ([> read ], _, Iobuf.global) Iobuf.t
+    :  ([> read ], _, Iobuf.global) Iobuf.t @ local
     -> Unix.File_descr.t
     -> unit
+    @@ portable
 
   val write_assume_fd_is_nonblocking
-    :  local_ ([> read ], _, Iobuf.global) Iobuf.t
+    :  ([> read ], _, Iobuf.global) Iobuf.t @ local
     -> Unix.File_descr.t
     -> int
 end
 
 (** As [Peek], but advances the window by the number of bytes written. *)
-val output : local_ ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t -> Out_channel.t -> unit
+val output
+  :  ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
+  -> Out_channel.t
+  -> unit
 
 val write
-  :  local_ ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> unit
 
 val really_write
-  :  local_ ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> unit
 
 val really_pwrite
-  :  local_ ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> offset:int
   -> unit
 
 val write_assume_fd_is_nonblocking
-  :  local_ ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> unit
 
 val pwrite_assume_fd_is_nonblocking
-  :  local_ ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t
+  :  ([> read ], Iobuf.seek, Iobuf.global) Iobuf.t @ local
   -> Unix.File_descr.t
   -> offset:int
   -> unit
@@ -163,6 +169,6 @@ module Expert : sig
   val to_iovec_shared
     :  ?pos:int
     -> ?len:int
-    -> local_ (_, _, Iobuf.global) Iobuf.t
+    -> (_, _, Iobuf.global) Iobuf.t @ local
     -> Bigstring.t Unix.IOVec.t
 end

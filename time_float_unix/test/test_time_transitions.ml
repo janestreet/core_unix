@@ -169,13 +169,13 @@ let test time_m f =
 ;;
 
 module Date_and_ofday = struct
-  type t = Date.t * Time.Ofday.t [@@deriving compare, sexp_of]
+  type t = Date.t * Time.Ofday.t [@@deriving compare ~localize, sexp_of]
 
   let equal = [%compare.equal: t]
 end
 
 module Date_and_ofday_ns = struct
-  type t = Date.t * Time_ns.Ofday.t [@@deriving compare, sexp_of]
+  type t = Date.t * Time_ns.Ofday.t [@@deriving compare ~localize, sexp_of]
 
   let equal = [%compare.equal: t]
 end
@@ -186,7 +186,7 @@ module Time_precise = struct
     | `Once of Time.t
     | `Twice of Time.t * Time.t
     ]
-  [@@deriving compare, sexp_of]
+  [@@deriving compare ~localize, sexp_of]
 
   let equal = [%compare.equal: t]
 end
@@ -196,7 +196,7 @@ module Date_ofday_precise = struct
     Date.t
     * Time.Ofday.t
     * [ `Only | `Also_at of Time.t | `Also_skipped of Date.t * Time.Ofday.t ]
-  [@@deriving compare, sexp_of]
+  [@@deriving compare ~localize, sexp_of]
 
   let equal = [%compare.equal: t]
 end

@@ -13,11 +13,13 @@ build: [
 depends: [
   "ocaml" {>= "5.1.0"}
   "base"
+  "basement"
   "core"
   "core_kernel"
   "expect_test_helpers_core"
   "jane-street-headers"
   "jst-config"
+  "portable_intrusive_stack"
   "ppx_builtin"
   "ppx_diff"
   "ppx_jane"

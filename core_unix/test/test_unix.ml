@@ -698,6 +698,38 @@ let%expect_test "makedev, major, minor" =
   [%expect {| true |}]
 ;;
 
+let%expect_test "[pselect] rejects fds that don't fit in [fd_set]" =
+  let test fd =
+    let fds = List.map ~f:File_descr.of_int [ fd ] in
+    List.iter
+      [ fds, [], []; [], fds, []; [], [], fds ]
+      ~f:(fun (r, w, e) -> require_does_raise (fun () -> pselect r w e 0. []))
+  in
+  (* FD_SETSIZE on Linux for each FD_SET (read, write, exception). *)
+  test 1024;
+  [%expect
+    {|
+    (Unix.Unix_error "Invalid argument" pselect "")
+    (Unix.Unix_error "Invalid argument" pselect "")
+    (Unix.Unix_error "Invalid argument" pselect "")
+    |}];
+  test (-1);
+  [%expect
+    {|
+    (Unix.Unix_error "Invalid argument" pselect "")
+    (Unix.Unix_error "Invalid argument" pselect "")
+    (Unix.Unix_error "Invalid argument" pselect "")
+    |}];
+  (* Test a value where [Int_val] would have failed. *)
+  test (1 lsl 32);
+  [%expect
+    {|
+    (Unix.Unix_error "Invalid argument" pselect "")
+    (Unix.Unix_error "Invalid argument" pselect "")
+    (Unix.Unix_error "Invalid argument" pselect "")
+    |}]
+;;
+
 [%%expect_test
   let "simple wrapper doesn't allocate" =
     let key = "hello" in

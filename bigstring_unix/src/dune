@@ -8,7 +8,7 @@
  (libraries core core_unix ocaml_c_utils)
  (preprocessor_deps config.h)
  (preprocess
-  (pps ppx_jane ppx_optcomp)))
+  (pps ppx_jane ppx_optcomp -compare-require-explicit-locality)))
 
 (rule
  (targets config.h)

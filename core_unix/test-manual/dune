@@ -3,4 +3,4 @@
  (names getgrgid_thread_safety)
  (libraries core_kernel.caml_threads core_unix unix)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

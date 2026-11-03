@@ -2,4 +2,4 @@
  (name time_stamp_counter_test)
  (libraries core expect_test_helpers_core time_float_unix time_stamp_counter)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

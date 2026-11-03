@@ -4,4 +4,4 @@
    core_unix expect_test_helpers_base expect_test_helpers_core filename_unix
    linux_ext)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))
