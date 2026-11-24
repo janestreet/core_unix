@@ -42,6 +42,15 @@ static uint64_t rdtsc() {
   asm volatile("mrs %0, cntvct_el0" : "=r"(tsc));
   return tsc;
 }
+#else
+/* No cycle counter is implemented for this target: fall back to
+   [clock_gettime(CLOCK_MONOTONIC)] in nanoseconds, as documented in
+   time_stamp_counter.mli. */
+static uint64_t rdtsc() {
+  struct timespec ts = {0, 0};
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (uint64_t)ts.tv_sec * 1000000000u + (uint64_t)ts.tv_nsec;
+}
 #endif
 
 CAMLprim CAMLweakdef uint64_t caml_rdtsc_unboxed(value unit) {
