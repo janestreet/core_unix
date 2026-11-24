@@ -79,13 +79,17 @@ let create
       ~mode:([ Unix.O_WRONLY; O_CREAT ] @ if close_on_exec then [ O_CLOEXEC ] else [])
       ~perm:0o664
   in
+  (* Set by the exception handler below, which closes [fd]. The [at_exit] handler must
+     not close [fd] again: by then the descriptor number may belong to another file, or
+     to nothing. *)
+  let fd_closed = ref false in
   try
     if lock fd
     then (
       if unlink_on_exit
       then
         at_exit (fun () ->
-          Unix.close fd;
+          if not !fd_closed then Unix.close fd;
           (* Do not unlink if (e.g. a forked child, or our parent) still holds this lock *)
           if not (is_locked path)
           then (
@@ -104,6 +108,7 @@ let create
       false)
   with
   | e ->
+    fd_closed := true;
     Unix.close fd;
     (* releases any locks from [flock] and/or [lockf] *)
     raise e

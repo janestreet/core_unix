@@ -231,3 +231,36 @@ let%expect_test "Symlink lock protocol" =
   [%expect {| ("Somebody else took it" ((metadata (Ok hi)))) |}];
   Symlink.unlock_exn lock
 ;;
+
+let create_fails_with_unlink_on_exit_exe =
+  "../test-bin/create_fails_with_unlink_on_exit.exe"
+;;
+
+let%expect_test "[create ~unlink_on_exit:true] that raises does not close fds at exit" =
+  let run args =
+    let dir = Filename_unix.temp_dir "lock_file" "unit_test" in
+    let result =
+      Unix.system
+        (String.concat
+           ~sep:" "
+           (create_fails_with_unlink_on_exit_exe :: Filename.quote dir :: args)
+         ^ " 2>&1")
+    in
+    print_s [%sexp (result : Unix.Exit_or_signal.t)];
+    dir
+  in
+  (* Nothing reuses the descriptor number that [create] released. *)
+  let (_ : string) = run [] in
+  [%expect {|
+    create raised EFBIG
+    (Ok ())
+    |}];
+  (* Another file gets the descriptor number that [create] released. *)
+  let dir = run [ "open-other-file" ] in
+  print_string (In_channel.read_all (dir ^/ "other-file"));
+  [%expect {|
+    create raised EFBIG
+    (Ok ())
+    other data
+    |}]
+;;
