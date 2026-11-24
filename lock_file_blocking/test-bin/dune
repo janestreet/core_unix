@@ -1,6 +1,6 @@
 (executables
  (modes byte exe)
- (names test_lock_file_blocking)
+ (names create_fails_with_unlink_on_exit test_lock_file_blocking)
  (libraries command_unix core core_unix lock_file_blocking signal_unix)
  (preprocess
   (pps ppx_jane -compare-require-explicit-locality)))
